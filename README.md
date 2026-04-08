@@ -1,6 +1,6 @@
 # change-mate
 
-A Claude Code workflow for tracking changes like Jira tickets — without leaving your terminal.
+A Claude Code workflow for tracking changes like Jira tickets — without leaving your terminal. Works for solo devs and teams.
 
 ---
 
@@ -8,10 +8,11 @@ A Claude Code workflow for tracking changes like Jira tickets — without leavin
 
 change-mate gives Claude Code a structured way to:
 
-- Present your backlog at the start of each session
+- Pull the latest backlog at the start of every session
 - Turn vague tasks into defined tickets before touching code
+- Check out tickets so teammates know what's being worked on
 - Log every completed change with decisions and notes
-- Keep a running `change-mate.md` file you can export to Jira or Trello later
+- Keep a history that can be exported to Jira or Trello later
 
 ---
 
@@ -23,41 +24,53 @@ Inside a Claude Code session, just say:
 I want to use change-mate. Set it up from https://github.com/allavallc/change-mate
 ```
 
-Claude Code will run the setup automatically.
-
 Or run it manually:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh | bash
 ```
 
-That's it. Setup will:
+Then commit and push so your whole team has it:
 
-- Add `CHANGEMATE.md` to your project (the workflow instructions)
-- Create `change-mate.md` (your running change log)
-- Add one line to your `CLAUDE.md` to wire it all together
+```bash
+git add change-mate/ CHANGEMATE.md CLAUDE.md
+git commit -m "add change-mate"
+git push
+```
 
-Your existing `CLAUDE.md` is safe — change-mate only appends a single import line.
+---
+
+## How it works
+
+Tickets are individual markdown files that live in your repo. Moving a file is how you check out a ticket. Git is the sync layer.
+
+```
+change-mate/
+  backlog/        ← tickets waiting to be picked up
+  in-progress/    ← tickets currently being worked on
+  done/           ← completed tickets
+  blocked/        ← tickets that cannot proceed
+```
 
 ---
 
 ## The workflow
 
-**Start of session**
+**Start of session — Claude pulls latest and shows the board**
 ```
-Claude: What are we working on?
+What are we working on?
 
-  Open:
-    A. [CM-003] Add user authentication
-    B. [CM-005] Fix pagination bug
+Backlog:
+  CM-003 — Add user authentication
+  CM-005 — Fix pagination bug
 
-  In Progress:
-    → [CM-002] Refactor data layer
+In Progress (by others):
+  CM-002 — Refactor data layer [Sarah, 2h ago]
 ```
 
-**Pick a task**
+**Pick a ticket — Claude defines it before starting**
 ```
-You: Let's do A
+You: Let's do CM-003
 
 Claude: Let's write this up as a ticket. Answer using the numbers:
 
@@ -69,15 +82,8 @@ Claude: Let's write this up as a ticket. Answer using the numbers:
   6. Effort: XS / S / M / L / XL
 ```
 
-**Answer and confirm**
+**Claude checks it out — moves the file, pushes to repo**
 ```
-You: 1. Add login with email and password
-     2. Users can't save anything without an account
-     3. User can register, log in, log out, reset password
-     4. Using existing auth library, no OAuth for now
-     5. High
-     6. M
-
 Claude: [CM-003] Add user authentication
         ───────────────────────────────
         Goal:      Add login with email and password
@@ -87,43 +93,67 @@ Claude: [CM-003] Add user authentication
                    - Password reset works
         Priority:  High
         Effort:    M
-        Notes:     Using existing auth library, no OAuth for now
 
         Does this look right? (yes / edit N)
+
+You: yes
+
+Claude: On it. [CM-003 checked out]
 ```
 
-**After the work is done**
+**If two devs grab the same ticket simultaneously**
 ```
-Claude: Done. I've tracked [CM-003] in change-mate.md.
+⚠️  CM-003 was just picked up by someone else.
+
+Remaining backlog:
+  CM-005 — Fix pagination bug
+  CM-007 — Add export feature
+
+Want to pick one of these instead?
+```
+
+**When done — Claude updates the ticket and pushes**
+```
+Claude: Done. CM-003 is complete and logged.
 ```
 
 ---
 
-## The change log
+## Ticket format
 
-`change-mate.md` is a plain markdown file in your project root. It stays with your code, is readable by anyone, and is structured for easy export.
-
-Example:
+Each ticket is a plain markdown file:
 
 ```markdown
-### [CM-003] Add user authentication
+# [CM-003] Add user authentication
+
 - **Status**: done
 - **Priority**: High
 - **Effort**: M
-- **Goal**: Add login with email and password
-- **Done when**:
-  - User can register
-  - User can log in / log out
-  - Password reset works
-- **Notes**: Went with JWT over sessions for stateless API compatibility
-- **Date**: 2025-01-14
+- **Assigned to**: Alex
+- **Started**: 2025-01-14 09:30
+- **Completed**: 2025-01-14 14:00
+
+## Goal
+Add login with email and password.
+
+## Why
+Users can't save anything without an account.
+
+## Done when
+- User can register
+- User can log in / log out
+- Password reset works
+
+## Notes
+Went with JWT over sessions for stateless API compatibility.
+Decided against OAuth for now — adding in CM-008.
 ```
 
 ---
 
 ## Exporting to Jira or Trello
 
-The ticket format is designed to map cleanly to both:
+The ticket format maps cleanly to both:
 
 | change-mate | Jira | Trello |
 |---|---|---|
@@ -135,8 +165,6 @@ The ticket format is designed to map cleanly to both:
 | Effort | Story points | Label |
 | Notes | Comments | Card description |
 
-Manual export for now — automated export coming soon.
-
 ---
 
 ## Files
@@ -144,14 +172,14 @@ Manual export for now — automated export coming soon.
 | File | Purpose |
 |---|---|
 | `CHANGEMATE.md` | Workflow instructions loaded by Claude Code |
-| `change-mate.md` | Your running change log |
+| `change-mate/` | Your ticket folders (committed to the repo) |
 | `setup.sh` | One-command installer |
 
 ---
 
 ## Contributing
 
-PRs welcome. Keep it simple — this should work in any project, any stack, with zero dependencies.
+PRs welcome. Keep it simple — this should work in any project, any stack, with zero dependencies beyond git.
 
 ---
 
