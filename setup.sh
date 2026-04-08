@@ -15,13 +15,19 @@ echo ""
 curl -fsSL "$REPO_URL/CHANGEMATE.md" -o CHANGEMATE.md
 echo -e "${GREEN}✓${NC} downloaded CHANGEMATE.md"
 
-# Download change-mate.md only if it doesn't already exist
-if [ -f "change-mate.md" ]; then
-  echo -e "${YELLOW}~${NC} change-mate.md already exists, skipping"
-else
-  curl -fsSL "$REPO_URL/change-mate.md" -o change-mate.md
-  echo -e "${GREEN}✓${NC} created change-mate.md"
-fi
+# Create folder structure
+mkdir -p change-mate/backlog
+mkdir -p change-mate/in-progress
+mkdir -p change-mate/done
+mkdir -p change-mate/blocked
+
+# Add .gitkeep files so empty folders are tracked by git
+touch change-mate/backlog/.gitkeep
+touch change-mate/in-progress/.gitkeep
+touch change-mate/done/.gitkeep
+touch change-mate/blocked/.gitkeep
+
+echo -e "${GREEN}✓${NC} created change-mate/ folder structure"
 
 # Append import to CLAUDE.md if not already there
 IMPORT_LINE="@CHANGEMATE.md"
@@ -47,6 +53,7 @@ echo ""
 echo -e "${GREEN}change-mate is ready.${NC}"
 echo ""
 echo "next steps:"
-echo "  1. start a claude code session in this project"
-echo "  2. ask: 'what are we working on?'"
+echo "  1. commit and push the change-mate/ folder to your repo"
+echo "  2. have your team pull"
+echo "  3. start a claude code session and ask: 'what are we working on?'"
 echo ""
