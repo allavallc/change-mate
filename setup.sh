@@ -49,6 +49,17 @@ EOF
   echo -e "${GREEN}✓${NC} created CLAUDE.md"
 fi
 
+# Check .gitignore — change-mate/ must not be ignored
+if [ -f ".gitignore" ]; then
+  if grep -qE "^change-mate" .gitignore; then
+    echo ""
+    echo -e "⚠️  WARNING: change-mate/ is in your .gitignore"
+    echo "   Tickets won't sync between teammates until you remove it."
+    echo "   Remove this line from .gitignore: change-mate"
+    echo ""
+  fi
+fi
+
 echo ""
 echo -e "${GREEN}change-mate is ready.${NC}"
 echo ""
