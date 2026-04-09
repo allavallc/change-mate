@@ -151,6 +151,36 @@ Decided against OAuth for now — adding in CM-008.
 
 ---
 
+## Visual board
+
+change-mate generates a single-file HTML board from your tickets and feature sets.
+
+**View the board** — open `change-mate-board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
+
+**Regenerate manually:**
+```bash
+bash build.sh
+```
+
+**Commit the board** so teammates always have the latest version without running anything:
+```bash
+git add change-mate-board.html
+git commit -m "update board"
+git push
+```
+
+---
+
+## Feature sets
+
+A feature set is a collection of stories grouped under a common goal or milestone. It is not a time box — it's done when all its stories are done.
+
+Feature set files live in `change-mate/feature-sets/`. Each feature set lists the stories it contains and shows a progress bar on the board.
+
+To suggest a feature set, just say: "can you suggest a feature set?" — Claude will read your backlog, group tickets by theme, and propose one for your review.
+
+---
+
 ## Exporting to Jira or Trello
 
 The ticket format maps cleanly to both:
