@@ -50,6 +50,7 @@ change-mate/
   in-progress/    ← tickets currently being worked on
   done/           ← completed tickets
   blocked/        ← tickets that cannot proceed
+  not-doing/      ← tickets explicitly rejected (hidden from board by default)
 ```
 
 ---

@@ -20,12 +20,14 @@ mkdir -p change-mate/backlog
 mkdir -p change-mate/in-progress
 mkdir -p change-mate/done
 mkdir -p change-mate/blocked
+mkdir -p change-mate/not-doing
 
 # Add .gitkeep files so empty folders are tracked by git
 touch change-mate/backlog/.gitkeep
 touch change-mate/in-progress/.gitkeep
 touch change-mate/done/.gitkeep
 touch change-mate/blocked/.gitkeep
+touch change-mate/not-doing/.gitkeep
 
 echo -e "${GREEN}✓${NC} created change-mate/ folder structure"
 

@@ -1,5 +1,8 @@
 # change-mate workflow
 
+> **Source & updates**: https://github.com/allavallc/change-mate
+> To update: `curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh | bash`
+
 You are a senior developer and project manager working as a pair programmer. Your job is to help plan, execute, and track all meaningful work using a structured ticket-based workflow.
 
 Tickets live as individual markdown files in the `change-mate/` folder in this repo. Git is the sync layer — always pull before reading the backlog, always push after moving a ticket.
@@ -14,6 +17,7 @@ change-mate/
   in-progress/   ← tickets currently being worked on
   done/          ← completed tickets
   blocked/       ← tickets that cannot proceed
+  not-doing/     ← tickets explicitly rejected (hidden from board by default)
 ```
 
 ---
@@ -116,6 +120,33 @@ Want to pick one of these instead?
 
 ---
 
+## Rejecting a ticket
+
+When the user says "reject CM-XXX", "not doing CM-XXX", or "kill CM-XXX":
+
+1. Ask: "Why is this being rejected? (type n/a to skip)"
+2. Wait for the answer
+3. Move the ticket file to `change-mate/not-doing/`
+4. Update the file — set status to `not-doing`, add these fields after **Completed**:
+   ```
+   - **Rejected by**: <user name, or "user" if unknown>
+   - **Rejected**: <YYYY-MM-DD>
+   - **Rejection reason**: <answer, or blank if n/a>
+   ```
+5. Run:
+   ```
+   git add change-mate/
+   git commit -m "CM-XXX: not doing"
+   git push
+   ```
+6. Confirm: "CM-XXX marked as not doing."
+
+Tickets in `not-doing/` are **never shown at session start** — they are dead. They are visible on the board only when the user clicks "Show rejected".
+
+Works from any folder: `backlog/`, `in-progress/`, or `blocked/`.
+
+---
+
 ## When work is complete
 
 1. Tell the user what was done in plain language
@@ -149,12 +180,15 @@ CM-004-1736847392.md
 ```markdown
 # [CM-XXX] Title
 
-- **Status**: open | in-progress | done | blocked
+- **Status**: open | in-progress | done | blocked | not-doing
 - **Priority**: Low | Medium | High | Critical
 - **Effort**: XS | S | M | L | XL
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
+- **Rejected by**: <name or blank>
+- **Rejected**: <YYYY-MM-DD or blank>
+- **Rejection reason**: <reason or blank>
 
 ## Goal
 One sentence description.
@@ -174,7 +208,7 @@ Decisions made, gotchas, anything future-you should know.
 
 ## Ticket ID format
 
-Read all files across all folders in `change-mate/`. Find the highest existing CM-XXX number and increment by 1. Start at CM-001 if no tickets exist.
+Read all files across all folders in `change-mate/` including `not-doing/`. Find the highest existing CM-XXX number and increment by 1. Start at CM-001 if no tickets exist.
 
 ---
 

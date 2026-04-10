@@ -15,13 +15,15 @@ if [ -z "$PYTHON" ]; then
 fi
 
 "$PYTHON" - << 'PYEOF'
-import re, json, subprocess
+import re, json, subprocess, sys
 from pathlib import Path
 from datetime import datetime, timezone
 UTC = timezone.utc
 
 ROOT = Path.cwd()
 CM = ROOT / "change-mate"
+sys.path.insert(0, str(ROOT))
+from build_lib import parse_ticket, parse_feature_set
 
 
 def detect_github_repo():
@@ -41,78 +43,6 @@ def detect_github_repo():
 GITHUB_REPO = detect_github_repo()
 
 
-def parse_ticket(path, default_status):
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
-    stem = path.stem
-    stem_m = re.match(r"^(CM-\d+)(?:-\d+)?$", stem)
-    t = {
-        "id": stem_m.group(1) if stem_m else stem, "title": "", "status": default_status,
-        "priority": "", "effort": "", "assigned_to": "",
-        "started": "", "completed": "", "goal": "",
-        "why": "", "done_when": [], "notes": ""
-    }
-    if lines:
-        m = re.match(r"^#\s+\[([^\]]+)\]\s+(.+)$", lines[0])
-        if m:
-            t["id"] = m.group(1)
-            t["title"] = m.group(2).strip()
-    for line in lines:
-        m = re.match(r"^-\s+\*\*([^*]+)\*\*:\s*(.*)", line)
-        if m:
-            k = m.group(1).strip().lower().replace(" ", "_")
-            v = m.group(2).strip()
-            if k in ("priority", "effort", "assigned_to", "started", "completed") and v:
-                t[k] = v
-            elif k == "status" and v:
-                t["status"] = v
-    section, buf = None, []
-
-    def flush():
-        if not section:
-            return
-        block = "\n".join(buf).strip()
-        if section == "goal":
-            t["goal"] = block
-        elif section == "why":
-            t["why"] = block
-        elif section == "done_when":
-            t["done_when"] = [l.lstrip("- ").strip() for l in buf if l.strip().startswith("-")]
-        elif section == "notes":
-            t["notes"] = block
-
-    for line in lines[1:]:
-        if line.startswith("## "):
-            flush()
-            section = line[3:].strip().lower().replace(" ", "_")
-            buf = []
-        else:
-            buf.append(line)
-    flush()
-    return t
-
-
-def parse_feature_set(path):
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
-    s = {"id": path.stem, "name": path.stem, "goal": "", "status": "planned", "tickets": []}
-    if lines:
-        m = re.match(r"^#\s+(.+)$", lines[0])
-        if m:
-            s["name"] = m.group(1).strip()
-    for line in lines:
-        m = re.match(r"^-\s+\*\*([^*]+)\*\*:\s*(.*)", line)
-        if m:
-            k = m.group(1).strip().lower()
-            v = m.group(2).strip()
-            if k == "status":
-                s["status"] = v
-            elif k == "goal":
-                s["goal"] = v
-            elif k == "tickets":
-                s["tickets"] = [x.strip() for x in v.split(",") if x.strip()]
-    return s
-
 
 tickets = []
 for folder, default_status in [
@@ -120,6 +50,7 @@ for folder, default_status in [
     ("in-progress", "in-progress"),
     ("done", "done"),
     ("blocked", "blocked"),
+    ("not-doing", "not-doing"),
 ]:
     d = CM / folder
     if d.exists():
@@ -228,8 +159,28 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 .view.active { display: block; animation: fadeIn 150ms ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-@media (max-width: 900px) { .board { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { .board { grid-template-columns: 1fr; } }
+.board.show-rejected { grid-template-columns: repeat(5, 1fr); }
+.col-rejected { display: none; }
+.board.show-rejected .col-rejected { display: block; }
+.card.not-doing { opacity: 0.5; }
+.card.not-doing .card-title { text-decoration: line-through; color: var(--text2); }
+.btn-toggle-rejected {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  background: none;
+  color: var(--muted);
+  margin-bottom: 16px;
+  transition: color 100ms, border-color 100ms;
+}
+.btn-toggle-rejected:hover { color: var(--text2); border-color: var(--text2); }
+.btn-toggle-rejected.active { color: var(--text); border-color: var(--text2); }
+@media (max-width: 900px) { .board { grid-template-columns: 1fr 1fr; } .board.show-rejected { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .board { grid-template-columns: 1fr; } .board.show-rejected { grid-template-columns: 1fr; } }
 .col-head {
   display: flex;
   align-items: center;
@@ -453,7 +404,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
     <button class="tab" data-view="feature-sets" onclick="switchTab(this)">Feature Sets</button>
   </div>
   <div class="view active" id="view-board">
-    <div class="board">
+    <button class="btn-toggle-rejected" id="btn-rejected" onclick="toggleRejected()" style="display:none">Show rejected</button>
+    <div class="board" id="board-grid">
       <div>
         <div class="col-head"><span class="col-name">Backlog</span><span class="col-count" id="n-backlog">0</span></div>
         <div class="cards" id="c-backlog"></div>
@@ -469,6 +421,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
       <div>
         <div class="col-head"><span class="col-name">Blocked</span><span class="col-count" id="n-blocked">0</span></div>
         <div class="cards" id="c-blocked"></div>
+      </div>
+      <div class="col-rejected">
+        <div class="col-head"><span class="col-name">Not Doing</span><span class="col-count" id="n-notdoing">0</span></div>
+        <div class="cards" id="c-notdoing"></div>
       </div>
     </div>
   </div>
@@ -489,19 +445,23 @@ function priorityBadge(p) {
   return p ? '<span class="badge ' + (cls||'') + '">' + esc(p) + '</span>' : '';
 }
 
-function cardHTML(t) {
+function cardHTML(t, isRejected) {
+  var rejClass = (isRejected || t.status === 'not-doing') ? ' not-doing' : '';
   var assignee = t.assigned_to ? '<div class="card-assignee">' + esc(t.assigned_to) + '</div>' : '';
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
   var why   = t.why   ? '<div><div class="dl-label">Why</div><div class="dl-val">'   + esc(t.why)   + '</div></div>' : '';
   var notes = t.notes ? '<div><div class="dl-label">Notes</div><div class="dl-val">' + esc(t.notes) + '</div></div>' : '';
+  var rejection = (t.rejection_reason && t.rejection_reason.toLowerCase() !== 'n/a')
+    ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
+    : '';
   var dw = '';
   if (t.done_when && t.done_when.length) {
     dw = '<div><div class="dl-label">Done when</div><ul class="dl-list">'
       + t.done_when.map(function(d) { return '<li>' + esc(d) + '</li>'; }).join('')
       + '</ul></div>';
   }
-  var detail = goal + why + dw + notes;
-  return '<div class="card" onclick="toggleCard(this)">'
+  var detail = goal + why + dw + notes + rejection;
+  return '<div class="card' + rejClass + '" onclick="toggleCard(this)">'
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
     + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
@@ -516,6 +476,14 @@ function toggleCard(el) {
   el.classList.toggle('open');
 }
 
+function toggleRejected() {
+  var btn = document.getElementById('btn-rejected');
+  var board = document.getElementById('board-grid');
+  var showing = board.classList.toggle('show-rejected');
+  btn.textContent = showing ? 'Hide rejected' : 'Show rejected';
+  btn.classList.toggle('active', showing);
+}
+
 function switchTab(btn) {
   var view = btn.getAttribute('data-view');
   document.querySelectorAll('.tab').forEach(function(b) { b.classList.toggle('active', b === btn); });
@@ -526,15 +494,19 @@ function render() {
   var gen = D.generated ? new Date(D.generated).toLocaleString() : '';
   if (gen) document.getElementById('gen-time').textContent = 'generated ' + gen;
 
-  var buckets = {open:[], 'in-progress':[], done:[], blocked:[]};
+  var buckets = {open:[], 'in-progress':[], done:[], blocked:[], 'not-doing':[]};
   D.tickets.forEach(function(t) { if (buckets[t.status]) buckets[t.status].push(t); });
   var colKeys = {open:'backlog','in-progress':'inprogress',done:'done',blocked:'blocked'};
-  Object.keys(buckets).forEach(function(status) {
+  Object.keys(colKeys).forEach(function(status) {
     var list = buckets[status];
     var k = colKeys[status];
-    document.getElementById('c-'+k).innerHTML = list.length ? list.map(cardHTML).join('') : '<div class="empty">No tickets</div>';
+    document.getElementById('c-'+k).innerHTML = list.length ? list.map(function(t) { return cardHTML(t); }).join('') : '<div class="empty">No tickets</div>';
     document.getElementById('n-'+k).textContent = list.length;
   });
+  var ndList = buckets['not-doing'];
+  document.getElementById('c-notdoing').innerHTML = ndList.length ? ndList.map(function(t) { return cardHTML(t, true); }).join('') : '<div class="empty">No tickets</div>';
+  document.getElementById('n-notdoing').textContent = ndList.length;
+  if (ndList.length) document.getElementById('btn-rejected').style.display = '';
 
   var byId = {};
   D.tickets.forEach(function(t) { byId[t.id] = t; });
@@ -555,7 +527,7 @@ function render() {
   featureSetList.innerHTML = sections.map(function(featureSet) {
     var list = featureSet.tickets.map(function(id) { return byId[id]; }).filter(Boolean);
     var done = list.filter(function(t) { return t.status === 'done'; }).length;
-    var total = list.length;
+    var total = list.filter(function(t) { return t.status !== 'not-doing'; }).length;
     var pct = total ? Math.round(done / total * 100) : 0;
     var isUnassigned = featureSet.id === '__unassigned';
     var progRow = !isUnassigned
