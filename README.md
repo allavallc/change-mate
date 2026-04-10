@@ -198,12 +198,33 @@ The ticket format maps cleanly to both:
 
 ---
 
+## Live lock registry (optional)
+
+When multiple agents work in parallel, change-mate can check a shared Gist before claiming a ticket to avoid two agents picking up the same work.
+
+**Setup:**
+
+1. Create a **secret** GitHub Gist at [gist.github.com](https://gist.github.com). The filename and content don't matter — change-mate will manage the content.
+2. Copy the Gist ID (the hash at the end of the URL) and paste it into `change-mate-config.json`:
+   ```json
+   {
+     "gist_id": "your-gist-id-here",
+     "project_name": "my project"
+   }
+   ```
+3. Set `CHANGEMATE_GITHUB_TOKEN` as an environment variable (or shell secret) with **Gist read/write** scope.
+
+If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate-config.json` has no `gist_id`, the check is skipped — change-mate works normally without it.
+
+---
+
 ## Files
 
 | File | Purpose |
 |---|---|
 | `CHANGEMATE.md` | Workflow instructions loaded by Claude Code |
 | `change-mate/` | Your ticket folders (committed to the repo) |
+| `change-mate-config.json` | Optional config: Gist ID and project name |
 | `setup.sh` | One-command installer |
 
 ---
