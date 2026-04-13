@@ -753,7 +753,7 @@ checkGitHubStatus();
     if (!targetCol) return;
 
     var existing = null;
-    document.querySelectorAll('.card').forEach(function(card) {
+    document.querySelectorAll('#view-board .card').forEach(function(card) {
       var el = card.querySelector('.card-id');
       if (el && el.textContent.trim() === data.ticket_id) existing = card;
     });
