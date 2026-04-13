@@ -415,7 +415,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-13T18:37:57.571573+00:00"
+  "generated": "2026-04-13T18:42:03.060867+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
@@ -709,7 +709,7 @@ checkGitHubStatus();
     if (!targetCol) return;
 
     var existing = null;
-    document.querySelectorAll('.card').forEach(function(card) {
+    document.querySelectorAll('#view-board .card').forEach(function(card) {
       var el = card.querySelector('.card-id');
       if (el && el.textContent.trim() === data.ticket_id) existing = card;
     });
