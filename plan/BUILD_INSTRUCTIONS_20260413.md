@@ -256,12 +256,31 @@ Tell the user to add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY as GitHub Actions
 
 ---
 
-## Step 6 — Verify
+## Step 6 — Enable GitHub Pages (required for shared access)
 
-1. Run `bash build.sh` — confirm `change-mate-board.html` is generated with the config injected
-2. Open `change-mate-board.html` in a browser — confirm the green "live" dot appears in the header
-3. In a Claude Code session, claim a ticket — confirm the card moves in the open browser tab in real time
-4. Open the board in two browser tabs — confirm both update simultaneously
+For two people anywhere in the world to see the same live board, the board must be hosted at a shared URL. GitHub Pages serves `change-mate-board.html` directly from the repo — no extra infrastructure needed.
+
+1. On GitHub, go to the repo → Settings → Pages
+2. Under "Source", select **Deploy from a branch**
+3. Set branch to `main`, folder to `/ (root)`
+4. Click Save
+5. GitHub will publish the board at:
+   `https://<your-username>.github.io/<your-repo>/change-mate-board.html`
+
+**Cost**: Free for public repos. Private repos require a paid GitHub plan ($4/month).
+
+Once enabled, every push to `main` triggers the GitHub Action, which rebuilds the board and Pages serves the updated file automatically.
+
+Both people open the same URL. The board connects to Supabase Realtime. When an agent moves a ticket, the card animates on everyone's screen instantly — no refresh needed.
+
+---
+
+## Step 7 — Verify
+
+1. Enable GitHub Pages (Step 6)
+2. Push a change to `main` — confirm the Action runs and rebuilds the board
+3. Open the Pages URL in a browser — confirm the green "live" dot appears in the header
+4. Open the same URL in a second browser tab — confirm both tabs update simultaneously when a ticket is moved
 
 ---
 
