@@ -270,6 +270,55 @@ A feature set is a collection of stories grouped under a common goal or mileston
 
 ---
 
+## Real-time sync
+
+change-mate uses Supabase Realtime to broadcast ticket events so that
+other agents and the human board see changes instantly.
+
+### When to broadcast
+
+Broadcast a Supabase Realtime event in these situations:
+
+1. When claiming a ticket (moving to in-progress)
+2. When completing a ticket (moving to done)
+3. When blocking a ticket (moving to blocked)
+4. When creating a new ticket
+
+### How to broadcast
+
+Read supabase_url and supabase_publishable_key from change-mate-config.json.
+Then send a POST request to the Supabase Realtime broadcast endpoint:
+
+  POST {supabase_url}/realtime/v1/api/broadcast
+  Headers:
+    Content-Type: application/json
+    apikey: {supabase_publishable_key}
+    Authorization: Bearer {supabase_publishable_key}
+  Body:
+    {
+      "messages": [{
+        "topic": "change-mate",
+        "event": "ticket_updated",
+        "payload": {
+          "ticket_id": "CM-004",
+          "title": "Add user authentication",
+          "from_status": "backlog",
+          "to_status": "in-progress",
+          "assigned_to": "alex",
+          "timestamp": "<ISO timestamp>"
+        }
+      }]
+    }
+
+If supabase_url or supabase_publishable_key are missing from change-mate-config.json,
+skip the broadcast silently and continue as normal.
+
+### Do not wait for a response
+
+Fire the broadcast and move on. Do not block work on a failed broadcast.
+
+---
+
 ## Board rules
 
 - The board is rebuilt automatically by GitHub Actions on every push to `main` — never run `build.sh` manually

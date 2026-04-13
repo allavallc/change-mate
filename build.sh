@@ -15,7 +15,7 @@ if [ -z "$PYTHON" ]; then
 fi
 
 "$PYTHON" - << 'PYEOF'
-import re, json, subprocess, sys
+import re, json, subprocess, sys, os
 from pathlib import Path
 from datetime import datetime, timezone
 UTC = timezone.utc
@@ -24,6 +24,13 @@ ROOT = Path.cwd()
 CM = ROOT / "change-mate"
 sys.path.insert(0, str(ROOT))
 from build_lib import parse_ticket, parse_feature_set
+
+# Read Supabase config — env vars (set by GitHub Actions secrets) take priority
+_cfg_path = ROOT / "change-mate-config.json"
+_cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
+SUPABASE_URL = os.environ.get('SUPABASE_URL') or _cfg.get('supabase_url', '')
+SUPABASE_PUBLISHABLE_KEY = os.environ.get('SUPABASE_PUBLISHABLE_KEY') or _cfg.get('supabase_publishable_key', '')
+PROJECT_NAME = _cfg.get('project_name', '')
 
 
 def detect_github_repo():
@@ -68,6 +75,12 @@ data_json = json.dumps(
     indent=2
 )
 
+cm_config_json = json.dumps({
+    "supabase_url": SUPABASE_URL,
+    "supabase_publishable_key": SUPABASE_PUBLISHABLE_KEY,
+    "project_name": PROJECT_NAME,
+}, indent=2)
+
 HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,6 +89,7 @@ HTML = """<!DOCTYPE html>
 <title>change-mate board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root {
   --bg: #ffffff;
@@ -385,11 +399,28 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   z-index: 100;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@keyframes cm-pulse {
+  0%   { background: var(--surface); }
+  30%  { background: #fef9c3; }
+  100% { background: var(--surface); }
+}
+@keyframes cm-fadein {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cm-moving { animation: cm-pulse 600ms ease; }
+.cm-new { animation: cm-fadein 300ms ease; }
 </style>
 </head>
 <body>
 <header>
-  <span class="logo">change-mate</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="logo">change-mate</span>
+    <span id="cm-live-indicator" style="display:none; align-items:center; gap:5px; font-size:12px; color:#666;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+      live
+    </span>
+  </div>
   <div class="header-right">
     <span class="header-meta" id="gen-time"></span>
     <button class="btn-github" onclick="openSettings()">
@@ -691,6 +722,64 @@ document.addEventListener('keydown', function(e) {
 
 checkGitHubStatus();
 </script>
+<script id="cm-config" type="application/json">PLACEHOLDER_CONFIG</script>
+<script>
+(function() {
+  var cfg = JSON.parse(document.getElementById('cm-config').textContent);
+  if (!cfg.supabase_url || !cfg.supabase_publishable_key) return;
+
+  var client = supabase.createClient(cfg.supabase_url, cfg.supabase_publishable_key);
+  var channel = client.channel('change-mate');
+
+  channel.on('broadcast', { event: 'ticket_updated' }, function(e) {
+    handleTicketUpdate(e.payload);
+  });
+
+  channel.subscribe(function(status) {
+    if (status === 'SUBSCRIBED') {
+      document.getElementById('cm-live-indicator').style.display = 'flex';
+    }
+  });
+
+  function handleTicketUpdate(data) {
+    var colMap = {
+      'backlog': 'c-backlog', 'open': 'c-backlog',
+      'in-progress': 'c-inprogress', 'done': 'c-done',
+      'blocked': 'c-blocked', 'not-doing': 'c-notdoing'
+    };
+    var targetColId = colMap[data.to_status];
+    if (!targetColId) return;
+    var targetCol = document.getElementById(targetColId);
+    if (!targetCol) return;
+
+    var existing = null;
+    document.querySelectorAll('.card').forEach(function(card) {
+      var el = card.querySelector('.card-id');
+      if (el && el.textContent.trim() === data.ticket_id) existing = card;
+    });
+
+    if (existing) {
+      existing.classList.add('cm-moving');
+      existing.parentNode.removeChild(existing);
+      targetCol.insertBefore(existing, targetCol.firstChild);
+      setTimeout(function() { existing.classList.remove('cm-moving'); }, 600);
+    } else {
+      var card = document.createElement('div');
+      card.className = 'card cm-new';
+      card.onclick = function() { toggleCard(this); };
+      card.innerHTML = '<div class="card-top"><span class="card-id">' + esc(data.ticket_id) + '</span></div>'
+        + '<div class="card-title">' + esc(data.title || data.ticket_id) + '</div>';
+      targetCol.insertBefore(card, targetCol.firstChild);
+    }
+
+    ['c-backlog','c-inprogress','c-done','c-blocked','c-notdoing'].forEach(function(id) {
+      var col = document.getElementById(id);
+      var cnt = document.getElementById(id.replace('c-', 'n-'));
+      if (col && cnt) cnt.textContent = col.querySelectorAll('.card').length;
+    });
+  }
+})();
+</script>
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-title">New story</div>
@@ -777,7 +866,8 @@ checkGitHubStatus();
 
 output = (HTML
     .replace("PLACEHOLDER_JSON", data_json)
-    .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO)))
+    .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
+    .replace("PLACEHOLDER_CONFIG", cm_config_json))
 Path("change-mate-board.html").write_text(output, encoding="utf-8")
 print("change-mate-board.html updated")
 PYEOF
