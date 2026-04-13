@@ -382,7 +382,27 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 </main>
 <script>
 var D = {
-  "tickets": [],
+  "tickets": [
+    {
+      "id": "CM-001",
+      "title": "Test ticket",
+      "status": "open",
+      "priority": "Low",
+      "effort": "XS",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Test that the live board and GitHub Pages are working correctly.",
+      "why": "Verify end-to-end flow from ticket creation to board update.",
+      "done_when": [
+        "Ticket appears on the live board at the GitHub Pages URL"
+      ],
+      "notes": "Created as a test of the Supabase Realtime + GitHub Pages setup.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    }
+  ],
   "feature_sets": [
     {
       "id": "feature-set-001",
@@ -395,7 +415,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-13T18:33:22.621377+00:00"
+  "generated": "2026-04-13T18:36:09.905075+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
