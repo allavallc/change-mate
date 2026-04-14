@@ -436,20 +436,147 @@ var D = {
       "rejection_reason": ""
     },
     {
+      "id": "CM-005",
+      "title": "Supabase schema: locks, ticket_events, write_keys + RLS",
+      "status": "open",
+      "priority": "High",
+      "effort": "M",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Create the Supabase Postgres schema that powers the next-generation board: atomic locking, event history, and per-person write keys \u2014 all protected by Row Level Security.",
+      "why": "Current state: locking lives in a GitHub Gist (fragile, not atomic), there is zero history, and there is no access control. This schema is the foundation every other piece of the next build sits on \u2014 nothing else ships without it.",
+      "done_when": [
+        "`locks` table: `ticket_id` (PK), `agent`, `started_at`, atomic insert-or-fail semantics",
+        "`ticket_events` table: `id`, `ticket_id`, `from_status`, `to_status`, `actor`, `created_at`",
+        "`write_keys` table: `key_hash` (PK), `label`, `role` (`human` | `agent`), `created_at`, `revoked_at`",
+        "RLS policies: anon role read-only on `ticket_events`; write-key-gated inserts on `locks` and `ticket_events`; `write_keys` readable only by service role",
+        "SQL migration script committed to repo under `supabase/migrations/`",
+        "Idempotent: re-running the script against an already-migrated database is a no-op"
+      ],
+      "notes": "**Desired output**: a single SQL file a maintainer can run in the Supabase SQL editor to provision the project.\n\n**Success signals**:\n- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key\n\n**Failure signals / what to watch**:\n- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket\n\n**Tests required**:\n- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds\n\n**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
+      "id": "CM-006",
+      "title": "Supabase Edge Function `cm-write` (validated ticket writes via GitHub API)",
+      "status": "open",
+      "priority": "High",
+      "effort": "L",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Build a Supabase Edge Function that validates a caller's write key, then creates/updates tickets in the GitHub repo on their behalf \u2014 keeping the GitHub PAT server-side only.",
+      "why": "Today the \"Add story\" button on the board requires every user to paste their own GitHub PAT into localStorage. That is clunky, insecure, and blocks non-technical users. An Edge Function with the PAT stored as a Supabase secret is the right shape: one shared write path, per-person write keys, no tokens in the browser.",
+      "done_when": [
+        "Edge Function `cm-write` deployed to Supabase",
+        "Accepts: write key, ticket payload (title, goal, why, done-when, priority, effort, notes)",
+        "Validates write key against `write_keys` table (hashed lookup)",
+        "On success: creates the markdown file in `change-mate/backlog/` via GitHub API (authenticated with server-side PAT)",
+        "On success: inserts a row into `ticket_events`",
+        "On failure: returns structured error (`401` invalid key, `403` revoked, `422` bad payload, `500` GitHub API failure)",
+        "Rate limit: per-key throttle (e.g. 10 writes/minute)"
+      ],
+      "notes": "**Desired output**: a callable HTTPS endpoint the board JS hits with a write key and a ticket payload.\n\n**Success signals**:\n- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never reaches the client bundle or logs\n\n**Failure signals / what to watch**:\n- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes\n\n**Tests required**:\n- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions\n\n**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
+      "id": "CM-007",
+      "title": "Board modes + write-key prompt + Add Story via Edge Function",
+      "status": "open",
+      "priority": "High",
+      "effort": "M",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Teach the live board to operate in three distinct modes (`public-readonly`, `public-write`, `private`) and wire the Add Story button to the `cm-write` Edge Function instead of raw GitHub PAT + browser localStorage.",
+      "why": "A single mode (\"anyone can see, nobody can write without their own PAT\") does not fit real projects. Some boards are fully public, some accept anonymous-but-gated contributions, some need to be private. Tying Add Story to a server-side write path also kills the per-user PAT setup friction that today makes the button a non-starter for non-technical users.",
+      "done_when": [
+        "`change-mate-config.json` gains a `board_mode` field: `public-readonly` | `public-write` | `private`",
+        "`public-readonly`: no Add Story button, board visible to anyone",
+        "`public-write`: Add Story button visible, prompts for write key on click, key cached in localStorage",
+        "`private`: board gated behind a write-key prompt on load; no content renders until validated",
+        "Add Story button POSTs to `cm-write` Edge Function with the cached key",
+        "Clear error UX for invalid/revoked keys (not a silent failure)",
+        "Old per-user GitHub PAT path removed from board JS"
+      ],
+      "notes": "**Desired output**: the live board respects the mode in config, and the Add Story flow no longer touches a user's GitHub PAT.\n\n**Success signals**:\n- Flipping `board_mode` in config produces the expected UX on next build\n- Write key prompt appears exactly once per browser (cached in localStorage)\n- Add Story round-trips through the Edge Function in under 2s\n\n**Failure signals / what to watch**:\n- Write keys leaking into analytics / Sentry / URL params\n- `private` mode flashing content before the gate renders (FOUC-style leak)\n- localStorage cache not invalidating when a key is revoked server-side\n\n**Tests required**:\n- Snapshot tests for each of the three modes (readonly, write, private)\n- Unit test for write-key prompt flow (first visit, cached visit, revoked key)\n- Manual QA checklist for each mode before merge\n\n**Sequencing**: depends on CM-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
+      "id": "CM-008",
+      "title": "Migrate agent locking + event logging from Gist to Supabase",
+      "status": "open",
+      "priority": "High",
+      "effort": "M",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Rewrite the agent locking and event-broadcast sections of `CHANGEMATE.md` and `build.sh` so that agents lock tickets against the Supabase `locks` table and write status changes into `ticket_events` \u2014 retiring the GitHub Gist lock registry.",
+      "why": "The Gist-based lock registry is fragile (race conditions on PATCH), requires every agent to carry a GitHub token with Gist scope, and records no history. Supabase gives us atomic locking and a permanent audit trail in one move \u2014 and it removes one more token from the agent environment.",
+      "done_when": [
+        "`CHANGEMATE.md` Live Lock Registry section rewritten to describe Supabase lock flow",
+        "Agents acquire a lock via insert into `locks` table (fails if row exists)",
+        "Agents release the lock via delete on ticket completion",
+        "Every status move (backlog \u2192 in-progress, \u2192 done, \u2192 blocked, \u2192 not-doing) inserts a row into `ticket_events`",
+        "`CHANGEMATE_GITHUB_TOKEN` references removed from `CHANGEMATE.md`",
+        "`change-mate-config.json` `gist_id` field deprecated (leave for backcompat but document as unused)",
+        "`build.sh` continues to function \u2014 board rebuild path unchanged"
+      ],
+      "notes": "**Desired output**: agents use Supabase for locking and history; the Gist path is gone.\n\n**Success signals**:\n- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `CHANGEMATE_GITHUB_TOKEN` anymore\n\n**Failure signals / what to watch**:\n- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)\n\n**Tests required**:\n- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent\n\n**Sequencing**: depends on CM-005. Can land in parallel with CM-006/CM-007 since it touches a different surface (agent workflow, not board UI).",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
+      "id": "CM-009",
+      "title": "Setup docs for the new Supabase-backed architecture",
+      "status": "open",
+      "priority": "Medium",
+      "effort": "S",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Write end-to-end setup documentation so a new project can install change-mate v5 (Supabase locks + events + write keys + Edge Function) from scratch in under 15 minutes.",
+      "why": "The new architecture touches four systems (Supabase Postgres, Supabase Edge Functions, GitHub API, GitHub Actions). Without a clean setup guide, every new install becomes a support ticket. Docs are the final mile that makes CM-005 through CM-008 actually usable by anyone other than us.",
+      "done_when": [
+        "`docs/SETUP.md` (or README section) covers:",
+        "Creating a Supabase project",
+        "Running the schema migration",
+        "Deploying the `cm-write` Edge Function",
+        "Creating and distributing write keys",
+        "Setting `board_mode` and Supabase credentials in `change-mate-config.json`",
+        "Configuring GitHub Actions secrets",
+        "Troubleshooting section: common errors (invalid key, stale lock, RLS misconfigured)",
+        "A \"verify install\" checklist the user can walk through after setup",
+        "`setup.sh` updated to scaffold the new config fields"
+      ],
+      "notes": "**Desired output**: one markdown file that takes a new user from empty repo \u2192 working board with locking and access control.\n\n**Success signals**:\n- A person unfamiliar with the project completes setup from the doc alone\n- \"Verify install\" checklist catches misconfigured RLS and missing secrets\n\n**Failure signals / what to watch**:\n- Docs drifting from the actual code (pin examples to real file names and commit SHAs)\n- Setup steps that assume prior Supabase knowledge without linking to their docs\n- Missing coverage of the write-key lifecycle (create / distribute / revoke)\n\n**Tests required**:\n- Dogfood: run through the setup doc against a fresh Supabase project \u2014 time it, note every friction point\n- Doc-lint: all referenced file paths exist in the repo\n\n**Sequencing**: last in the chain. Depends on CM-005, CM-006, CM-007, CM-008 all being live.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
       "id": "CM-001",
       "title": "Test ticket",
-      "status": "in-progress",
+      "status": "done",
       "priority": "Low",
       "effort": "XS",
       "assigned_to": "adefilippo",
       "started": "2026-04-13 00:00",
-      "completed": "",
+      "completed": "2026-04-14",
       "goal": "Test that the live board and GitHub Pages are working correctly.",
       "why": "Verify end-to-end flow from ticket creation to board update.",
       "done_when": [
         "Ticket appears on the live board at the GitHub Pages URL"
       ],
-      "notes": "Created as a test of the Supabase Realtime + GitHub Pages setup.",
+      "notes": "Created as a test of the Supabase Realtime + GitHub Pages setup. End-to-end flow verified: ticket creation \u2192 GitHub Actions rebuild \u2192 live board update.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -457,18 +584,18 @@ var D = {
     {
       "id": "CM-002",
       "title": "Test 2",
-      "status": "in-progress",
+      "status": "done",
       "priority": "Low",
       "effort": "XS",
       "assigned_to": "claude",
       "started": "2026-04-13 14:45",
-      "completed": "",
+      "completed": "2026-04-14",
       "goal": "Test live card animation from backlog to in-progress.",
       "why": "Verify the Supabase Realtime board fix works correctly.",
       "done_when": [
         "Card animates from Backlog to In Progress without a page refresh"
       ],
-      "notes": "Second test ticket for Realtime animation fix verification.",
+      "notes": "Second test ticket for Realtime animation fix verification. Confirmed `handleTicketUpdate` scope fix (commit b9e4bff) works \u2014 cards animate between columns without full page refresh.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -486,7 +613,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-14T16:37:39.811261+00:00"
+  "generated": "2026-04-14T16:43:33.895364+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
