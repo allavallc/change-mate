@@ -563,6 +563,29 @@ var D = {
       "rejection_reason": ""
     },
     {
+      "id": "CM-010",
+      "title": "Second-LLM review pass on ticket drafts before user sees them",
+      "status": "open",
+      "priority": "Low",
+      "effort": "M",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
+      "why": "The product-manager skill (CM-004) will let one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
+      "done_when": [
+        "A configurable review step runs after the PM skill drafts a ticket",
+        "Review output is either: \"approved\" (pass through) or \"revise with: \u2026\" (draft rewritten once)",
+        "Config flag in `change-mate-config.json` (e.g. `reviewer_enabled: true/false`, `reviewer_persona: \"senior-pm\" | \"senior-tech-lead\"`)",
+        "Off by default; explicit opt-in",
+        "User sees the final (reviewed) draft \u2014 the review exchange is not shown unless they ask"
+      ],
+      "notes": "**Desired output**: optional critic pass that silently improves drafts.\n\n**Success signals**:\n- Turned on: drafts arrive with tighter acceptance criteria and clearer risk callouts\n- Turned off: behavior is identical to CM-004 baseline\n\n**Failure signals / what to watch**:\n- Latency spike on ticket creation (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n\n**Tests required**:\n- Unit test: reviewer disabled \u2192 single draft pass-through unchanged\n- Unit test: reviewer enabled + approved \u2192 draft unchanged\n- Unit test: reviewer enabled + revise \u2192 draft rewritten exactly once, not looped\n\n**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "done",
@@ -613,7 +636,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-14T16:43:33.895364+00:00"
+  "generated": "2026-04-14T16:57:35.013051+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
