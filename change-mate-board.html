@@ -402,7 +402,7 @@ var D = {
       "status": "open",
       "priority": "Medium",
       "effort": "M",
-      "feature_set": "",
+      "feature_set": "feature-set-002-workflow-hygiene",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -413,14 +413,13 @@ var D = {
         "`CHANGEMATE.md` documents how agents set and read these fields",
         "Board renders relationships on the card (e.g. small \"\u2194 CM-002\" chips)",
         "Moving a ticket to `blocked/` requires a `Blocked by` value",
-        "Unit tests in `build_lib.py` cover parsing: present, missing, malformed",
         "Round-trips cleanly through `build.sh` without data loss"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Sequencing**: land CM-004 first so the new relationship fields slot into the updated ticket format in one pass.\n\n**Desired output**: three new optional fields in every ticket, rendered as linked chips on the board.\n\n**Success signals**:\n- New tickets created after this ships include the new fields where applicable\n- Clicking a relationship chip on the board scrolls/highlights the referenced card\n- Legacy tickets without these fields still parse and render\n\n**Failure signals / what to watch**:\n- Orphaned references (CM-XXX listed but file not found) \u2014 parser should warn, not crash\n- Cycles (A blocks B blocks A) \u2014 detect and flag on the board\n- Board layout breaking when a ticket has many relationships\n\n**Tests required**:\n- Unit tests for each field: present, missing, malformed, multiple IDs\n- Unit test for orphan detection\n- Unit test for cycle detection",
+      "desired_output": "Three new optional fields in every ticket, rendered as linked chips on the board.",
+      "success_signals": "- New tickets created after this ships include the new fields where applicable\n- Clicking a relationship chip on the board scrolls/highlights the referenced card\n- Legacy tickets without these fields still parse and render",
+      "failure_signals": "- Orphaned references (CM-XXX listed but file not found) \u2014 parser should warn, not crash\n- Cycles (A blocks B blocks A) \u2014 detect and flag on the board\n- Board layout breaking when a ticket has many relationships",
+      "tests": "- Parser unit tests for each field: present, missing, malformed, multiple IDs\n- Unit test for orphan detection\n- Unit test for cycle detection\n- Snapshot test for board card rendering with and without relationships",
+      "notes": "**Sequencing**: land CM-004 first so the new relationship fields slot into the updated ticket format in one pass.\n\n**Alternatives considered**:\n- Encode relationships only in feature-set files \u2192 rejected; loses ticket-level traceability and forces lookup detour\n- Use a separate `relationships.json` index \u2192 rejected; duplicates source-of-truth from the markdown",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -431,7 +430,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "M",
-      "feature_set": "",
+      "feature_set": "feature-set-001-supabase-upgrade",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -445,11 +444,11 @@ var D = {
         "SQL migration script committed to repo under `supabase/migrations/`",
         "Idempotent: re-running the script against an already-migrated database is a no-op"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Desired output**: a single SQL file a maintainer can run in the Supabase SQL editor to provision the project.\n\n**Success signals**:\n- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key\n\n**Failure signals / what to watch**:\n- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket\n\n**Tests required**:\n- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds\n\n**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.",
+      "desired_output": "A single SQL file a maintainer can run in the Supabase SQL editor to provision the project, plus a documented \"verify install\" check.",
+      "success_signals": "- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key",
+      "failure_signals": "- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket",
+      "tests": "- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds",
+      "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `change-mate-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -611,29 +610,29 @@ var D = {
       "status": "in-progress",
       "priority": "Medium",
       "effort": "M",
-      "feature_set": "",
+      "feature_set": "feature-set-002-workflow-hygiene",
       "assigned_to": "claude",
       "started": "2026-04-14 14:56",
       "completed": "",
       "goal": "Rewrite the persona and working-style sections of `CHANGEMATE.md` so the agent operates as a senior technical product manager shaping features inside feature sets \u2014 not as a senior developer. Add a reusable `product-manager` skill that owns ticket intake.",
-      "why": "The current opening line (\"You are a senior developer and project manager\") pushes agents toward implementation voice. The real job at the ticket layer is PM work: crisp problem statements, desired outputs, success/failure criteria, and handoff notes that tell the developer what to watch. Developer tone belongs downstream, inside the build phase.",
+      "why": "The original opening line (\"You are a senior developer and project manager\") pushed agents toward implementation voice. The real job at the ticket layer is PM work: crisp problem statements, desired outputs, success/failure criteria, and handoff notes that tell the developer what to watch. Developer tone belongs downstream, inside the build phase.",
       "done_when": [
         "Opening persona rewritten to senior technical PM voice",
         "6-question numbered intake retired; replaced with PM-skill-driven \"draft first, ask second\" flow",
-        "Ticket file format gains `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`",
-        "Ticket file format gains `**Feature set**` field",
+        "Ticket format gains `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`",
+        "Ticket format gains `**Feature set**` field",
         "New `skills/product-manager/SKILL.md` written from scratch (no external clone), wired into `setup.sh`",
         "`build_lib.py` parses new sections + feature_set; legacy tickets still parse",
         "`build.sh` renders feature set on card face, new sections on card open",
         "pytest harness + GitHub Actions CI runs on every PR",
         "CM-003 and CM-005\u2013CM-009 backfilled into the new format",
-        "All work split into 6 phases (\u22645 files each), each with explicit user approval gate"
+        "Work split into 6 phases (\u22645 files each), each with explicit user approval gate"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Plan**: see `tasks/todo.md` for the six-phase build.\n\n**Phase 1 in progress**: CHANGEMATE.md persona sweep + new intake flow + new format documented.\n\n**Sequencing**: this lands before CM-003 so relationship fields slot cleanly into the new format.\n\n**Out of scope** (split to other tickets):\n- Relationship chips on card face \u2192 CM-003\n- Second-LLM review of drafts \u2192 CM-010",
+      "desired_output": "The agent that intercepts \"add a story about X\" produces a fully-drafted, PM-grade ticket \u2014 including success/failure signals and test directives \u2014 instead of asking the user a numbered question list.",
+      "success_signals": "- New tickets created after this ships contain all four new sections without prompting\n- Tickets carry a feature-set assignment at creation time\n- Parser + renderer handle legacy and new formats with zero errors\n- pytest runs green in CI",
+      "failure_signals": "- Parser crashes on malformed sections from older or hand-written tickets\n- LLM drifts back into dev-voice on sub-tasks (skill prompt needs to be firm)\n- Feature-set proposals feel random \u2014 skill needs clear heuristics for \"is this a match\"\n- Board card face becomes visually crowded by the feature-set label\n- Tests flake on CRLF/LF line ending differences (Windows \u2194 CI) \u2014 addressed via `.gitattributes` in Phase 5",
+      "tests": "- `test_parse_legacy_ticket` \u2014 old format parses cleanly, new fields are None\n- `test_parse_new_ticket_full` \u2014 all four new sections + feature_set populate\n- `test_parse_partial_new_ticket` \u2014 some new sections missing\n- `test_parse_feature_set_new_format` \u2014 section-based feature set file parses\n- `test_every_committed_ticket_parses_without_error` \u2014 regression sweep\n- Manual: live board renders feature-set chip on card face and new sections on card open",
+      "notes": "**Plan**: see `tasks/todo.md` for the six-phase build.\n\n**Phase status**:\n- Phase 1: CHANGEMATE.md persona sweep \u2014 done (commit `1bb1499`)\n- Phase 2: product-manager skill + setup.sh wiring \u2014 done (commit `bf78dc9`)\n- Phase 3: build_lib.py parser \u2014 done (commit `43c061a`)\n- Phase 4: build.sh renderer \u2014 done (commit `776d683`)\n- Phase 5: pytest + CI + .gitattributes \u2014 done (commit `3d33982`)\n- Phase 6: backfill tickets and feature sets \u2014 in progress\n\n**Out of scope** (split to other tickets):\n- Relationship chips on card face \u2192 CM-003\n- Second-LLM review of drafts \u2192 CM-010\n\n**Sequencing**: this lands before CM-003 so relationship fields slot cleanly into the new format.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -689,18 +688,33 @@ var D = {
   ],
   "feature_sets": [
     {
-      "id": "feature-set-001",
-      "name": "Feature Set 1 \u2014 [your goal here]",
-      "goal": "One sentence describing what this feature set achieves",
-      "rationale": "",
-      "status": "active",
+      "id": "feature-set-001-supabase-upgrade",
+      "name": "[feature-set-001] Supabase Upgrade",
+      "goal": "Replace the Gist-based locking and per-user GitHub PAT setup with a Supabase-backed multi-user, access-controlled, live ticket board.",
+      "rationale": "The current setup uses a fragile GitHub Gist for locking, has zero history of ticket transitions, and requires every user to bring their own GitHub PAT for the Add Story button. CM-005 through CM-009 together replace that surface \u2014 schema, server-side write path, board access modes, agent locking via Supabase, and setup docs \u2014 into one coherent architectural cut. Bundling them prevents partial migrations that leave the system in two states at once.",
+      "status": "Planned",
       "tickets": [
-        "CM-001",
-        "CM-002"
+        "CM-005",
+        "CM-006",
+        "CM-007",
+        "CM-008",
+        "CM-009"
+      ]
+    },
+    {
+      "id": "feature-set-002-workflow-hygiene",
+      "name": "[feature-set-002] Workflow Hygiene",
+      "goal": "Reshape the change-mate ticket workflow so the agent operates as a senior technical PM, ticket structure carries explicit success/failure signals, tickets can reference each other, and ticket drafts can optionally pass through a critic.",
+      "rationale": "Tickets created by the LLM today follow a thin format and a developer-voice persona, with no way to express relationships between work items. CM-003, CM-004, and CM-010 collectively address all three: relationship fields (CM-003), PM persona + new sections + product-manager skill (CM-004), and second-LLM critic on drafts (CM-010). Bundling keeps the ticket-format changes coherent and avoids two formats coexisting mid-rollout.",
+      "status": "In progress",
+      "tickets": [
+        "CM-003",
+        "CM-004",
+        "CM-010"
       ]
     }
   ],
-  "generated": "2026-04-14T20:59:12.067756+00:00"
+  "generated": "2026-04-14T21:12:35.227870+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
