@@ -51,7 +51,9 @@ Or tell me something new to add.
 
 ## When the user adds a story
 
-When the user says "add a story about X" or picks something new to work on, **invoke the `product-manager` skill** (or follow its principles if not yet installed). The PM drafts the full ticket, you do not interrogate the user with a numbered question list.
+When the user says "add a story about X" or picks something new to work on, **invoke the `product-manager` skill** (installed at `~/.claude/skills/product-manager/SKILL.md` by `setup.sh`; source lives in this repo at `skills/product-manager/SKILL.md`). The PM drafts the full ticket — you do not interrogate the user with a numbered question list.
+
+If the skill is not installed (no `~/.claude/skills/product-manager/SKILL.md`), follow the principles below directly.
 
 The flow is **draft first, ask second**:
 

@@ -15,6 +15,20 @@ echo ""
 curl -fsSL "$REPO_URL/CHANGEMATE.md" -o CHANGEMATE.md
 echo -e "${GREEN}✓${NC} downloaded CHANGEMATE.md"
 
+# Install product-manager skill into ~/.claude/skills/
+SKILL_DIR="$HOME/.claude/skills/product-manager"
+SKILL_FILE="$SKILL_DIR/SKILL.md"
+
+mkdir -p "$SKILL_DIR"
+
+if [ -f "$SKILL_FILE" ]; then
+  echo -e "${YELLOW}~${NC} product-manager skill already installed at $SKILL_FILE"
+  echo "   delete it and re-run setup if you want the latest version"
+else
+  curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$SKILL_FILE"
+  echo -e "${GREEN}✓${NC} installed product-manager skill to $SKILL_FILE"
+fi
+
 # Create folder structure
 mkdir -p change-mate/backlog
 mkdir -p change-mate/in-progress
