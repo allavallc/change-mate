@@ -384,6 +384,58 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
+      "id": "CM-003",
+      "title": "Ticket relationships (related / blocks / blocked-by)",
+      "status": "open",
+      "priority": "Medium",
+      "effort": "M",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Let tickets reference other tickets so humans and agents can see dependencies and cross-ticket context at a glance.",
+      "why": "Today \"blocked\" is just a folder \u2014 we lose *what* blocks *what*. Adding explicit relationships surfaces feature-set cohesion, reveals dependency chains, and makes the board useful beyond a flat list of cards.",
+      "done_when": [
+        "Ticket format supports `Related`, `Blocks`, `Blocked by` fields (comma-separated CM-IDs)",
+        "`CHANGEMATE.md` documents how agents set and read these fields",
+        "Board renders relationships on the card (e.g. small \"\u2194 CM-002\" chips)",
+        "Moving a ticket to `blocked/` requires a `Blocked by` value",
+        "Unit tests in `build_lib.py` cover parsing: present, missing, malformed",
+        "Round-trips cleanly through `build.sh` without data loss"
+      ],
+      "notes": "**Sequencing**: land CM-004 first so the new relationship fields slot into the updated ticket format in one pass.\n\n**Desired output**: three new optional fields in every ticket, rendered as linked chips on the board.\n\n**Success signals**:\n- New tickets created after this ships include the new fields where applicable\n- Clicking a relationship chip on the board scrolls/highlights the referenced card\n- Legacy tickets without these fields still parse and render\n\n**Failure signals / what to watch**:\n- Orphaned references (CM-XXX listed but file not found) \u2014 parser should warn, not crash\n- Cycles (A blocks B blocks A) \u2014 detect and flag on the board\n- Board layout breaking when a ticket has many relationships\n\n**Tests required**:\n- Unit tests for each field: present, missing, malformed, multiple IDs\n- Unit test for orphan detection\n- Unit test for cycle detection",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
+      "id": "CM-004",
+      "title": "Reframe CHANGEMATE.md agent persona: senior technical PM, not senior dev",
+      "status": "open",
+      "priority": "Medium",
+      "effort": "M",
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Rewrite the persona and working-style sections of `CHANGEMATE.md` so the agent operates as a senior technical product manager shaping features inside feature sets \u2014 not as a senior developer.",
+      "why": "The current opening line (\"You are a senior developer and project manager\") pushes agents toward implementation voice. The real job at the ticket layer is PM work: crisp problem statements, desired outputs, success/failure criteria, and handoff notes that tell the developer what to watch. Developer tone belongs downstream, inside the build phase.",
+      "done_when": [
+        "Opening persona line rewritten to \"senior technical product manager creating features within feature sets for a project\"",
+        "Ticket intake questions expanded to require:",
+        "Desired output",
+        "Success signals",
+        "Failure signals / what to watch",
+        "Unit tests required (explicit prompt, not optional)",
+        "Ticket file format gains new sections: `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`",
+        "`build_lib.py` + `build.sh` parse and render the new sections",
+        "Legacy tickets (without new sections) still parse and render correctly",
+        "Unit tests cover both legacy and new ticket formats"
+      ],
+      "notes": "**Desired output**: a CHANGEMATE.md rewrite plus a parser update. Tickets created after this ships feel noticeably more PM-oriented and give developers clearer guardrails.\n\n**Success signals**:\n- Every new ticket created after this ships contains the four new sections\n- Developers consuming these tickets do not need follow-up clarification on what \"done\" looks like\n- Board displays new sections without layout regressions\n\n**Failure signals / what to watch**:\n- Parser crashes on tickets missing the new sections\n- Board layout breaks on long success/failure bullet lists\n- Agents drift back toward dev-voice because the rewrite is too subtle \u2014 language must be firm\n\n**Tests required**:\n- Unit tests for `parse_ticket` on legacy format (no new sections)\n- Unit tests for `parse_ticket` on new format (all new sections present)\n- Unit tests for partial new format (some new sections missing)\n- Snapshot test of board HTML rendering for a new-format ticket\n\n**Sequencing**: land this before CM-003 so relationship fields slot cleanly into the new format.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
+    },
+    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "in-progress",
@@ -434,7 +486,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-13T18:54:41.105970+00:00"
+  "generated": "2026-04-14T16:37:39.811261+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
