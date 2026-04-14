@@ -230,6 +230,19 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 .b-effort   { background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
 .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
 .card-assignee { font-size: 11px; color: var(--muted); }
+.card-fs {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+.dl-val.pre { white-space: pre-line; }
 .card-detail { max-height: 0; overflow: hidden; transition: max-height 200ms ease; }
 .card.open .card-detail { max-height: 600px; }
 .detail-inner {
@@ -476,28 +489,53 @@ function priorityBadge(p) {
   return p ? '<span class="badge ' + (cls||'') + '">' + esc(p) + '</span>' : '';
 }
 
+function bulletOrProse(s) {
+  if (!s) return '';
+  var lines = String(s).split(/\\r?\\n/);
+  var bullets = lines.filter(function(l) { return /^\\s*-\\s+/.test(l); });
+  if (bullets.length && bullets.length === lines.filter(function(l) { return l.trim(); }).length) {
+    return '<ul class="dl-list">'
+      + bullets.map(function(l) { return '<li>' + esc(l.replace(/^\\s*-\\s+/, '')) + '</li>'; }).join('')
+      + '</ul>';
+  }
+  return '<div class="dl-val pre">' + esc(s) + '</div>';
+}
+
+function detailRow(label, content) {
+  if (!content) return '';
+  return '<div><div class="dl-label">' + label + '</div>' + content + '</div>';
+}
+
 function cardHTML(t, isRejected) {
   var rejClass = (isRejected || t.status === 'not-doing') ? ' not-doing' : '';
+  var fsChip = t.feature_set ? '<div class="card-fs">' + esc(t.feature_set) + '</div>' : '';
   var assignee = t.assigned_to ? '<div class="card-assignee">' + esc(t.assigned_to) + '</div>' : '';
+
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
   var why   = t.why   ? '<div><div class="dl-label">Why</div><div class="dl-val">'   + esc(t.why)   + '</div></div>' : '';
-  var notes = t.notes ? '<div><div class="dl-label">Notes</div><div class="dl-val">' + esc(t.notes) + '</div></div>' : '';
-  var rejection = (t.rejection_reason && t.rejection_reason.toLowerCase() !== 'n/a')
-    ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
-    : '';
   var dw = '';
   if (t.done_when && t.done_when.length) {
     dw = '<div><div class="dl-label">Done when</div><ul class="dl-list">'
       + t.done_when.map(function(d) { return '<li>' + esc(d) + '</li>'; }).join('')
       + '</ul></div>';
   }
-  var detail = goal + why + dw + notes + rejection;
+  var desired = detailRow('Desired output', bulletOrProse(t.desired_output));
+  var success = detailRow('Success signals', bulletOrProse(t.success_signals));
+  var failure = detailRow('Failure signals', bulletOrProse(t.failure_signals));
+  var tests   = detailRow('Tests', bulletOrProse(t.tests));
+  var notes = t.notes ? '<div><div class="dl-label">Notes</div><div class="dl-val pre">' + esc(t.notes) + '</div></div>' : '';
+  var rejection = (t.rejection_reason && t.rejection_reason.toLowerCase() !== 'n/a')
+    ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
+    : '';
+
+  var detail = goal + why + dw + desired + success + failure + tests + notes + rejection;
   return '<div class="card' + rejClass + '" onclick="toggleCard(this)">'
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
     + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
+    + fsChip
     + assignee
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
     + '</div>';
