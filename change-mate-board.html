@@ -459,7 +459,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "L",
-      "feature_set": "",
+      "feature_set": "feature-set-001-supabase-upgrade",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -474,11 +474,11 @@ var D = {
         "On failure: returns structured error (`401` invalid key, `403` revoked, `422` bad payload, `500` GitHub API failure)",
         "Rate limit: per-key throttle (e.g. 10 writes/minute)"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Desired output**: a callable HTTPS endpoint the board JS hits with a write key and a ticket payload.\n\n**Success signals**:\n- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never reaches the client bundle or logs\n\n**Failure signals / what to watch**:\n- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes\n\n**Tests required**:\n- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions\n\n**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.",
+      "desired_output": "A callable HTTPS endpoint the board JS hits with a write key and a ticket payload. PAT never reaches the client.",
+      "success_signals": "- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never appears in client bundle, browser network logs, or function output logs",
+      "failure_signals": "- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes",
+      "tests": "- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions",
+      "notes": "**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -489,7 +489,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "M",
-      "feature_set": "",
+      "feature_set": "feature-set-001-supabase-upgrade",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -504,11 +504,11 @@ var D = {
         "Clear error UX for invalid/revoked keys (not a silent failure)",
         "Old per-user GitHub PAT path removed from board JS"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Desired output**: the live board respects the mode in config, and the Add Story flow no longer touches a user's GitHub PAT.\n\n**Success signals**:\n- Flipping `board_mode` in config produces the expected UX on next build\n- Write key prompt appears exactly once per browser (cached in localStorage)\n- Add Story round-trips through the Edge Function in under 2s\n\n**Failure signals / what to watch**:\n- Write keys leaking into analytics / Sentry / URL params\n- `private` mode flashing content before the gate renders (FOUC-style leak)\n- localStorage cache not invalidating when a key is revoked server-side\n\n**Tests required**:\n- Snapshot tests for each of the three modes (readonly, write, private)\n- Unit test for write-key prompt flow (first visit, cached visit, revoked key)\n- Manual QA checklist for each mode before merge\n\n**Sequencing**: depends on CM-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.",
+      "desired_output": "The live board respects the mode in config, and the Add Story flow no longer touches a user's GitHub PAT.",
+      "success_signals": "- Flipping `board_mode` in config produces the expected UX on next build\n- Write key prompt appears exactly once per browser (cached in localStorage)\n- Add Story round-trips through the Edge Function in under 2s",
+      "failure_signals": "- Write keys leaking into analytics / Sentry / URL params\n- `private` mode flashing content before the gate renders (FOUC-style leak)\n- localStorage cache not invalidating when a key is revoked server-side",
+      "tests": "- Snapshot tests for each of the three modes (readonly, write, private)\n- Unit test for write-key prompt flow (first visit, cached visit, revoked key)\n- Manual QA checklist for each mode before merge",
+      "notes": "**Sequencing**: depends on CM-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.\n\n**Alternatives considered**:\n- Single mode toggle (public/private) without `public-write` \u2192 rejected; loses the most useful intermediate state for community projects\n- Server-rendered private board \u2192 rejected; breaks the static-HTML deployment model",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -519,7 +519,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "M",
-      "feature_set": "",
+      "feature_set": "feature-set-001-supabase-upgrade",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -534,11 +534,11 @@ var D = {
         "`change-mate-config.json` `gist_id` field deprecated (leave for backcompat but document as unused)",
         "`build.sh` continues to function \u2014 board rebuild path unchanged"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Desired output**: agents use Supabase for locking and history; the Gist path is gone.\n\n**Success signals**:\n- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `CHANGEMATE_GITHUB_TOKEN` anymore\n\n**Failure signals / what to watch**:\n- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)\n\n**Tests required**:\n- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent\n\n**Sequencing**: depends on CM-005. Can land in parallel with CM-006/CM-007 since it touches a different surface (agent workflow, not board UI).",
+      "desired_output": "Agents use Supabase for locking and history; the Gist path is gone; no agent needs `CHANGEMATE_GITHUB_TOKEN` anymore.",
+      "success_signals": "- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `CHANGEMATE_GITHUB_TOKEN` anymore",
+      "failure_signals": "- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)",
+      "tests": "- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent",
+      "notes": "**Sequencing**: depends on CM-005. Can land in parallel with CM-006/CM-007 since it touches a different surface (agent workflow, not board UI).\n\n**Alternatives considered**:\n- Keep Gist locking, add Supabase only for events \u2192 rejected; doesn't fix the atomicity bug or the token requirement\n- File-based lock in the repo itself \u2192 rejected; git push race conditions are worse than Gist races",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -549,7 +549,7 @@ var D = {
       "status": "open",
       "priority": "Medium",
       "effort": "S",
-      "feature_set": "",
+      "feature_set": "feature-set-001-supabase-upgrade",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -567,11 +567,11 @@ var D = {
         "A \"verify install\" checklist the user can walk through after setup",
         "`setup.sh` updated to scaffold the new config fields"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Desired output**: one markdown file that takes a new user from empty repo \u2192 working board with locking and access control.\n\n**Success signals**:\n- A person unfamiliar with the project completes setup from the doc alone\n- \"Verify install\" checklist catches misconfigured RLS and missing secrets\n\n**Failure signals / what to watch**:\n- Docs drifting from the actual code (pin examples to real file names and commit SHAs)\n- Setup steps that assume prior Supabase knowledge without linking to their docs\n- Missing coverage of the write-key lifecycle (create / distribute / revoke)\n\n**Tests required**:\n- Dogfood: run through the setup doc against a fresh Supabase project \u2014 time it, note every friction point\n- Doc-lint: all referenced file paths exist in the repo\n\n**Sequencing**: last in the chain. Depends on CM-005, CM-006, CM-007, CM-008 all being live.",
+      "desired_output": "One markdown file that takes a new user from empty repo \u2192 working board with locking and access control.",
+      "success_signals": "- A person unfamiliar with the project completes setup from the doc alone\n- \"Verify install\" checklist catches misconfigured RLS and missing secrets",
+      "failure_signals": "- Docs drifting from the actual code (pin examples to real file names and commit SHAs)\n- Setup steps that assume prior Supabase knowledge without linking to their docs\n- Missing coverage of the write-key lifecycle (create / distribute / revoke)",
+      "tests": "- Dogfood: run through the setup doc against a fresh Supabase project \u2014 time it, note every friction point\n- Doc-lint: all referenced file paths exist in the repo",
+      "notes": "**Sequencing**: last in the chain. Depends on CM-005, CM-006, CM-007, CM-008 all being live.\n\n**Alternatives considered**:\n- Defer docs and rely on code reading \u2192 rejected; new users are exactly the people who can't read four-system code\n- Video walkthrough \u2192 rejected for v1; videos rot faster than markdown when files change",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -582,12 +582,12 @@ var D = {
       "status": "open",
       "priority": "Low",
       "effort": "M",
-      "feature_set": "",
+      "feature_set": "feature-set-002-workflow-hygiene",
       "assigned_to": "",
       "started": "",
       "completed": "",
       "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
-      "why": "The product-manager skill (CM-004) will let one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
+      "why": "The product-manager skill (CM-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
       "done_when": [
         "A configurable review step runs after the PM skill drafts a ticket",
         "Review output is either: \"approved\" (pass through) or \"revise with: \u2026\" (draft rewritten once)",
@@ -595,11 +595,11 @@ var D = {
         "Off by default; explicit opt-in",
         "User sees the final (reviewed) draft \u2014 the review exchange is not shown unless they ask"
       ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "**Desired output**: optional critic pass that silently improves drafts.\n\n**Success signals**:\n- Turned on: drafts arrive with tighter acceptance criteria and clearer risk callouts\n- Turned off: behavior is identical to CM-004 baseline\n\n**Failure signals / what to watch**:\n- Latency spike on ticket creation (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n\n**Tests required**:\n- Unit test: reviewer disabled \u2192 single draft pass-through unchanged\n- Unit test: reviewer enabled + approved \u2192 draft unchanged\n- Unit test: reviewer enabled + revise \u2192 draft rewritten exactly once, not looped\n\n**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.",
+      "desired_output": "An optional critic pass that silently improves drafts.",
+      "success_signals": "- Turned on: drafts arrive with tighter acceptance criteria and clearer risk callouts\n- Turned off: behavior is identical to CM-004 baseline",
+      "failure_signals": "- Latency spike on ticket creation (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass",
+      "tests": "- Unit test: reviewer disabled \u2192 single draft pass-through unchanged\n- Unit test: reviewer enabled + approved \u2192 draft unchanged\n- Unit test: reviewer enabled + revise \u2192 draft rewritten exactly once, not looped",
+      "notes": "**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
@@ -714,7 +714,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-14T21:12:35.227870+00:00"
+  "generated": "2026-04-14T21:14:47.850711+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
