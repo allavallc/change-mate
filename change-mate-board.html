@@ -684,6 +684,39 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": ""
+    },
+    {
+      "id": "CM-004",
+      "title": "Reframe CHANGEMATE.md agent persona: senior technical PM, not senior dev",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-002-workflow-hygiene",
+      "assigned_to": "claude",
+      "started": "2026-04-14 14:56",
+      "completed": "2026-04-14",
+      "goal": "Rewrite the persona and working-style sections of `CHANGEMATE.md` so the agent operates as a senior technical product manager shaping features inside feature sets \u2014 not as a senior developer. Add a reusable `product-manager` skill that owns ticket intake.",
+      "why": "The original opening line (\"You are a senior developer and project manager\") pushed agents toward implementation voice. The real job at the ticket layer is PM work: crisp problem statements, desired outputs, success/failure criteria, and handoff notes that tell the developer what to watch. Developer tone belongs downstream, inside the build phase.",
+      "done_when": [
+        "Opening persona rewritten to senior technical PM voice \u2705",
+        "6-question numbered intake retired; replaced with PM-skill-driven \"draft first, ask second\" flow \u2705",
+        "Ticket format gains `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests` \u2705",
+        "Ticket format gains `**Feature set**` field \u2705",
+        "New `skills/product-manager/SKILL.md` written from scratch (no external clone), wired into `setup.sh` \u2705",
+        "`build_lib.py` parses new sections + feature_set; legacy tickets still parse \u2705",
+        "`build.sh` renders feature set on card face, new sections on card open \u2705",
+        "pytest harness + GitHub Actions CI runs on every PR \u2705",
+        "CM-003 and CM-005\u2013CM-009 backfilled into the new format (plus CM-010 which was added mid-build) \u2705",
+        "Work split into 6 phases (\u22645 files each), each with explicit user approval gate \u2705"
+      ],
+      "desired_output": "The agent that intercepts \"add a story about X\" produces a fully-drafted, PM-grade ticket \u2014 including success/failure signals and test directives \u2014 instead of asking the user a numbered question list.",
+      "success_signals": "- New tickets created after this ships contain all four new sections without prompting\n- Tickets carry a feature-set assignment at creation time\n- Parser + renderer handle legacy and new formats with zero errors\n- pytest runs green in CI",
+      "failure_signals": "- Parser crashes on malformed sections from older or hand-written tickets\n- LLM drifts back into dev-voice on sub-tasks (skill prompt needs to be firm)\n- Feature-set proposals feel random \u2014 skill needs clear heuristics for \"is this a match\"\n- Board card face becomes visually crowded by the feature-set label\n- Tests flake on CRLF/LF line ending differences (Windows \u2194 CI) \u2014 addressed via `.gitattributes` in Phase 5",
+      "tests": "- `test_parse_legacy_ticket` \u2014 old format parses cleanly, new fields are None\n- `test_parse_new_ticket_full` \u2014 all four new sections + feature_set populate\n- `test_parse_partial_new_ticket` \u2014 some new sections missing\n- `test_parse_feature_set_new_format` \u2014 section-based feature set file parses\n- `test_every_committed_ticket_parses_without_error` \u2014 regression sweep\n- Manual: live board renders feature-set chip on card face and new sections on card open",
+      "notes": "**Plan lived in**: `tasks/todo.md`.\n\n**Phase-by-phase ship log**:\n- Phase 1: CHANGEMATE.md persona sweep \u2014 commit `1bb1499`\n- Phase 2: product-manager skill + setup.sh wiring \u2014 commit `bf78dc9`\n- Phase 3: build_lib.py parser updates \u2014 commit `43c061a`\n- Phase 4: build.sh renderer updates \u2014 commit `776d683`\n- Phase 5: pytest harness + GitHub Actions test workflow + .gitattributes \u2014 commit `3d33982`\n- Phase 6a: feature sets + backfill CM-003/004/005 \u2014 commit `4c0a17a`\n- Phase 6b: backfill CM-006/007/008/009/010 \u2014 commit `7d43476`\n\n**Key decisions made during build**:\n- PM skill written from scratch \u2014 did not clone the external reference the user linked (wrong shape for this context: too many human-team assumptions that don't apply to a solo-dev + AI, git-backed board)\n- CM-010 (second-LLM review) was spun out as a separate ticket rather than bundled into CM-004\n- Stale `feature-set-001.md` placeholder template removed during Phase 6a cleanup (conflicting ID, no real references)\n- `.gitattributes` added in Phase 5 to fix a Windows-only CRLF issue that was breaking the pre-existing `test_build.py` subprocess tests\n\n**Out of scope** (lived separately):\n- Relationship chips on card face \u2192 CM-003\n- Second-LLM review of drafts \u2192 CM-010\n\n**Sequencing**: landed before CM-003 so relationship fields will slot cleanly into the new ticket format.\n\n**Follow-on**: feature-set-002-workflow-hygiene is now in progress with CM-003 and CM-010 remaining. The Supabase upgrade feature set (feature-set-001) is still planned \u2014 next coherent chunk of work.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": ""
     }
   ],
   "feature_sets": [
@@ -714,7 +747,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-14T21:14:47.850711+00:00"
+  "generated": "2026-04-14T22:21:09.259870+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
