@@ -389,6 +389,7 @@ var D = {
       "status": "open",
       "priority": "Medium",
       "effort": "M",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -402,6 +403,10 @@ var D = {
         "Unit tests in `build_lib.py` cover parsing: present, missing, malformed",
         "Round-trips cleanly through `build.sh` without data loss"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Sequencing**: land CM-004 first so the new relationship fields slot into the updated ticket format in one pass.\n\n**Desired output**: three new optional fields in every ticket, rendered as linked chips on the board.\n\n**Success signals**:\n- New tickets created after this ships include the new fields where applicable\n- Clicking a relationship chip on the board scrolls/highlights the referenced card\n- Legacy tickets without these fields still parse and render\n\n**Failure signals / what to watch**:\n- Orphaned references (CM-XXX listed but file not found) \u2014 parser should warn, not crash\n- Cycles (A blocks B blocks A) \u2014 detect and flag on the board\n- Board layout breaking when a ticket has many relationships\n\n**Tests required**:\n- Unit tests for each field: present, missing, malformed, multiple IDs\n- Unit test for orphan detection\n- Unit test for cycle detection",
       "rejected_by": "",
       "rejected": "",
@@ -413,6 +418,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "M",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -426,6 +432,10 @@ var D = {
         "SQL migration script committed to repo under `supabase/migrations/`",
         "Idempotent: re-running the script against an already-migrated database is a no-op"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Desired output**: a single SQL file a maintainer can run in the Supabase SQL editor to provision the project.\n\n**Success signals**:\n- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key\n\n**Failure signals / what to watch**:\n- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket\n\n**Tests required**:\n- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds\n\n**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.",
       "rejected_by": "",
       "rejected": "",
@@ -437,6 +447,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "L",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -451,6 +462,10 @@ var D = {
         "On failure: returns structured error (`401` invalid key, `403` revoked, `422` bad payload, `500` GitHub API failure)",
         "Rate limit: per-key throttle (e.g. 10 writes/minute)"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Desired output**: a callable HTTPS endpoint the board JS hits with a write key and a ticket payload.\n\n**Success signals**:\n- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never reaches the client bundle or logs\n\n**Failure signals / what to watch**:\n- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes\n\n**Tests required**:\n- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions\n\n**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.",
       "rejected_by": "",
       "rejected": "",
@@ -462,6 +477,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "M",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -476,6 +492,10 @@ var D = {
         "Clear error UX for invalid/revoked keys (not a silent failure)",
         "Old per-user GitHub PAT path removed from board JS"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Desired output**: the live board respects the mode in config, and the Add Story flow no longer touches a user's GitHub PAT.\n\n**Success signals**:\n- Flipping `board_mode` in config produces the expected UX on next build\n- Write key prompt appears exactly once per browser (cached in localStorage)\n- Add Story round-trips through the Edge Function in under 2s\n\n**Failure signals / what to watch**:\n- Write keys leaking into analytics / Sentry / URL params\n- `private` mode flashing content before the gate renders (FOUC-style leak)\n- localStorage cache not invalidating when a key is revoked server-side\n\n**Tests required**:\n- Snapshot tests for each of the three modes (readonly, write, private)\n- Unit test for write-key prompt flow (first visit, cached visit, revoked key)\n- Manual QA checklist for each mode before merge\n\n**Sequencing**: depends on CM-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.",
       "rejected_by": "",
       "rejected": "",
@@ -487,6 +507,7 @@ var D = {
       "status": "open",
       "priority": "High",
       "effort": "M",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -501,6 +522,10 @@ var D = {
         "`change-mate-config.json` `gist_id` field deprecated (leave for backcompat but document as unused)",
         "`build.sh` continues to function \u2014 board rebuild path unchanged"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Desired output**: agents use Supabase for locking and history; the Gist path is gone.\n\n**Success signals**:\n- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `CHANGEMATE_GITHUB_TOKEN` anymore\n\n**Failure signals / what to watch**:\n- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)\n\n**Tests required**:\n- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent\n\n**Sequencing**: depends on CM-005. Can land in parallel with CM-006/CM-007 since it touches a different surface (agent workflow, not board UI).",
       "rejected_by": "",
       "rejected": "",
@@ -512,6 +537,7 @@ var D = {
       "status": "open",
       "priority": "Medium",
       "effort": "S",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -529,6 +555,10 @@ var D = {
         "A \"verify install\" checklist the user can walk through after setup",
         "`setup.sh` updated to scaffold the new config fields"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Desired output**: one markdown file that takes a new user from empty repo \u2192 working board with locking and access control.\n\n**Success signals**:\n- A person unfamiliar with the project completes setup from the doc alone\n- \"Verify install\" checklist catches misconfigured RLS and missing secrets\n\n**Failure signals / what to watch**:\n- Docs drifting from the actual code (pin examples to real file names and commit SHAs)\n- Setup steps that assume prior Supabase knowledge without linking to their docs\n- Missing coverage of the write-key lifecycle (create / distribute / revoke)\n\n**Tests required**:\n- Dogfood: run through the setup doc against a fresh Supabase project \u2014 time it, note every friction point\n- Doc-lint: all referenced file paths exist in the repo\n\n**Sequencing**: last in the chain. Depends on CM-005, CM-006, CM-007, CM-008 all being live.",
       "rejected_by": "",
       "rejected": "",
@@ -540,6 +570,7 @@ var D = {
       "status": "open",
       "priority": "Low",
       "effort": "M",
+      "feature_set": "",
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -552,6 +583,10 @@ var D = {
         "Off by default; explicit opt-in",
         "User sees the final (reviewed) draft \u2014 the review exchange is not shown unless they ask"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Desired output**: optional critic pass that silently improves drafts.\n\n**Success signals**:\n- Turned on: drafts arrive with tighter acceptance criteria and clearer risk callouts\n- Turned off: behavior is identical to CM-004 baseline\n\n**Failure signals / what to watch**:\n- Latency spike on ticket creation (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n\n**Tests required**:\n- Unit test: reviewer disabled \u2192 single draft pass-through unchanged\n- Unit test: reviewer enabled + approved \u2192 draft unchanged\n- Unit test: reviewer enabled + revise \u2192 draft rewritten exactly once, not looped\n\n**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.",
       "rejected_by": "",
       "rejected": "",
@@ -563,6 +598,7 @@ var D = {
       "status": "in-progress",
       "priority": "Medium",
       "effort": "M",
+      "feature_set": "",
       "assigned_to": "claude",
       "started": "2026-04-14 14:56",
       "completed": "",
@@ -580,6 +616,10 @@ var D = {
         "CM-003 and CM-005\u2013CM-009 backfilled into the new format",
         "All work split into 6 phases (\u22645 files each), each with explicit user approval gate"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "**Plan**: see `tasks/todo.md` for the six-phase build.\n\n**Phase 1 in progress**: CHANGEMATE.md persona sweep + new intake flow + new format documented.\n\n**Sequencing**: this lands before CM-003 so relationship fields slot cleanly into the new format.\n\n**Out of scope** (split to other tickets):\n- Relationship chips on card face \u2192 CM-003\n- Second-LLM review of drafts \u2192 CM-010",
       "rejected_by": "",
       "rejected": "",
@@ -591,6 +631,7 @@ var D = {
       "status": "done",
       "priority": "Low",
       "effort": "XS",
+      "feature_set": "",
       "assigned_to": "adefilippo",
       "started": "2026-04-13 00:00",
       "completed": "2026-04-14",
@@ -599,6 +640,10 @@ var D = {
       "done_when": [
         "Ticket appears on the live board at the GitHub Pages URL"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "Created as a test of the Supabase Realtime + GitHub Pages setup. End-to-end flow verified: ticket creation \u2192 GitHub Actions rebuild \u2192 live board update.",
       "rejected_by": "",
       "rejected": "",
@@ -610,6 +655,7 @@ var D = {
       "status": "done",
       "priority": "Low",
       "effort": "XS",
+      "feature_set": "",
       "assigned_to": "claude",
       "started": "2026-04-13 14:45",
       "completed": "2026-04-14",
@@ -618,6 +664,10 @@ var D = {
       "done_when": [
         "Card animates from Backlog to In Progress without a page refresh"
       ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
       "notes": "Second test ticket for Realtime animation fix verification. Confirmed `handleTicketUpdate` scope fix (commit b9e4bff) works \u2014 cards animate between columns without full page refresh.",
       "rejected_by": "",
       "rejected": "",
@@ -629,6 +679,7 @@ var D = {
       "id": "feature-set-001",
       "name": "Feature Set 1 \u2014 [your goal here]",
       "goal": "One sentence describing what this feature set achieves",
+      "rationale": "",
       "status": "active",
       "tickets": [
         "CM-001",
@@ -636,7 +687,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-14T20:44:44.308678+00:00"
+  "generated": "2026-04-14T20:48:18.882211+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
