@@ -159,6 +159,21 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   margin-bottom: 4px;
   white-space: nowrap;
 }
+.card-rels { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.card-rel {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+.card-rel-more { color: var(--muted); font-family: inherit; }
 .dl-val.pre { white-space: pre-line; }
 .card-detail { max-height: 0; overflow: hidden; transition: max-height 200ms ease; }
 .card.open .card-detail { max-height: 600px; }
@@ -426,7 +441,8 @@ var D = {
       "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `change-mate-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-006",
@@ -459,7 +475,8 @@ var D = {
       "notes": "**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-007",
@@ -492,7 +509,8 @@ var D = {
       "notes": "**Sequencing**: depends on CM-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.\n\n**Alternatives considered**:\n- Single mode toggle (public/private) without `public-write` \u2192 rejected; loses the most useful intermediate state for community projects\n- Server-rendered private board \u2192 rejected; breaks the static-HTML deployment model",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-008",
@@ -525,7 +543,8 @@ var D = {
       "notes": "**Sequencing**: depends on CM-005. Can land in parallel with CM-006/CM-007 since it touches a different surface (agent workflow, not board UI).\n\n**Alternatives considered**:\n- Keep Gist locking, add Supabase only for events \u2192 rejected; doesn't fix the atomicity bug or the token requirement\n- File-based lock in the repo itself \u2192 rejected; git push race conditions are worse than Gist races",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-009",
@@ -561,7 +580,8 @@ var D = {
       "notes": "**Sequencing**: last in the chain. Depends on CM-005, CM-006, CM-007, CM-008 all being live.\n\n**Alternatives considered**:\n- Defer docs and rely on code reading \u2192 rejected; new users are exactly the people who can't read four-system code\n- Video walkthrough \u2192 rejected for v1; videos rot faster than markdown when files change",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-010",
@@ -592,7 +612,8 @@ var D = {
       "notes": "**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-003",
@@ -624,7 +645,8 @@ var D = {
       "notes": "**Design decisions agreed with user**:\n- **Symmetry**: inferred at render time, not persisted. CM-005 writes `Blocks: CM-006`; CM-006's card auto-shows `Blocked by: CM-005` via the renderer walking the reverse map.\n- **Placement**: all chips on card face, cap to 3 visible with \"+N more\" overflow beyond that.\n- **Orphan / cycle handling**: warn in build log, skip the broken chip, keep building. Non-fatal.\n\n**Plan**: see `tasks/todo.md` for the three-phase build.\n\n**Alternatives considered**:\n- Encode relationships only in feature-set files \u2192 rejected; loses ticket-level traceability and forces lookup detour\n- Use a separate `relationships.json` index \u2192 rejected; duplicates source-of-truth from the markdown\n- Require explicit two-sided edges (no inference) \u2192 rejected per user direction; doubles bookkeeping for no real gain",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-001",
@@ -651,7 +673,8 @@ var D = {
       "notes": "Created as a test of the Supabase Realtime + GitHub Pages setup. End-to-end flow verified: ticket creation \u2192 GitHub Actions rebuild \u2192 live board update.",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-002",
@@ -678,7 +701,8 @@ var D = {
       "notes": "Second test ticket for Realtime animation fix verification. Confirmed `handleTicketUpdate` scope fix (commit b9e4bff) works \u2014 cards animate between columns without full page refresh.",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     },
     {
       "id": "CM-004",
@@ -714,7 +738,8 @@ var D = {
       "notes": "**Plan lived in**: `tasks/todo.md`.\n\n**Phase-by-phase ship log**:\n- Phase 1: CHANGEMATE.md persona sweep \u2014 commit `1bb1499`\n- Phase 2: product-manager skill + setup.sh wiring \u2014 commit `bf78dc9`\n- Phase 3: build_lib.py parser updates \u2014 commit `43c061a`\n- Phase 4: build.sh renderer updates \u2014 commit `776d683`\n- Phase 5: pytest harness + GitHub Actions test workflow + .gitattributes \u2014 commit `3d33982`\n- Phase 6a: feature sets + backfill CM-003/004/005 \u2014 commit `4c0a17a`\n- Phase 6b: backfill CM-006/007/008/009/010 \u2014 commit `7d43476`\n\n**Key decisions made during build**:\n- PM skill written from scratch \u2014 did not clone the external reference the user linked (wrong shape for this context: too many human-team assumptions that don't apply to a solo-dev + AI, git-backed board)\n- CM-010 (second-LLM review) was spun out as a separate ticket rather than bundled into CM-004\n- Stale `feature-set-001.md` placeholder template removed during Phase 6a cleanup (conflicting ID, no real references)\n- `.gitattributes` added in Phase 5 to fix a Windows-only CRLF issue that was breaking the pre-existing `test_build.py` subprocess tests\n\n**Out of scope** (lived separately):\n- Relationship chips on card face \u2192 CM-003\n- Second-LLM review of drafts \u2192 CM-010\n\n**Sequencing**: landed before CM-003 so relationship fields will slot cleanly into the new ticket format.\n\n**Follow-on**: feature-set-002-workflow-hygiene is now in progress with CM-003 and CM-010 remaining. The Supabase upgrade feature set (feature-set-001) is still planned \u2014 next coherent chunk of work.",
       "rejected_by": "",
       "rejected": "",
-      "rejection_reason": ""
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     }
   ],
   "feature_sets": [
@@ -745,7 +770,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-14T22:43:25.403530+00:00"
+  "generated": "2026-04-14T22:46:48.435035+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
@@ -775,9 +800,46 @@ function detailRow(label, content) {
   return '<div><div class="dl-label">' + label + '</div>' + content + '</div>';
 }
 
+function buildRelChips(t) {
+  var all = [];
+  (t.related || []).forEach(function(id) { all.push({kind:'related', id:id, prefix:'\u2194'}); });
+  (t.blocks || []).forEach(function(id) { all.push({kind:'blocks', id:id, prefix:'\u2192'}); });
+  var bb = {};
+  (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
+  (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
+  Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\u2190'}); });
+  return all;
+}
+
+function relChipsFaceHTML(chips, cap) {
+  if (!chips.length) return '';
+  var visible = chips.slice(0, cap);
+  var extra = chips.length - visible.length;
+  var html = visible.map(function(c) {
+    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : 'Blocked by ') + c.id;
+    return '<span class="card-rel" title="' + esc(title) + '">' + c.prefix + ' ' + esc(c.id) + '</span>';
+  }).join('');
+  if (extra > 0) html += '<span class="card-rel card-rel-more">+' + extra + ' more</span>';
+  return '<div class="card-rels">' + html + '</div>';
+}
+
+function relDetailHTML(chips) {
+  if (!chips.length) return '';
+  var groups = {related: [], blocks: [], blocked_by: []};
+  chips.forEach(function(c) { groups[c.kind].push(c.id); });
+  var parts = [];
+  if (groups.related.length)    parts.push('<div><div class="dl-label">Related</div><div class="dl-val">'    + groups.related.map(esc).join(', ')    + '</div></div>');
+  if (groups.blocks.length)     parts.push('<div><div class="dl-label">Blocks</div><div class="dl-val">'     + groups.blocks.map(esc).join(', ')     + '</div></div>');
+  if (groups.blocked_by.length) parts.push('<div><div class="dl-label">Blocked by</div><div class="dl-val">' + groups.blocked_by.map(esc).join(', ') + '</div></div>');
+  return parts.join('');
+}
+
 function cardHTML(t, isRejected) {
   var rejClass = (isRejected || t.status === 'not-doing') ? ' not-doing' : '';
   var fsChip = t.feature_set ? '<div class="card-fs">' + esc(t.feature_set) + '</div>' : '';
+  var relChips = buildRelChips(t);
+  var relFace = relChipsFaceHTML(relChips, 3);
+  var relDetail = relDetailHTML(relChips);
   var assignee = t.assigned_to ? '<div class="card-assignee">' + esc(t.assigned_to) + '</div>' : '';
 
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
@@ -797,7 +859,7 @@ function cardHTML(t, isRejected) {
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = goal + why + dw + desired + success + failure + tests + notes + rejection;
+  var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   return '<div class="card' + rejClass + '" onclick="toggleCard(this)">'
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
@@ -805,6 +867,7 @@ function cardHTML(t, isRejected) {
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + fsChip
+    + relFace
     + assignee
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
     + '</div>';
