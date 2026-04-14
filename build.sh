@@ -70,6 +70,60 @@ if sd.exists():
     for f in sorted(sd.glob("feature-set-*.md")):
         feature_sets.append(parse_feature_set(f))
 
+# Relationship analysis: inverse edge inference + orphan + cycle detection
+valid_ids = {t["id"] for t in tickets}
+by_id = {t["id"]: t for t in tickets}
+
+# Inverse blocked_by: if A blocks B, B.blocked_by_inferred += [A]
+inv = {tid: [] for tid in valid_ids}
+for t in tickets:
+    for target in t.get("blocks", []):
+        if target in inv:
+            inv[target].append(t["id"])
+
+for t in tickets:
+    explicit = set(t.get("blocked_by", []))
+    # Only include inferred if not already explicit (dedupe — avoid showing same edge twice)
+    t["blocked_by_inferred"] = [x for x in inv.get(t["id"], []) if x not in explicit]
+
+# Orphan detection — reference to a CM-ID that doesn't exist on disk
+for t in tickets:
+    for field in ("related", "blocks", "blocked_by"):
+        for ref in t.get(field, []):
+            if ref not in valid_ids:
+                print(f"[warn] {t['id']} references {ref} in {field} but {ref} does not exist", file=sys.stderr)
+
+# Cycle detection on the blocks graph (A blocks B = A -> B)
+cycles_found = []
+visited = set()
+
+def _dfs_cycles(node, path, path_set):
+    for neighbor in by_id.get(node, {}).get("blocks", []):
+        if neighbor not in valid_ids:
+            continue
+        if neighbor in path_set:
+            idx = path.index(neighbor)
+            cycles_found.append(path[idx:])
+        elif neighbor not in visited:
+            _dfs_cycles(neighbor, path + [neighbor], path_set | {neighbor})
+    visited.add(node)
+
+for _tid in sorted(valid_ids):
+    if _tid not in visited:
+        _dfs_cycles(_tid, [_tid], {_tid})
+
+# Deduplicate cycles (same cycle can be discovered from different rotations)
+_seen_cycles = set()
+for _cycle in cycles_found:
+    if not _cycle:
+        continue
+    _min_idx = _cycle.index(min(_cycle))
+    _norm = tuple(_cycle[_min_idx:] + _cycle[:_min_idx])
+    if _norm not in _seen_cycles:
+        _seen_cycles.add(_norm)
+        _chain = " -> ".join(_norm) + f" -> {_norm[0]}"
+        print(f"[warn] cycle detected in blocks graph: {_chain}", file=sys.stderr)
+
 data_json = json.dumps(
     {"tickets": tickets, "feature_sets": feature_sets, "generated": datetime.now(UTC).isoformat()},
     indent=2
@@ -242,6 +296,21 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   margin-bottom: 4px;
   white-space: nowrap;
 }
+.card-rels { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.card-rel {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+.card-rel-more { color: var(--muted); font-family: inherit; }
 .dl-val.pre { white-space: pre-line; }
 .card-detail { max-height: 0; overflow: hidden; transition: max-height 200ms ease; }
 .card.open .card-detail { max-height: 600px; }
@@ -506,9 +575,46 @@ function detailRow(label, content) {
   return '<div><div class="dl-label">' + label + '</div>' + content + '</div>';
 }
 
+function buildRelChips(t) {
+  var all = [];
+  (t.related || []).forEach(function(id) { all.push({kind:'related', id:id, prefix:'\\u2194'}); });
+  (t.blocks || []).forEach(function(id) { all.push({kind:'blocks', id:id, prefix:'\\u2192'}); });
+  var bb = {};
+  (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
+  (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
+  Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\\u2190'}); });
+  return all;
+}
+
+function relChipsFaceHTML(chips, cap) {
+  if (!chips.length) return '';
+  var visible = chips.slice(0, cap);
+  var extra = chips.length - visible.length;
+  var html = visible.map(function(c) {
+    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : 'Blocked by ') + c.id;
+    return '<span class="card-rel" title="' + esc(title) + '">' + c.prefix + ' ' + esc(c.id) + '</span>';
+  }).join('');
+  if (extra > 0) html += '<span class="card-rel card-rel-more">+' + extra + ' more</span>';
+  return '<div class="card-rels">' + html + '</div>';
+}
+
+function relDetailHTML(chips) {
+  if (!chips.length) return '';
+  var groups = {related: [], blocks: [], blocked_by: []};
+  chips.forEach(function(c) { groups[c.kind].push(c.id); });
+  var parts = [];
+  if (groups.related.length)    parts.push('<div><div class="dl-label">Related</div><div class="dl-val">'    + groups.related.map(esc).join(', ')    + '</div></div>');
+  if (groups.blocks.length)     parts.push('<div><div class="dl-label">Blocks</div><div class="dl-val">'     + groups.blocks.map(esc).join(', ')     + '</div></div>');
+  if (groups.blocked_by.length) parts.push('<div><div class="dl-label">Blocked by</div><div class="dl-val">' + groups.blocked_by.map(esc).join(', ') + '</div></div>');
+  return parts.join('');
+}
+
 function cardHTML(t, isRejected) {
   var rejClass = (isRejected || t.status === 'not-doing') ? ' not-doing' : '';
   var fsChip = t.feature_set ? '<div class="card-fs">' + esc(t.feature_set) + '</div>' : '';
+  var relChips = buildRelChips(t);
+  var relFace = relChipsFaceHTML(relChips, 3);
+  var relDetail = relDetailHTML(relChips);
   var assignee = t.assigned_to ? '<div class="card-assignee">' + esc(t.assigned_to) + '</div>' : '';
 
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
@@ -528,7 +634,7 @@ function cardHTML(t, isRejected) {
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = goal + why + dw + desired + success + failure + tests + notes + rejection;
+  var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   return '<div class="card' + rejClass + '" onclick="toggleCard(this)">'
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
@@ -536,6 +642,7 @@ function cardHTML(t, isRejected) {
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + fsChip
+    + relFace
     + assignee
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
     + '</div>';
