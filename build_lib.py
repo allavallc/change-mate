@@ -1,6 +1,23 @@
 import re
 
 
+_CM_ID_RE = re.compile(r"^CM-\d+$")
+
+
+def _parse_id_list(value):
+    """Split a comma-separated CM-ID list. Strip whitespace, drop malformed entries, dedupe."""
+    if not value:
+        return []
+    out = []
+    seen = set()
+    for chunk in value.split(","):
+        s = chunk.strip()
+        if _CM_ID_RE.match(s) and s not in seen:
+            out.append(s)
+            seen.add(s)
+    return out
+
+
 def parse_ticket(path, default_status):
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
@@ -13,6 +30,9 @@ def parse_ticket(path, default_status):
         "priority": "",
         "effort": "",
         "feature_set": "",
+        "related": [],
+        "blocks": [],
+        "blocked_by": [],
         "assigned_to": "",
         "started": "",
         "completed": "",
@@ -38,6 +58,7 @@ def parse_ticket(path, default_status):
         "priority", "effort", "feature_set", "assigned_to",
         "started", "completed", "rejected_by", "rejected", "rejection_reason",
     )
+    id_list_keys = ("related", "blocks", "blocked_by")
     for line in lines:
         m = re.match(r"^-\s+\*\*([^*]+)\*\*:\s*(.*)", line)
         if m:
@@ -47,6 +68,8 @@ def parse_ticket(path, default_status):
                 t[k] = v
             elif k == "status" and v:
                 t["status"] = v
+            elif k in id_list_keys:
+                t[k] = _parse_id_list(v)
 
     section, buf = None, []
 

@@ -222,6 +222,118 @@ Complete
     assert s["status"] == "Complete"
 
 
+# ---------- relationship fields ----------
+
+
+def test_parse_relationships_all_three_fields(tmp_path):
+    body = """# [CM-500] Relationships
+
+- **Status**: open
+- **Related**: CM-001, CM-002
+- **Blocks**: CM-003
+- **Blocked by**: CM-004, CM-005, CM-006
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-500.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["related"] == ["CM-001", "CM-002"]
+    assert t["blocks"] == ["CM-003"]
+    assert t["blocked_by"] == ["CM-004", "CM-005", "CM-006"]
+
+
+def test_parse_relationships_missing_fields_default_to_empty_list(tmp_path):
+    body = """# [CM-501] No relationships
+
+- **Status**: open
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-501.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["related"] == []
+    assert t["blocks"] == []
+    assert t["blocked_by"] == []
+
+
+def test_parse_relationships_empty_value_is_empty_list(tmp_path):
+    body = """# [CM-502] Empty values
+
+- **Status**: open
+- **Related**:
+- **Blocks**:
+- **Blocked by**:
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-502.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["related"] == []
+    assert t["blocks"] == []
+    assert t["blocked_by"] == []
+
+
+def test_parse_relationships_single_id_no_comma(tmp_path):
+    body = """# [CM-503] Single
+
+- **Status**: open
+- **Related**: CM-007
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-503.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["related"] == ["CM-007"]
+
+
+def test_parse_relationships_whitespace_tolerant(tmp_path):
+    body = """# [CM-504] Whitespace
+
+- **Status**: open
+- **Related**:   CM-001 ,  CM-002   ,CM-003
+- **Blocks**: CM-004,CM-005
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-504.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["related"] == ["CM-001", "CM-002", "CM-003"]
+    assert t["blocks"] == ["CM-004", "CM-005"]
+
+
+def test_parse_relationships_malformed_entries_dropped(tmp_path):
+    body = """# [CM-505] Malformed
+
+- **Status**: open
+- **Related**: CM-001, foo, CM-ABC, , CM-002, bar
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-505.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["related"] == ["CM-001", "CM-002"]
+
+
+def test_parse_relationships_deduped(tmp_path):
+    body = """# [CM-506] Dupes
+
+- **Status**: open
+- **Blocked by**: CM-010, CM-011, CM-010, CM-011
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-506.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["blocked_by"] == ["CM-010", "CM-011"]
+
+
 # ---------- regression: every committed ticket parses ----------
 
 

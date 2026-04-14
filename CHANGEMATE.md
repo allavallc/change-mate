@@ -160,6 +160,24 @@ Want to pick one of these instead?
 
 ---
 
+## Blocking a ticket
+
+When a ticket cannot proceed, move it to `change-mate/blocked/` and set the `**Blocked by**` field to the CM-IDs preventing progress. The `Blocked by` value is **required** for tickets in the blocked folder — a blocked ticket with no explanation of what is blocking it is just an orphan.
+
+1. Update the file: set status to `blocked`, set `**Blocked by**: CM-XXX[, CM-YYY]`
+2. Move the file from its current folder to `change-mate/blocked/`
+3. Run:
+   ```
+   git add change-mate/
+   git commit -m "CM-XXX: blocked"
+   git push
+   ```
+4. Broadcast the `ticket_updated` Realtime event
+
+When the blocker is resolved, move the ticket back to `in-progress/` (or `backlog/` if work has not started), clear the `Blocked by` field, and commit.
+
+---
+
 ## Rejecting a ticket
 
 When the user says "reject CM-XXX", "not doing CM-XXX", or "kill CM-XXX":
@@ -225,6 +243,9 @@ CM-004-1736847392.md
 - **Priority**: Low | Medium | High | Critical
 - **Effort**: XS | S | M | L | XL
 - **Feature set**: feature-set-XXX-<slug> (or blank for standalone)
+- **Related**: CM-XXX, CM-YYY (comma-separated, or blank)
+- **Blocks**: CM-XXX, CM-YYY (comma-separated, or blank)
+- **Blocked by**: CM-XXX, CM-YYY (comma-separated, or blank)
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
@@ -265,7 +286,21 @@ Unit tests, integration tests, or manual QA the developer should produce before 
 Decisions made, alternatives considered and rejected (with reasons), gotchas, out-of-scope items pushed to other tickets.
 ```
 
-**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, or `**Feature set**` must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
+**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, or the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`) must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
+
+## Relationship fields
+
+Three optional fields express how tickets relate to each other:
+
+- **Related**: loose "see also" link. No scheduling implication.
+- **Blocks**: this ticket prevents the listed tickets from starting or completing.
+- **Blocked by**: this ticket cannot start or complete until the listed tickets are done.
+
+Values are comma-separated `CM-XXX` IDs. Whitespace is tolerated. Entries that don't match `CM-\d+` are ignored silently.
+
+**Write only one side of each edge.** If CM-005 declares `Blocks: CM-006`, do not also add `Blocked by: CM-005` on CM-006 — the renderer infers the inverse at build time and shows it on the counterpart card automatically. Writing both sides creates maintenance drift.
+
+Convention: prefer the upstream side. Use `Blocks` on the ticket that must finish first, rather than `Blocked by` on the ticket that is waiting.
 
 ---
 
