@@ -1,49 +1,43 @@
-# CM-005 — Pre-build interview (AWAITING USER ANSWERS)
+# CM-005 — Supabase schema (locks, ticket_events, write_keys + RLS)
 
-**Status**: interview drafted, user will return tomorrow (2026-04-14 → 2026-04-15) to answer Q1–Q5. Do not start any phase work until these are resolved.
+**Status**: all three phases delivered and verified against a live Supabase project on 2026-04-15. Ticket still physically in `change-mate/backlog/` — awaiting user go-ahead to move to `done/`.
 
-## What I understand the work to be
+## Interview answers (locked 2026-04-15)
+- Q1 = (a) Supabase project exists — user applies SQL via Supabase SQL editor
+- Q2 = (a) Strict RLS — all writes via `cm-write` Edge Function (CM-006)
+- Q3 = (a) SHA-256 of plaintext for `write_keys.key_hash`
+- Q4 = (a) `ticket_events` retained forever
+- Q5 = (a) Single `0001_initial.sql` with everything
+- Scope addition: `SETUP.md` at repo root, write-key generation deferred to CM-006
 
-1. Create a single idempotent SQL migration file (suggested: `supabase/migrations/0001_initial.sql`) that provisions:
-   - `locks` — `ticket_id` (PK, text), `agent` (text), `started_at` (timestamptz), atomic claim via PK uniqueness
-   - `ticket_events` — `id` (bigint/uuid PK), `ticket_id` (text, indexed), `from_status`, `to_status`, `actor`, `created_at`
-   - `write_keys` — `key_hash` (PK), `label`, `role` (human | agent), `created_at`, `revoked_at`
-2. RLS policies:
-   - `ticket_events`: anon can `select`, only service role can `insert`
-   - `locks`: only service role can `insert` / `delete` (agents call through `cm-write` Edge Function in CM-006)
-   - `write_keys`: readable only by service role
-3. Idempotent provisioning — safe to re-run the SQL
-4. SQL assertions (or pgTap) that verify RLS behaves
+## Delivered
 
-## Open questions — must resolve before any code
+### Phase 1 — Migration SQL
+- `supabase/migrations/0001_initial.sql` — three tables, RLS enabled + forced, strict policies, defense-in-depth revokes, wrapped in `begin; ... commit;`, fully idempotent
 
-### Q1 — Supabase project status (blocks everything)
-- a) Project exists, you'll apply the SQL via the Supabase SQL editor after I write it
-- b) No project yet — ticket delivers just the SQL file + README instructions; provisioning later
-- c) Project exists and you want me to apply via the Supabase CLI (needs credentials / access)
+### Phase 2 — Verification
+- `supabase/tests/verify.sql` — deep schema assertions (tables, RLS flags, policies, indexes, check constraint) — paste in SQL editor
+- `supabase/tests/concurrent_lock_test.sql` — atomic claim proof via duplicate insert → unique_violation
+- `tests/test_migration_sql.py` — 11 static-analysis tests, always runs in CI, no database needed
+- `tests/test_verify_supabase.py` — 19 tests for the verify script (mocked urllib, covers config loading, retry logic, every check path, every main exit code)
+- `tests/conftest.py` — adds scripts/ + repo root to sys.path for tests
 
-### Q2 — Direct-write vs always-through-Edge-Function
-- a) **Strict — all writes through `cm-write` Edge Function (CM-006)**. Anon cannot insert into `locks` or `ticket_events` directly. CM-006 must ship before CM-008 can function. (Claude's recommendation.)
-- b) Loose — allow anon inserts to `locks` gated by publishable key, as a transitional measure for faster parallel progress on CM-008
-- c) Write the RLS strict now, revisit if CM-008 actually needs looser rules
+### Phase 3 — Onboarding (pulled forward into Phase 1)
+- `SETUP.md` at repo root — 5-step grandma-grade flow (create project → apply schema → wire up config → verify schema → verify RLS); includes "Enable Data API" step and troubleshooting for PGRST002
+- `scripts/verify_supabase.py` — pure-stdlib Python, reads `change-mate-config.json`, probes three REST endpoints, retries transparently on PGRST002, distinct exit path for schema-cache-cold diagnosis
+- `README.md` — "Setup" section replaced with link to SETUP.md (single source of truth)
 
-### Q3 — Key hashing algorithm for `write_keys.key_hash`
-- a) **SHA-256 of plaintext** (Claude's rec — keys are machine-generated high-entropy, not user-chosen passwords)
-- b) Bcrypt — over-engineered here but future-proof
-- c) Plain SHA-256 + aggressive rotation policy
+## Verification against live project (2026-04-15)
+- Migration applied via Supabase SQL editor — idempotent, re-ran cleanly
+- `py scripts/verify_supabase.py` — all three `[PASS]`
+- Hit and recovered from PGRST002 caused by Data API being disabled by default on new Supabase projects — root cause documented in SETUP.md and troubleshooting table
+- Full pytest suite: 64/64 green (up from 34 at session start)
 
-### Q4 — `ticket_events` retention
-- a) **Forever** (Claude's rec — small audit log, negligible storage)
-- b) Cap at 90 days or 10k rows
+## Not in scope (downstream tickets)
+- `cm-write` Edge Function → CM-006
+- Write-key generation helper → CM-006 / CM-007
+- Migrating existing Gist lock data → CM-008
+- Frontend wiring to read `ticket_events` → CM-009
 
-### Q5 — Migration file organization
-- a) **Single `0001_initial.sql` with everything** (Claude's rec — cleaner for initial provisioning, split later when real migrations come)
-- b) Three files: `0001_locks.sql`, `0002_ticket_events.sql`, `0003_write_keys.sql`
-
-## Shortcut
-
-If you just want to proceed with all recommendations: say "defaults" and we use Q1 answer-required, Q2 (a), Q3 (a), Q4 (a), Q5 (a). Q1 still needs a direct pick — it can't be a default.
-
-## Once Q1–Q5 are answered
-
-I'll write the phased plan into this file (estimate: 2–3 phases, ≤5 files each) and wait for "go Phase 1".
+## Awaiting
+User decision on moving `change-mate/backlog/CM-005-1776184900.md` to `change-mate/done/`.

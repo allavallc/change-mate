@@ -18,25 +18,7 @@ change-mate gives Claude Code a structured way to:
 
 ## Setup
 
-Inside a Claude Code session, just say:
-
-```
-I want to use change-mate. Set it up from https://github.com/allavallc/change-mate
-```
-
-Or run it manually:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh | bash
-```
-
-Then commit and push so your whole team has it:
-
-```bash
-git add change-mate/ CHANGEMATE.md CLAUDE.md
-git commit -m "add change-mate"
-git push
-```
+See **[SETUP.md](SETUP.md)** for the full step-by-step: installing change-mate in a project, provisioning Supabase (live locks + history + write keys), and verifying the install.
 
 ---
 
