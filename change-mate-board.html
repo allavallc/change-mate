@@ -617,39 +617,6 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-003",
-      "title": "Ticket relationships (related / blocks / blocked-by)",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "M",
-      "feature_set": "feature-set-002-workflow-hygiene",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "claude",
-      "started": "2026-04-14 18:38",
-      "completed": "",
-      "goal": "Let tickets reference other tickets so humans and agents can see dependencies and cross-ticket context at a glance.",
-      "why": "Today \"blocked\" is just a folder \u2014 we lose *what* blocks *what*. Adding explicit relationships surfaces feature-set cohesion, reveals dependency chains, and makes the board useful beyond a flat list of cards.",
-      "done_when": [
-        "Ticket format supports `Related`, `Blocks`, `Blocked by` fields (comma-separated CM-IDs)",
-        "`CHANGEMATE.md` documents how agents set and read these fields",
-        "Board renders relationships on the card (small chips, cap + \"+N more\" overflow)",
-        "Board auto-infers the inverse of `Blocks` \u2192 `Blocked by` at render time (not persisted in files)",
-        "Moving a ticket to `blocked/` requires a `Blocked by` value",
-        "Round-trips cleanly through `build.sh` without data loss"
-      ],
-      "desired_output": "Three new optional fields in every ticket, rendered as chips on the card face, with the inverse edge inferred automatically. Build-time warnings for orphaned or cyclic references.",
-      "success_signals": "- New tickets created after this ships include the new fields where applicable\n- Chips on CM-A say \"Blocks: CM-B\" and CM-B's card automatically shows \"Blocked by: CM-A\" without the user writing it twice\n- Legacy tickets without these fields still parse and render\n- Overflow displays cleanly on tickets with many relationships",
-      "failure_signals": "- Orphaned references (CM-XXX listed but file not found) \u2014 build logs a warning, chip is skipped\n- Cycles (A blocks B blocks A) \u2014 build logs a warning, cards still render\n- Board layout breaking when a ticket has many relationships \u2014 overflow cap prevents this\n- Symmetric inference double-renders an edge (e.g. shows \"Blocked by: CM-X\" when CM-X file also explicitly lists \"Blocked by\" on the same target)",
-      "tests": "- Parser unit tests: each field present / missing / single ID / multiple IDs / malformed\n- Parser unit test: empty bullet value (just `**Related**:` with nothing after)\n- Build-time test: orphan reference produces a warning in stderr but build exits 0\n- Build-time test: cycle produces a warning but build exits 0\n- Snapshot / manual: board card with all three relationships renders as expected chips",
-      "notes": "**Design decisions agreed with user**:\n- **Symmetry**: inferred at render time, not persisted. CM-005 writes `Blocks: CM-006`; CM-006's card auto-shows `Blocked by: CM-005` via the renderer walking the reverse map.\n- **Placement**: all chips on card face, cap to 3 visible with \"+N more\" overflow beyond that.\n- **Orphan / cycle handling**: warn in build log, skip the broken chip, keep building. Non-fatal.\n\n**Plan**: see `tasks/todo.md` for the three-phase build.\n\n**Alternatives considered**:\n- Encode relationships only in feature-set files \u2192 rejected; loses ticket-level traceability and forces lookup detour\n- Use a separate `relationships.json` index \u2192 rejected; duplicates source-of-truth from the markdown\n- Require explicit two-sided edges (no inference) \u2192 rejected per user direction; doubles bookkeeping for no real gain",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "done",
@@ -847,7 +814,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-15T20:11:40.316921+00:00"
+  "generated": "2026-04-15T20:22:16.650029+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
