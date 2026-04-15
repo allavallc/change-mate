@@ -66,7 +66,26 @@ For each new ticket:
 
 The user can override your assignment at draft-review time. Default to your call — don't ask.
 
-### 4. Make trade-offs explicit
+### 4. Set relationships (if any)
+
+Three optional fields express how this ticket relates to others:
+
+- **Related**: loose "see also" link. No scheduling implication.
+- **Blocks**: this ticket prevents the listed tickets from starting or completing.
+- **Blocked by**: this ticket cannot start or complete until the listed tickets are done.
+
+Scan the backlog for tickets that:
+- Touch the same files or subsystem → likely **Related**
+- Depend on this one completing first → this ticket **Blocks** them
+- Have to land before this one can start → this ticket is **Blocked by** them
+
+**Write only one side of each edge.** The board renderer infers the inverse automatically. If CM-A blocks CM-B, write `Blocks: CM-B` on CM-A's file only — do not also write `Blocked by: CM-A` on CM-B's file. Writing both creates maintenance drift.
+
+**Prefer the upstream side.** When an edge exists, write it as `Blocks` on the ticket that must finish first. That ticket's author is closest to knowing what depends on it.
+
+For tickets being moved to `blocked/`, `Blocked by` is **required**. A blocked ticket with no explanation of what blocks it is just an orphan.
+
+### 5. Make trade-offs explicit
 
 In Notes, always include:
 
@@ -74,7 +93,7 @@ In Notes, always include:
 - **Out of scope**: anything the user might assume is included but isn't. Say which ticket should cover it (existing or to-be-created).
 - **Risks**: anything that could turn this ticket into a bigger one. Don't bury these.
 
-### 5. Ask only when a gap is real
+### 6. Ask only when a gap is real
 
 Most requests have enough signal to draft. Ask only when:
 
@@ -84,7 +103,7 @@ Most requests have enough signal to draft. Ask only when:
 
 When you do ask: ask **at most two** questions. Each question must offer **2–3 proposed answers** with your recommendation flagged. Open-ended questions like "what do you want?" are forbidden — your job is to propose.
 
-### 6. Show the draft and wait
+### 7. Show the draft and wait
 
 Present the complete draft. End with:
 

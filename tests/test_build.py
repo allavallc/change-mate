@@ -268,3 +268,81 @@ def test_build_hides_rejected_button_when_no_not_doing_tickets(tmp_path):
     html = (tmp_path / "change-mate-board.html").read_text(encoding="utf-8")
     # Button should be rendered but hidden (display:none when no not-doing tickets)
     assert 'style="display:none"' in html
+
+
+# ---------- relationship fields: orphan + cycle warnings ----------
+
+def _write_min_ticket(path, cm_id, title, extra_bullets=""):
+    body = f"""# [{cm_id}] {title}
+
+- **Status**: open
+{extra_bullets}
+## Goal
+g
+"""
+    path.write_text(body, encoding="utf-8")
+
+
+def _stage_repo(tmp_path):
+    for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
+        (tmp_path / "change-mate" / folder).mkdir(parents=True, exist_ok=True)
+    shutil.copy(REPO_ROOT / "build.sh", tmp_path / "build.sh")
+    shutil.copy(REPO_ROOT / "build_lib.py", tmp_path / "build_lib.py")
+
+
+def test_build_warns_on_orphan_reference_and_still_exits_zero(tmp_path):
+    _stage_repo(tmp_path)
+    _write_min_ticket(
+        tmp_path / "change-mate/backlog/CM-001-1000.md",
+        "CM-001", "Orphan owner",
+        "- **Related**: CM-999\n- **Blocks**: CM-888\n",
+    )
+
+    result = subprocess.run(["bash", "build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "CM-999" in result.stderr
+    assert "CM-888" in result.stderr
+    assert "does not exist" in result.stderr
+    assert (tmp_path / "change-mate-board.html").exists()
+
+
+def test_build_warns_on_cycle_and_still_exits_zero(tmp_path):
+    _stage_repo(tmp_path)
+    _write_min_ticket(
+        tmp_path / "change-mate/backlog/CM-001-1000.md",
+        "CM-001", "A",
+        "- **Blocks**: CM-002\n",
+    )
+    _write_min_ticket(
+        tmp_path / "change-mate/backlog/CM-002-1001.md",
+        "CM-002", "B",
+        "- **Blocks**: CM-001\n",
+    )
+
+    result = subprocess.run(["bash", "build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "cycle detected" in result.stderr
+    assert "CM-001" in result.stderr and "CM-002" in result.stderr
+    assert (tmp_path / "change-mate-board.html").exists()
+
+
+def test_build_inverse_blocked_by_inferred_is_rendered(tmp_path):
+    """CM-001 Blocks CM-002. CM-002's card HTML should show a 'blocked_by_inferred' reference to CM-001."""
+    _stage_repo(tmp_path)
+    _write_min_ticket(
+        tmp_path / "change-mate/backlog/CM-001-1000.md",
+        "CM-001", "Upstream",
+        "- **Blocks**: CM-002\n",
+    )
+    _write_min_ticket(
+        tmp_path / "change-mate/backlog/CM-002-1001.md",
+        "CM-002", "Downstream",
+    )
+
+    result = subprocess.run(["bash", "build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    html = (tmp_path / "change-mate-board.html").read_text(encoding="utf-8")
+    # The embedded JSON data should contain the inferred field populated for CM-002
+    assert '"blocked_by_inferred"' in html
+    # And the upstream's explicit blocks list should be there too
+    assert '"blocks"' in html

@@ -60,6 +60,7 @@ The flow is **draft first, ask second**:
 1. **Read context before drafting.** Before writing a single line of the ticket:
    - Scan `change-mate/backlog/` and `change-mate/in-progress/` for related or duplicate tickets
    - Scan `change-mate/feature-sets/` for an existing feature set that fits
+   - Note any tickets that the new work should link to via `Related`, `Blocks`, or `Blocked by`
    - Read any code files that the request touches
    - Read recent commits if the request relates to recent work
 
