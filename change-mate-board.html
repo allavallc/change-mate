@@ -412,40 +412,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
-      "id": "CM-006",
-      "title": "Supabase Edge Function `cm-write` (validated ticket writes via GitHub API)",
-      "status": "open",
-      "priority": "High",
-      "effort": "L",
-      "feature_set": "feature-set-001-supabase-upgrade",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Build a Supabase Edge Function that validates a caller's write key, then creates/updates tickets in the GitHub repo on their behalf \u2014 keeping the GitHub PAT server-side only.",
-      "why": "Today the \"Add story\" button on the board requires every user to paste their own GitHub PAT into localStorage. That is clunky, insecure, and blocks non-technical users. An Edge Function with the PAT stored as a Supabase secret is the right shape: one shared write path, per-person write keys, no tokens in the browser.",
-      "done_when": [
-        "Edge Function `cm-write` deployed to Supabase",
-        "Accepts: write key, ticket payload (title, goal, why, done-when, priority, effort, notes)",
-        "Validates write key against `write_keys` table (hashed lookup)",
-        "On success: creates the markdown file in `change-mate/backlog/` via GitHub API (authenticated with server-side PAT)",
-        "On success: inserts a row into `ticket_events`",
-        "On failure: returns structured error (`401` invalid key, `403` revoked, `422` bad payload, `500` GitHub API failure)",
-        "Rate limit: per-key throttle (e.g. 10 writes/minute)"
-      ],
-      "desired_output": "A callable HTTPS endpoint the board JS hits with a write key and a ticket payload. PAT never reaches the client.",
-      "success_signals": "- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never appears in client bundle, browser network logs, or function output logs",
-      "failure_signals": "- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes",
-      "tests": "- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions",
-      "notes": "**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-007",
       "title": "Board modes + write-key prompt + Add Story via Edge Function",
       "status": "open",
@@ -611,6 +577,40 @@ var D = {
       "failure_signals": "- Animations distract from reading tickets \u2014 users can't scan cards easily\n- CPU spike with many cards rendered (animations repaint unnecessarily)\n- Scenes look broken, ugly, or pixelated on small screens\n- Scenes fail to render without JavaScript \u2014 should degrade to static SVG\n- Dark mode palette makes scenes muddy or unreadable\n- Scope creep into per-card animations, sprite sheets, or dependency-graph rendering",
       "tests": "- Manual visual check in Chrome, Safari, Firefox (light + dark mode)\n- Manual responsive check at 560px, 900px, 1280px widths\n- Performance check: render 100 tickets across columns, verify 60fps on a mid-range laptop\n- Accessibility check: `prefers-reduced-motion` media query disables animation loops\n- Build pipeline check: scenes are CSS-only (no JS dependency); board renders on file:// without a server\n- Snapshot or visual regression test on the generated HTML (optional \u2014 flag if worth it)",
       "notes": "**Design agreed with user**:\n- Theme **C (forge/blacksmith)** \u2014 matches the \"build things\" spirit of a dev tool; tree is generic, bird doesn't map to growth cleanly\n- Ambition level **V1** \u2014 column-header SVG scenes, not per-card animation, not sprite sheets\n- New feature set (feature-set-003-visual-language) \u2014 polish is going to be a recurring stream, keep workflow-hygiene clean\n\n**Scene-by-scene sketch**:\n- **Backlog**: pile of raw ore/ingots on the workshop floor, unlit forge in the background (static \u2014 nothing to animate, raw materials are just *there*)\n- **In progress**: blacksmith at the anvil, hammer lifting and striking on a slow loop (~1.5s), sparks bursting at each strike, flames flickering in the forge\n- **Done**: finished blade/gear on a display rack, slow light shimmer crossing the surface every 4\u20136s\n- **Blocked**: forge gone cold, blacksmith sitting on a barrel scratching his head, tool mid-project on the anvil, slow \"nope\" head-shake every few seconds\n- **Not-doing**: scrap bin outside the workshop with a discarded item tossed in, light dust puff settling on a loop\n\n**Alternatives considered**:\n- V0 (emoji + CSS pulses) \u2014 rejected; too thin to justify the effort, doesn't deliver the \"wow\"\n- V2 (sprite sheet + card-move handoff animations) \u2014 deferred; ship V1 first, verify the concept lands, then decide whether V2 is worth the production cost\n- Per-card animation \u2014 rejected for v1; clutters the card UX and hurts scan-readability\n- Tree / plant theme \u2014 rejected; generic, doesn't match the dev-tool spirit\n- Bird / egg theme \u2014 rejected; \"growth\" doesn't map onto the Kanban stages cleanly\n\n**Follow-on candidates** (if V1 lands well):\n- V2: pixel-art sprite sheets + card-move handoff animations (\"blacksmith picks up the card, slides it onto the anvil\")\n- Feature-set aggregate view: show each feature-set as a \"forge\" with N forged items\n- Staleness effect: in-progress card sitting for >7 days gets a subtle \"aging\" tint\n- Sound effects on card-move events (optional, off by default)\n\n**Sequencing**: opens feature-set-003. Low dependency on other work \u2014 could land any time. Defer until feature-set-001 (Supabase upgrade) is underway or done so mechanics work isn't delayed by polish work.\n\n**Out of scope for this ticket**:\n- Per-card animations (defer to V2)\n- Sprite-sheet production (defer to V2)\n- Sound design (defer)\n- Theme switcher beyond light/dark (separate ticket if desired)",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-006",
+      "title": "Supabase Edge Function `cm-write` (validated ticket writes via GitHub API)",
+      "status": "in progress",
+      "priority": "High",
+      "effort": "L",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-15",
+      "completed": "",
+      "goal": "Build a Supabase Edge Function that validates a caller's write key, then creates/updates tickets in the GitHub repo on their behalf \u2014 keeping the GitHub PAT server-side only.",
+      "why": "Today the \"Add story\" button on the board requires every user to paste their own GitHub PAT into localStorage. That is clunky, insecure, and blocks non-technical users. An Edge Function with the PAT stored as a Supabase secret is the right shape: one shared write path, per-person write keys, no tokens in the browser.",
+      "done_when": [
+        "Edge Function `cm-write` deployed to Supabase",
+        "Accepts: write key, ticket payload (title, goal, why, done-when, priority, effort, notes)",
+        "Validates write key against `write_keys` table (hashed lookup)",
+        "On success: creates the markdown file in `change-mate/backlog/` via GitHub API (authenticated with server-side PAT)",
+        "On success: inserts a row into `ticket_events`",
+        "On failure: returns structured error (`401` invalid key, `403` revoked, `422` bad payload, `500` GitHub API failure)",
+        "Rate limit: per-key throttle (e.g. 10 writes/minute)"
+      ],
+      "desired_output": "A callable HTTPS endpoint the board JS hits with a write key and a ticket payload. PAT never reaches the client.",
+      "success_signals": "- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never appears in client bundle, browser network logs, or function output logs",
+      "failure_signals": "- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes",
+      "tests": "- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions",
+      "notes": "**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -814,7 +814,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-15T20:22:16.650029+00:00"
+  "generated": "2026-04-15T21:21:56.877017+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
