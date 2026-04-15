@@ -412,39 +412,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
-      "id": "CM-005",
-      "title": "Supabase schema: locks, ticket_events, write_keys + RLS",
-      "status": "open",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-001-supabase-upgrade",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Create the Supabase Postgres schema that powers the next-generation board: atomic locking, event history, and per-person write keys \u2014 all protected by Row Level Security.",
-      "why": "Current state: locking lives in a GitHub Gist (fragile, not atomic), there is zero history, and there is no access control. This schema is the foundation every other piece of the next build sits on \u2014 nothing else ships without it.",
-      "done_when": [
-        "`locks` table: `ticket_id` (PK), `agent`, `started_at`, atomic insert-or-fail semantics",
-        "`ticket_events` table: `id`, `ticket_id`, `from_status`, `to_status`, `actor`, `created_at`",
-        "`write_keys` table: `key_hash` (PK), `label`, `role` (`human` | `agent`), `created_at`, `revoked_at`",
-        "RLS policies: anon role read-only on `ticket_events`; write-key-gated inserts on `locks` and `ticket_events`; `write_keys` readable only by service role",
-        "SQL migration script committed to repo under `supabase/migrations/`",
-        "Idempotent: re-running the script against an already-migrated database is a no-op"
-      ],
-      "desired_output": "A single SQL file a maintainer can run in the Supabase SQL editor to provision the project, plus a documented \"verify install\" check.",
-      "success_signals": "- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key",
-      "failure_signals": "- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket",
-      "tests": "- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds",
-      "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `change-mate-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-006",
       "title": "Supabase Edge Function `cm-write` (validated ticket writes via GitHub API)",
       "status": "open",
@@ -807,6 +774,39 @@ var D = {
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-005",
+      "title": "Supabase schema: locks, ticket_events, write_keys + RLS",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-14",
+      "completed": "2026-04-15",
+      "goal": "Create the Supabase Postgres schema that powers the next-generation board: atomic locking, event history, and per-person write keys \u2014 all protected by Row Level Security.",
+      "why": "Current state: locking lives in a GitHub Gist (fragile, not atomic), there is zero history, and there is no access control. This schema is the foundation every other piece of the next build sits on \u2014 nothing else ships without it.",
+      "done_when": [
+        "`locks` table: `ticket_id` (PK), `agent`, `started_at`, atomic insert-or-fail semantics",
+        "`ticket_events` table: `id`, `ticket_id`, `from_status`, `to_status`, `actor`, `created_at`",
+        "`write_keys` table: `key_hash` (PK), `label`, `role` (`human` | `agent`), `created_at`, `revoked_at`",
+        "RLS policies: anon role read-only on `ticket_events`; write-key-gated inserts on `locks` and `ticket_events`; `write_keys` readable only by service role",
+        "SQL migration script committed to repo under `supabase/migrations/`",
+        "Idempotent: re-running the script against an already-migrated database is a no-op"
+      ],
+      "desired_output": "A single SQL file a maintainer can run in the Supabase SQL editor to provision the project, plus a documented \"verify install\" check.",
+      "success_signals": "- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key",
+      "failure_signals": "- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket",
+      "tests": "- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds",
+      "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `change-mate-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
     }
   ],
   "feature_sets": [
@@ -847,7 +847,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-15T02:23:28.789832+00:00"
+  "generated": "2026-04-15T20:11:40.316921+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
