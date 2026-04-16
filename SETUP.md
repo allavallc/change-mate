@@ -1,24 +1,31 @@
 # Setting up change-mate
 
-Follow these steps in order. If you just want the basic board (no live lock registry, no history, no write keys), stop after step 1. If you want the full experience — live locking across agents, full audit history, per-person write keys — continue through step 2.
+This guide takes you from zero to a fully working board. Every step tells you exactly what to click and what to type. If something doesn't match what you see on screen, check the [Troubleshooting](#troubleshooting) section at the bottom.
+
+There are two levels:
+
+| Level | What you get | Time |
+|---|---|---|
+| **Basic** (step 1 only) | A board you can view. No creating tickets from the browser. | 2 minutes |
+| **Full** (steps 1–3) | Everything: live updates, create tickets from the board, per-person write keys. | 15 minutes |
 
 ---
 
-## 1. Install change-mate in your project
+## Step 1 — Install change-mate in your project
 
-Inside a Claude Code session, say:
+Open a Claude Code session in your project and say:
 
 ```
 I want to use change-mate. Set it up from https://github.com/allavallc/change-mate
 ```
 
-Or run the installer manually:
+Or run the installer manually in your terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh | bash
 ```
 
-Then commit and push so your whole team picks it up:
+Then save it to your repo:
 
 ```bash
 git add change-mate/ CHANGEMATE.md CLAUDE.md
@@ -26,107 +33,105 @@ git commit -m "add change-mate"
 git push
 ```
 
-That's it — you now have a working board. `change-mate-board.html` is a static single-file HTML page committed to your repo. Two common ways to view it:
+**You now have a board.** Open `change-mate-board.html` to see it:
 
-- **Locally from disk.** Double-click `change-mate-board.html` in your file explorer, or drag-drop it into a browser tab. The address bar will show something like:
-  - macOS / Linux: `file:///Users/you/projects/your-project/change-mate-board.html`
-  - Windows: `file:///C:/Users/you/projects/your-project/change-mate-board.html`
-- **Shared team link via GitHub Pages.** Enable Pages in your repo (**Settings → Pages → Build from branch → `main` / root**). The board becomes available at:
-  - `https://<your-github-username>.github.io/<your-repo-name>/change-mate-board.html`
+- **On your computer**: double-click the file in your file explorer. It opens in your browser.
+- **Shared link for your team**: go to your GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board will be at:
+  `https://your-username.github.io/your-repo/change-mate-board.html`
 
-  Example: if your repo is `github.com/your-username/your-project`, the URL is `https://your-username.github.io/your-project/change-mate-board.html`.
-
-Netlify / Vercel work too — point them at the repo root and deploy as a static site.
+If you only want to view the board (no creating tickets from the browser), **you're done.** Stop here.
 
 ---
 
-## 2. Provision Supabase (live locks, history, write keys)
+## Step 2 — Connect to Supabase (live updates + ticket creation)
 
-**You need your own Supabase project.** Each change-mate deployment uses its own database — there is no shared backend. Anyone cloning a repo that uses change-mate follows the same five steps below.
+This step gives the board a database so it can show live updates and let people create tickets directly from the browser. You'll create a free Supabase project — it takes about 10 minutes.
 
-> Write keys (per-person authentication) are configured later, once the `cm-write` Edge Function ships in a follow-up ticket. You do not need to generate one now.
+### 2.1 — Create a Supabase account and project
 
-### Step 2.1 — Create the Supabase project *(on supabase.com)*
+1. Go to **[supabase.com/dashboard](https://supabase.com/dashboard)**.
+2. Click **Sign in** (or **Sign up** — you can use your GitHub account to sign in).
+3. Once you're in the dashboard, click **New project**.
+4. Fill in:
+   - **Name**: anything you'll recognise later, like `change-mate`
+   - **Database Password**: click **Generate a password**. Save it in your password manager just in case.
+   - **Region**: pick whichever is closest to you
+5. Click **Create new project**. It takes about 2 minutes to set up. Wait until the page shows your project dashboard.
 
-1. Go to **[supabase.com/dashboard](https://supabase.com/dashboard)** and sign in (or sign up — GitHub login works).
-2. Click **New project**.
-3. Fill in:
-   - **Name**: anything memorable (e.g. `change-mate-yourname`)
-   - **Database Password**: click *Generate a password* and **save it in your password manager**. You probably won't need it again, but save it anyway.
-   - **Region**: pick the one closest to you.
-4. Click **Create new project**. Wait ~2 minutes for the project to provision.
-5. When it's ready, click the **Project Settings** gear icon (bottom-left) → click **API** in the sidebar.
-6. Copy these two values and keep them in a scratchpad — you'll paste them in step 2.3:
-   - **Project URL** — looks like `https://xxxxxxx.supabase.co`
-   - **anon public** key — starts with `sb_publishable_...` or `eyJhbGciOi...`
+### 2.2 — Copy your project's connection details
 
-   ⚠️ Do **not** copy the `service_role` key. That one is a secret and must never leave the Supabase dashboard.
+1. In the Supabase sidebar (left side), click the **gear icon** at the bottom → **API**.
+2. You'll see two values you need. Copy each one and paste it somewhere you can find it (a text file, a sticky note, whatever works):
+   - **Project URL** — looks like `https://abcdefg.supabase.co`
+   - **anon public key** — a long string starting with `sb_publishable_` or `eyJ`
 
-7. Still on the **Settings → API** page, scroll to the **Data API** section. New Supabase projects ship with the Data API *disabled* by default. Toggle **Enable Data API** to ON, make sure `public` is listed in the schema dropdown that appears, and click **Save**. Without this, the board can't read anything and the verify script in step 2.5 will fail with `PGRST002`.
+   **Do NOT copy the `service_role` key.** That one is secret and should never leave this page.
 
-### Step 2.2 — Apply the schema *(in the Supabase SQL editor)*
+3. While you're still on this page, scroll down to **Data API**. If you see a toggle that says **Enable Data API**, turn it **ON**, make sure `public` appears in the dropdown, and click **Save**. (Some projects have this on already — if you don't see the toggle, you're fine.)
+
+### 2.3 — Set up the database tables
 
 1. In the Supabase sidebar, click **SQL Editor** (the `</>` icon).
 2. Click **New query**.
-3. Open the file [`supabase/migrations/0001_initial.sql`](supabase/migrations/0001_initial.sql) from this repo on your computer. Select all (Ctrl/Cmd+A) and copy (Ctrl/Cmd+C).
-4. Paste it into the Supabase SQL editor.
-5. Click **Run** (bottom-right, or Ctrl/Cmd+Enter).
+3. On your computer, open the file `supabase/migrations/0001_initial.sql` from this repo. Select everything (Ctrl+A or Cmd+A), copy it (Ctrl+C or Cmd+C).
+4. Go back to the Supabase SQL editor and paste it in.
+5. Click **Run**.
 
-> **Expected warning on first run.** Supabase will pop a "destructive operations" confirmation because the script includes `revoke` statements that strip default privileges from the `anon` and `authenticated` roles. This is intentional. No data is being deleted. Click **Run this query**.
+You'll see a confirmation that says *"destructive operations"* — this is normal. It's just removing unnecessary permissions. Click **Run this query**.
 
-You should see *Success. No rows returned.* The script is safe to re-run anytime.
+You should see **Success. No rows returned.** That means it worked.
 
-### Step 2.3 — Wire up change-mate *(edit one file + add two secrets)*
+Now do the same thing with the second migration:
 
-Open `change-mate-config.json` at the root of this repo in your editor. Paste your two values into the `supabase_url` and `supabase_publishable_key` fields. The complete file should look like this:
+1. Click **New query** again.
+2. Open `supabase/migrations/0002_ticket_id_sequence.sql` from this repo. Select all, copy.
+3. Paste into the SQL editor and click **Run**.
+
+Again, you should see **Success. No rows returned.**
+
+### 2.4 — Connect change-mate to your Supabase project
+
+Open `change-mate-config.json` in this repo (it's at the root). Update it with your values:
 
 ```json
 {
   "gist_id": "",
   "project_name": "my project",
-  "supabase_url": "https://xxxxxxx.supabase.co",
-  "supabase_publishable_key": "sb_publishable_..."
+  "supabase_url": "https://abcdefg.supabase.co",
+  "supabase_publishable_key": "your-anon-key-here",
+  "board_mode": "public-write"
 }
 ```
 
-> JSON is strict: keep every comma, every quote, and the surrounding `{ }`. Nothing after the closing `}`.
+Replace `https://abcdefg.supabase.co` with your actual Project URL, and `your-anon-key-here` with your actual anon public key.
 
-For automated board rebuilds via GitHub Actions, also add those same two values as repo secrets:
+The `board_mode` controls who can do what:
 
-1. In your GitHub repo → **Settings → Secrets and variables → Actions**.
-2. Click **New repository secret**. Name = `SUPABASE_URL`, value = your Project URL. Click **Add secret**.
-3. Click **New repository secret** again. Name = `SUPABASE_PUBLISHABLE_KEY`, value = your anon key. Click **Add secret**.
+| Mode | Who can see the board | Who can create tickets |
+|---|---|---|
+| `public-readonly` | Anyone | Nobody (Add Story button hidden) |
+| `public-write` | Anyone | Anyone with a write key |
+| `private` | Only people with a write key | Only people with a write key |
 
-### Step 2.4 — Verify the schema *(in the Supabase SQL editor)*
+Most teams should use `public-write`.
 
-Open a new query in the SQL editor and paste these two queries:
+**If you use GitHub Actions** to auto-rebuild the board, also add these as repo secrets:
 
-```sql
--- Expect exactly 3 rows: locks, ticket_events, write_keys
-select table_name
-from information_schema.tables
-where table_schema = 'public'
-  and table_name in ('locks', 'ticket_events', 'write_keys');
+1. Go to your GitHub repo → **Settings → Secrets and variables → Actions**.
+2. Click **New repository secret**. Name: `SUPABASE_URL`. Value: your Project URL. Click **Add secret**.
+3. Click **New repository secret** again. Name: `SUPABASE_PUBLISHABLE_KEY`. Value: your anon key. Click **Add secret**.
 
--- Expect true / true in every row for all three tables
-select relname, relrowsecurity, relforcerowsecurity
-from pg_class
-where relname in ('locks', 'ticket_events', 'write_keys');
-```
+### 2.5 — Verify everything is working
 
-If the row counts and flags match what's in the comments, the schema is correctly installed.
-
-### Step 2.5 — Verify RLS blocks anon writes *(run one command in your terminal)*
-
-This proves the anon key can't do anything it shouldn't. Open a terminal **at the root of this repo** and run:
+Run this in your terminal (at the root of this repo):
 
 ```bash
 py scripts/verify_supabase.py
 ```
 
-> On macOS/Linux use `python3 scripts/verify_supabase.py` instead of `py`.
+> On macOS/Linux, use `python3` instead of `py`.
 
-The script reads `change-mate-config.json`, hits the Supabase REST API three times with your anon key, and prints one line per check. You want to see three `[PASS]` lines:
+You should see:
 
 ```
 [PASS] write_keys is hidden from anon
@@ -135,89 +140,87 @@ The script reads `change-mate-config.json`, hits the Supabase REST API three tim
 All checks passed. RLS is correctly configured.
 ```
 
-If you see `[FAIL]` on any line, re-apply `supabase/migrations/0001_initial.sql` (step 2.2) and run the script again.
+If you see `[FAIL]`, go back to step 2.3 and re-run the SQL. If you see `PGRST002`, go back to step 2.2 and make sure the Data API is enabled.
 
-Setup is complete. The board now reads Supabase for live lock state and ticket event history.
+---
 
-### Step 2.6 — Deploy the cm-write Edge Function *(optional — needed for Add Story)*
+## Step 3 — Enable "Add Story" (create tickets from the board)
 
-The `cm-write` Edge Function lets the board (and any authorised client) create new tickets by calling a single HTTP endpoint. It validates the payload, claims the next CM-ID from a Postgres sequence, commits the ticket markdown file to your GitHub repo, and logs the event to `ticket_events`.
+This step deploys a small server function that lets the board create tickets. Without it, the Add Story button won't work.
 
-You need:
-- **Supabase CLI** installed
-- A **GitHub Personal Access Token** (fine-grained PAT) with `contents:write` on this repo
-- The migration from step 2.2 already applied
+### 3.1 — Install the Supabase CLI
 
-#### 2.6.1 — Install the Supabase CLI
+You need Node.js installed. Then run:
 
-**Windows (PowerShell):**
-```powershell
-npm install -g supabase
-```
-
-**macOS / Linux:**
 ```bash
 npm install -g supabase
 ```
 
-> If you don't use npm, see [supabase.com/docs/guides/cli/getting-started](https://supabase.com/docs/guides/cli/getting-started) for other install methods.
+> If you don't have Node.js, download it from [nodejs.org](https://nodejs.org/).
 
-#### 2.6.2 — Link your project
+### 3.2 — Log in and link your project
 
 ```bash
 supabase login
-supabase link --project-ref <your-project-ref>
 ```
 
-Your project ref is the subdomain in your Supabase URL. If your URL is `https://abcdefg.supabase.co`, the ref is `abcdefg`.
+This opens your browser. Sign in to Supabase and approve the connection.
 
-#### 2.6.3 — Apply migration 0002 *(if you haven't already)*
+Then link your project:
 
-Open the Supabase SQL editor, paste the contents of `supabase/migrations/0002_ticket_id_sequence.sql`, and click Run. This creates the `ticket_id_seq` sequence and the `claim_ticket_id()` function used by cm-write.
-
-Verify it worked:
-```sql
-select public.claim_ticket_id();
+```bash
+supabase link --project-ref abcdefg
 ```
-Should return the next available CM-ID number. (Each call advances the sequence — that's expected.)
 
-#### 2.6.4 — Create a GitHub Personal Access Token
+Replace `abcdefg` with your project ref — that's the part before `.supabase.co` in your Project URL. For example, if your URL is `https://abcdefg.supabase.co`, the ref is `abcdefg`.
 
-1. Go to [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) (fine-grained tokens).
+### 3.3 — Create a GitHub token
+
+The server function needs permission to create files in your repo. You'll give it a token that can only write to this one repo.
+
+1. Go to **[github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta)**.
 2. Click **Generate new token**.
 3. Fill in:
-   - **Token name**: `change-mate-cm-write`
-   - **Expiration**: 90 days (or longer — you'll rotate it later)
-   - **Repository access**: select **Only select repositories** → pick this repo
-   - **Permissions → Repository permissions → Contents**: set to **Read and write**
-4. Click **Generate token** and copy it immediately — you won't see it again.
+   - **Token name**: `change-mate`
+   - **Expiration**: 90 days
+   - **Repository access**: click **Only select repositories** → pick this repo
+   - **Permissions**: expand **Repository permissions** → find **Contents** → set to **Read and write**
+4. Leave everything else as-is.
+5. Click **Generate token**.
+6. **Copy the token immediately** — you won't be able to see it again. Save it in your password manager.
 
-#### 2.6.5 — Set secrets and deploy
+### 3.4 — Deploy the function
+
+Run these three commands. Replace the placeholders with your actual values:
 
 ```bash
-supabase secrets set GITHUB_PAT=ghp_your_token_here
+supabase secrets set GITHUB_PAT=your-github-token-here
 supabase secrets set GITHUB_OWNER=your-github-username
 supabase secrets set GITHUB_REPO=your-repo-name
-supabase functions deploy cm-write
+supabase functions deploy cm-write --no-verify-jwt
 ```
 
-> Optional: if your default branch isn't `main`, also set `GITHUB_BRANCH=your-branch`.
-
-#### 2.6.6 — Generate a write key
-
-A write key is a secret string that authorises a person or agent to create tickets. Each user gets their own key. The key itself is never stored — only its SHA-256 hash goes into the database.
-
-Pick a random key (or make one up — anything works as long as it's unique and secret):
+For example, if your GitHub is `janedoe` and your repo is `my-project`:
 
 ```bash
-# Generate a random key (macOS/Linux)
-openssl rand -hex 32
-
-# Or on Windows PowerShell
--join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })
+supabase secrets set GITHUB_OWNER=janedoe
+supabase secrets set GITHUB_REPO=my-project
 ```
 
-Save the key somewhere safe (password manager). Then insert the hash into Supabase. Open the SQL editor and run:
+When the deploy finishes, you'll see a success message with a link to your Supabase dashboard.
+
+### 3.5 — Create your write key
+
+A write key is like a password that lets you create tickets. Each person gets their own. The board will ask for it the first time you click Add Story, and remembers it in your browser after that.
+
+**Pick any secret string** — a password, a random phrase, anything you'll remember. Or generate a random one:
+
+- **macOS/Linux**: `openssl rand -hex 32`
+- **Windows PowerShell**: `-join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })`
+
+**Save your key in your password manager.** You'll need to enter it in the board the first time.
+
+Now register the key in Supabase. Go to the **SQL Editor** and run this (replace the two placeholders):
 
 ```sql
 insert into public.write_keys (key_hash, label, role)
@@ -228,89 +231,70 @@ values (
 );
 ```
 
-Replace `PASTE_YOUR_KEY_HERE` with your actual key, and `Your Name` with a label that identifies you.
+- Replace `PASTE_YOUR_KEY_HERE` with the key you just created.
+- Replace `Your Name` with your name (this shows up in the audit log when you create tickets).
 
-To verify it's there:
-```sql
-select label, role, created_at from public.write_keys where revoked_at is null;
-```
+### 3.6 — Test it
 
-#### 2.6.7 — Smoke test
+1. Open your board in a browser (rebuild it first with `bash build.sh`, or wait for GitHub Actions to rebuild it after your next push).
+2. Click **+ Add story**.
+3. The board will ask for your write key. Paste it in and click **Continue**.
+4. Fill in a title, priority, and effort. Click **Create story**.
+5. You should see a toast message saying the ticket was created.
+6. Check your repo — a new file should appear in `change-mate/backlog/`.
 
-```bash
-curl -s -X POST \
-  https://<your-project-ref>.supabase.co/functions/v1/cm-write \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-anon-key>" \
-  -d '{
-    "write_key": "PASTE_YOUR_KEY_HERE",
-    "payload": {
-      "title": "Test ticket from curl",
-      "goal": "Verify cm-write works end to end.",
-      "done_when": "This ticket appears in the repo.",
-      "priority": "Low",
-      "effort": "XS"
-    }
-  }'
-```
+**That's it. You're fully set up.**
 
-Expected response (status 200):
-```json
-{
-  "phase": 2,
-  "ticket_id": "CM-0XX",
-  "file_path": "change-mate/backlog/CM-0XX-1234567890.md",
-  "actor": "Your Name",
-  "github_created": true,
-  "commit_sha": "abc123...",
-  "file_sha": "def456...",
-  "html_url": "https://github.com/...",
-  "audit_logged": true
-}
-```
+---
 
-Check your repo — you should see a new file in `change-mate/backlog/`. Delete the test ticket and its commit if you don't want to keep it.
+## Giving other people access
 
-#### Revoking a write key
+Each person who needs to create tickets gets their own write key. Repeat step 3.5 for each person — pick a new key, register it with their name. They enter it in the board once and it's remembered.
 
-If a key is compromised, revoke it immediately:
+To **revoke someone's access** (they left the team, key was leaked, etc.), run this in the SQL editor:
 
 ```sql
 update public.write_keys
 set revoked_at = now()
-where label = 'The Label You Used';
+where label = 'Their Name';
 ```
 
-The key stops working instantly — no redeploy needed.
-
----
-
-## Advanced verification *(optional — for developers)*
-
-Two SQL files under `supabase/tests/` go deeper than the anon-key probe in step 2.5. Useful after editing the migration or debugging a deployment. Paste each into the Supabase SQL editor in turn:
-
-- **`supabase/tests/verify.sql`** — asserts all tables, indexes, RLS flags, policies, and the `role` check constraint are present and shaped correctly. On success prints `===== ALL VERIFICATIONS PASSED =====`.
-- **`supabase/tests/concurrent_lock_test.sql`** — proves the atomic claim semantics by inserting the same `ticket_id` twice and asserting the second insert is rejected by the PK unique constraint. Cleans up after itself.
-
-The pytest suite (`py -m pytest`) also includes static-analysis tests of the migration file itself (`tests/test_migration_sql.py`) — no database needed, runs on every CI build.
-
----
-
-## Managing migrations going forward
-
-- Each new schema change lands as `supabase/migrations/NNNN_<slug>.sql`, zero-padded 4 digits, in order.
-- Apply them one at a time in the Supabase SQL editor.
-- Every migration is wrapped in `begin; ... commit;` and uses `if exists` / `if not exists` so re-runs are safe.
-- Never edit an applied migration — add a new file instead.
+The key stops working immediately. No redeploy needed. Next time they try to create a ticket, they'll see "Your write key has been revoked."
 
 ---
 
 ## Troubleshooting
 
-| Problem | Fix |
+| What you see | What to do |
 |---|---|
-| Verify script reports "PostgREST schema cache is cold" / `PGRST002` | Three causes, check in order: **(1)** Data API is disabled — go to **Project Settings → API → Data API** and toggle **Enable Data API** on, make sure `public` is in the schema list, Save. New Supabase projects default to off. **(2)** Project is paused (free tier auto-pauses after ~1 week) — click **Restore** on the project card. **(3)** Project is still provisioning — wait 1–2 minutes |
-| Board shows but no lock info | Check `change-mate-config.json` has `supabase_url` + `supabase_publishable_key` filled in |
-| GitHub Actions board build fails | Check repo secrets `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set |
-| SQL editor says "permission denied" running the migration | You're using the anon key. Use the SQL editor in the Supabase dashboard — it runs as service role |
-| Re-running `0001_initial.sql` throws errors | The script should be idempotent. Capture the exact error and file an issue |
+| `PGRST002` error in verify script | The Data API is off. Go to Supabase → **Settings → API → Data API** → turn it **ON** → Save. If the project is paused (free tier), click **Restore** on the project card. |
+| Board loads but no live indicator | Check that `supabase_url` and `supabase_publishable_key` are filled in correctly in `change-mate-config.json`. |
+| Add Story says "Network error" | The cm-write function isn't deployed. Go back to step 3.4. |
+| Add Story says "Invalid write key" | The key you entered doesn't match any key in the database. Check that you registered it in step 3.5. Copy-paste it exactly — no extra spaces. |
+| Add Story says "write key revoked" | Your key was revoked by an admin. Ask them for a new one, or create a new key yourself (step 3.5). |
+| GitHub Actions board build fails | Check that `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set as repo secrets (step 2.4). |
+| SQL editor says "permission denied" | You're probably using the anon key somewhere. The SQL editor in the Supabase dashboard runs as admin — use that. |
+| Everything was working, now nothing loads | Free-tier Supabase projects pause after ~1 week of inactivity. Go to your Supabase dashboard and click **Restore**. |
+
+---
+
+## For developers
+
+### Running tests
+
+```bash
+py -m pytest -v
+```
+
+### Applying future migrations
+
+When new `supabase/migrations/NNNN_*.sql` files appear in the repo, apply them one at a time in the Supabase SQL editor. Each migration is safe to re-run.
+
+### Supabase verification SQL
+
+Two deeper test scripts live in `supabase/tests/`:
+
+- `verify.sql` — checks all tables, indexes, RLS flags, and policies
+- `concurrent_lock_test.sql` — proves the atomic lock claim works correctly
+
+Paste each into the SQL editor to run them. They clean up after themselves.
