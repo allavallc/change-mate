@@ -139,6 +139,150 @@ If you see `[FAIL]` on any line, re-apply `supabase/migrations/0001_initial.sql`
 
 Setup is complete. The board now reads Supabase for live lock state and ticket event history.
 
+### Step 2.6 — Deploy the cm-write Edge Function *(optional — needed for Add Story)*
+
+The `cm-write` Edge Function lets the board (and any authorised client) create new tickets by calling a single HTTP endpoint. It validates the payload, claims the next CM-ID from a Postgres sequence, commits the ticket markdown file to your GitHub repo, and logs the event to `ticket_events`.
+
+You need:
+- **Supabase CLI** installed
+- A **GitHub Personal Access Token** (fine-grained PAT) with `contents:write` on this repo
+- The migration from step 2.2 already applied
+
+#### 2.6.1 — Install the Supabase CLI
+
+**Windows (PowerShell):**
+```powershell
+npm install -g supabase
+```
+
+**macOS / Linux:**
+```bash
+npm install -g supabase
+```
+
+> If you don't use npm, see [supabase.com/docs/guides/cli/getting-started](https://supabase.com/docs/guides/cli/getting-started) for other install methods.
+
+#### 2.6.2 — Link your project
+
+```bash
+supabase login
+supabase link --project-ref <your-project-ref>
+```
+
+Your project ref is the subdomain in your Supabase URL. If your URL is `https://abcdefg.supabase.co`, the ref is `abcdefg`.
+
+#### 2.6.3 — Apply migration 0002 *(if you haven't already)*
+
+Open the Supabase SQL editor, paste the contents of `supabase/migrations/0002_ticket_id_sequence.sql`, and click Run. This creates the `ticket_id_seq` sequence and the `claim_ticket_id()` function used by cm-write.
+
+Verify it worked:
+```sql
+select public.claim_ticket_id();
+```
+Should return the next available CM-ID number. (Each call advances the sequence — that's expected.)
+
+#### 2.6.4 — Create a GitHub Personal Access Token
+
+1. Go to [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) (fine-grained tokens).
+2. Click **Generate new token**.
+3. Fill in:
+   - **Token name**: `change-mate-cm-write`
+   - **Expiration**: 90 days (or longer — you'll rotate it later)
+   - **Repository access**: select **Only select repositories** → pick this repo
+   - **Permissions → Repository permissions → Contents**: set to **Read and write**
+4. Click **Generate token** and copy it immediately — you won't see it again.
+
+#### 2.6.5 — Set secrets and deploy
+
+```bash
+supabase secrets set GITHUB_PAT=ghp_your_token_here
+supabase secrets set GITHUB_OWNER=your-github-username
+supabase secrets set GITHUB_REPO=your-repo-name
+supabase functions deploy cm-write
+```
+
+> Optional: if your default branch isn't `main`, also set `GITHUB_BRANCH=your-branch`.
+
+#### 2.6.6 — Generate a write key
+
+A write key is a secret string that authorises a person or agent to create tickets. Each user gets their own key. The key itself is never stored — only its SHA-256 hash goes into the database.
+
+Pick a random key (or make one up — anything works as long as it's unique and secret):
+
+```bash
+# Generate a random key (macOS/Linux)
+openssl rand -hex 32
+
+# Or on Windows PowerShell
+-join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })
+```
+
+Save the key somewhere safe (password manager). Then insert the hash into Supabase. Open the SQL editor and run:
+
+```sql
+insert into public.write_keys (key_hash, label, role)
+values (
+  encode(sha256(convert_to('PASTE_YOUR_KEY_HERE', 'UTF8')), 'hex'),
+  'Your Name',
+  'human'
+);
+```
+
+Replace `PASTE_YOUR_KEY_HERE` with your actual key, and `Your Name` with a label that identifies you.
+
+To verify it's there:
+```sql
+select label, role, created_at from public.write_keys where revoked_at is null;
+```
+
+#### 2.6.7 — Smoke test
+
+```bash
+curl -s -X POST \
+  https://<your-project-ref>.supabase.co/functions/v1/cm-write \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-anon-key>" \
+  -d '{
+    "write_key": "PASTE_YOUR_KEY_HERE",
+    "payload": {
+      "title": "Test ticket from curl",
+      "goal": "Verify cm-write works end to end.",
+      "done_when": "This ticket appears in the repo.",
+      "priority": "Low",
+      "effort": "XS"
+    }
+  }'
+```
+
+Expected response (status 200):
+```json
+{
+  "phase": 2,
+  "ticket_id": "CM-0XX",
+  "file_path": "change-mate/backlog/CM-0XX-1234567890.md",
+  "actor": "Your Name",
+  "github_created": true,
+  "commit_sha": "abc123...",
+  "file_sha": "def456...",
+  "html_url": "https://github.com/...",
+  "audit_logged": true
+}
+```
+
+Check your repo — you should see a new file in `change-mate/backlog/`. Delete the test ticket and its commit if you don't want to keep it.
+
+#### Revoking a write key
+
+If a key is compromised, revoke it immediately:
+
+```sql
+update public.write_keys
+set revoked_at = now()
+where label = 'The Label You Used';
+```
+
+The key stops working instantly — no redeploy needed.
+
 ---
 
 ## Advanced verification *(optional — for developers)*
