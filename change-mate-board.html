@@ -578,17 +578,18 @@ var D = {
       "goal": "Board cards should display which agent or person is currently working on a ticket, using the `locks` table as the source of truth. When an agent claims a ticket (inserts a row into `locks`), the board should show their name on the card in real time.",
       "why": "Right now you can't tell who's working on what just by looking at the board. In a multi-agent setup where several Claude instances are working in parallel, this visibility is critical \u2014 it prevents duplicate work and lets the human see at a glance what's happening.",
       "done_when": [
-        "On board load, query the `locks` table and overlay the active agent name on any card that has a lock",
+        "On board load, query the `locks` table and overlay the active agent indicator on any card that has a lock",
         "When a lock is acquired or released, the board updates in real time (via Supabase broadcast or polling)",
-        "The agent name is visually distinct from the static \"Assigned to\" field \u2014 e.g. a small live indicator + name badge on the card",
-        "Cards with active locks show a subtle visual differentiation (e.g. a colored left border or glow) so they stand out at a glance",
-        "Works correctly when multiple agents are working simultaneously"
+        "Active agent appears as a small crab icon (\ud83e\udd80) with a unique number or short name next to it \u2014 visually distinct from the static \"Assigned to\" field",
+        "Each agent/person picks their own name when they first enter their write key (e.g. \"\ud83e\udd80 crabFather\", \"\ud83e\udd80 Ada\") \u2014 the name is stored in localStorage alongside the key",
+        "Cards with active locks show a subtle visual differentiation (e.g. a colored left border or glow) so they stand out",
+        "Works correctly when multiple agents are working simultaneously \u2014 multiple crabs on separate cards"
       ],
-      "desired_output": "A board where you can see \"Agent X is working on CM-005\" without clicking into the card, updated live as agents pick up and release tickets.",
+      "desired_output": "A board where you can see a \ud83e\udd80 with a name on a card and instantly know which agent is working on it, updated live as agents pick up and release tickets.",
       "success_signals": "- Opening the board while an agent is mid-task shows their name on the correct card\n- Lock release (agent finishes) removes the indicator within seconds\n- Multiple simultaneous agents each show on their respective cards",
       "failure_signals": "- Stale lock indicators that persist after an agent finishes\n- Lock query failing silently and showing no indicators at all\n- Performance degradation from polling the locks table too aggressively",
       "tests": "- Manual QA: start a task in one session, verify the board shows the lock\n- Manual QA: complete the task, verify the indicator disappears\n- Verify `locks` table RLS allows anon SELECT (currently it doesn't \u2014 may need a policy addition)",
-      "notes": "**RLS gap**: the `locks` table currently has no SELECT policy for anon/authenticated \u2014 it's invisible to the board's anon key. This ticket needs to add a read-only policy: `CREATE POLICY locks_select_all ON public.locks FOR SELECT TO anon, authenticated USING (true);` plus `GRANT SELECT ON public.locks TO anon, authenticated;`. This is safe because lock data (ticket_id + agent name + timestamp) is not sensitive.\n\n**Real-time options**: (a) Supabase Realtime `postgres_changes` on the `locks` table (requires Realtime enabled on the table), or (b) broadcast events from the Edge Function that acquires/releases locks (if one exists), or (c) poll on an interval. Option (a) is cleanest if Realtime is enabled.\n\n**Naming agents**: the `agent` field in `locks` is a free-text string set when the lock is claimed. Agents should use a descriptive name (e.g. \"claude-session-abc\" or a human-readable label from the write key). The display on the card can truncate or abbreviate long names.",
+      "notes": "**RLS gap**: the `locks` table currently has no SELECT policy for anon/authenticated \u2014 it's invisible to the board's anon key. This ticket needs to add a read-only policy: `CREATE POLICY locks_select_all ON public.locks FOR SELECT TO anon, authenticated USING (true);` plus `GRANT SELECT ON public.locks TO anon, authenticated;`. This is safe because lock data (ticket_id + agent name + timestamp) is not sensitive.\n\n**Real-time options**: (a) Supabase Realtime `postgres_changes` on the `locks` table (requires Realtime enabled on the table), or (b) broadcast events from the Edge Function that acquires/releases locks (if one exists), or (c) poll on an interval. Option (a) is cleanest if Realtime is enabled.\n\n**Crab identity**: the agent/person picks their own name when entering their write key (stored as `cm_agent_name` in localStorage). The crab + name badge (\"\ud83e\udd80 crabFather\") sits in the top-right of the card face, visible without expanding. The name is passed to the `locks` table `agent` field when a lock is claimed, so the board can display it on any browser.\n\n**Color coding**: each crab gets a deterministic accent color derived from its name (pick from a small palette of 8\u201310 distinct colors). The card's left border uses the same color so you can scan the board and instantly group work by agent.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -852,7 +853,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-16T15:04:12.168923+00:00"
+  "generated": "2026-04-16T15:06:19.401878+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var BOARD_MODE = "public-write";
@@ -1054,23 +1055,31 @@ function closeModal() {
 function getWriteKey() { return localStorage.getItem('cm_write_key') || ''; }
 function setWriteKey(k) { localStorage.setItem('cm_write_key', k); }
 function clearWriteKey() { localStorage.removeItem('cm_write_key'); }
+function getAgentName() { return localStorage.getItem('cm_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('cm_agent_name', n); }
 
 function promptWriteKey(onSuccess, errorMsg) {
   var modal = document.getElementById('key-modal');
-  var input = document.getElementById('k-key');
+  var nameInput = document.getElementById('k-name');
+  var keyInput = document.getElementById('k-key');
   var err = document.getElementById('k-error');
-  input.value = '';
+  nameInput.value = getAgentName();
+  keyInput.value = '';
   if (errorMsg) { err.textContent = errorMsg; err.style.display = 'block'; }
   else { err.style.display = 'none'; }
   modal.style.display = 'flex';
   modal._onSuccess = onSuccess;
-  setTimeout(function() { input.focus(); }, 50);
+  setTimeout(function() { (getAgentName() ? keyInput : nameInput).focus(); }, 50);
 }
 
 function submitWriteKey() {
-  var input = document.getElementById('k-key');
-  var key = input.value.trim();
-  if (!key) { input.focus(); return; }
+  var nameInput = document.getElementById('k-name');
+  var keyInput = document.getElementById('k-key');
+  var name = nameInput.value.trim();
+  var key = keyInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  if (!key) { keyInput.focus(); return; }
+  setAgentName(name);
   setWriteKey(key);
   var modal = document.getElementById('key-modal');
   var cb = modal._onSuccess;
@@ -1303,11 +1312,15 @@ initBoardMode();
   <div class="modal">
     <div class="modal-title">Enter your write key</div>
     <div class="field">
+      <label>Your name</label>
+      <input type="text" id="k-name" placeholder="e.g. Ada, claude-pr-bot, Agent 7">
+    </div>
+    <div class="field">
       <label>Write key</label>
       <input type="password" id="k-key" placeholder="Paste your write key" onkeydown="if(event.key==='Enter')submitWriteKey()">
     </div>
     <p id="k-error" style="color:#991b1b;font-size:12px;margin-bottom:8px;display:none"></p>
-    <p class="settings-note">Your write key authorises you to create tickets. It is stored in your browser only.</p>
+    <p class="settings-note">Your name shows on the board when you're working on a ticket. Your write key authorises you to create tickets. Both are stored in your browser only.</p>
     <div class="modal-actions">
       <button class="btn" onclick="closeKeyModal()">Cancel</button>
       <button class="btn btn-primary" onclick="submitWriteKey()">Continue</button>
