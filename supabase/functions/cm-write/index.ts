@@ -1,30 +1,17 @@
-// cm-write — Supabase Edge Function for validated ticket writes (CM-006).
+// cm-write — Supabase Edge Function for validated ticket writes.
 //
-// Phase 2: full end-to-end flow.
-//   1. Parse POST body.
-//   2. Authenticate: SHA-256(write_key) looked up in write_keys; honour revoked_at.
+// Auth: caller sends their GitHub token. We verify they have push access to
+// the repo. No write_keys table, no SHA-256 hashing — GitHub IS the auth layer.
+//
+// Flow:
+//   1. Parse POST body (github_token + actor_name + payload).
+//   2. Verify the token has push access to GITHUB_OWNER/GITHUB_REPO.
 //   3. Validate payload.
-//   4. Atomically claim the next CM-ID via the claim_ticket_id() RPC.
+//   4. Claim next CM-ID via claim_ticket_id() RPC.
 //   5. Render markdown.
-//   6. PUT the file into the configured GitHub repo (Contents API).
-//   7. Insert a ticket_events row recording the create.
-//   8. Return 200 with ticket_id + file_path + commit/file SHA.
-//
-// Failure semantics:
-//   - GitHub call fails → no ticket_events row written; CM-ID is wasted (sequence
-//     gaps are fine). Map the github error to an HTTP status the client can act on.
-//   - GitHub succeeds but ticket_events insert fails → log a warning and still
-//     return 200. The user's ticket exists in the repo; the audit row is
-//     reconstructible from GH commit history and shouldn't block the response.
-//
-// Error contract:
-//   401  missing or invalid write_key
-//   403  write_key is revoked
-//   405  method other than POST
-//   422  invalid JSON body or invalid payload
-//   500  internal failure (lookup error, RPC error, GitHub auth/conflict)
-//   502  GitHub network or upstream server error
-//   503  GitHub rate limited
+//   6. Commit file to GitHub (using the FUNCTION's PAT, not the user's).
+//   7. Insert ticket_events audit row.
+//   8. Broadcast for real-time board updates.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { validate, type TicketPayload } from "./validate.ts";
@@ -55,12 +42,34 @@ function jsonResponse(status: number, body: JsonObject): Response {
   });
 }
 
-export async function sha256Hex(text: string): Promise<string> {
-  const buf = new TextEncoder().encode(text);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+export async function verifyGithubAccess(
+  token: string,
+  owner: string,
+  repo: string,
+  fetchImpl: typeof fetch = globalThis.fetch,
+): Promise<{ ok: boolean; login?: string; error?: string }> {
+  try {
+    const res = await fetchImpl(
+      `https://api.github.com/repos/${owner}/${repo}`,
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: "application/vnd.github+json",
+          "user-agent": "change-mate-cm-write",
+        },
+      },
+    );
+    if (res.status === 401) return { ok: false, error: "invalid github token" };
+    if (res.status === 403) return { ok: false, error: "github token lacks repo access" };
+    if (res.status === 404) return { ok: false, error: "repo not found or no access" };
+    if (!res.ok) return { ok: false, error: `github returned ${res.status}` };
+    const data = await res.json();
+    const perms = data.permissions ?? {};
+    if (!perms.push) return { ok: false, error: "token does not have push access" };
+    return { ok: true, login: data.owner?.login };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 function mapGithubError(err: GithubResult & { ok: false }): Response {
@@ -85,7 +94,6 @@ export type Deps = {
   now?: Date;
 };
 
-// Exported so _test.ts can drive it with mocked Supabase + fetch.
 export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -106,25 +114,31 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   }
   const body = raw as JsonObject;
 
-  const writeKey = body.write_key;
-  if (typeof writeKey !== "string" || writeKey.length === 0) {
-    return jsonResponse(401, { error: "write_key is required" });
+  const githubToken = body.github_token;
+  if (typeof githubToken !== "string" || githubToken.length === 0) {
+    return jsonResponse(401, { error: "github_token is required" });
   }
+
+  const actorName = typeof body.actor_name === "string" ? body.actor_name.trim() : "";
 
   const validation = validate(body.payload);
   if (!validation.ok) return jsonResponse(422, { error: validation.error });
 
-  const keyHash = await sha256Hex(writeKey);
-  const { data: keyRow, error: keyErr } = await deps.supa
-    .from("write_keys")
-    .select("label, role, revoked_at")
-    .eq("key_hash", keyHash)
-    .maybeSingle();
+  const cfg: GithubConfig = deps.githubConfig ?? {
+    pat: GITHUB_PAT,
+    owner: GITHUB_OWNER,
+    repo: GITHUB_REPO,
+    branch: GITHUB_BRANCH,
+  };
 
-  if (keyErr) return jsonResponse(500, { error: "auth lookup failed" });
-  if (!keyRow) return jsonResponse(401, { error: "invalid write key" });
-  if (keyRow.revoked_at !== null) {
-    return jsonResponse(403, { error: "write key revoked" });
+  const auth = await verifyGithubAccess(
+    githubToken as string,
+    cfg.owner,
+    cfg.repo,
+    deps.fetchImpl,
+  );
+  if (!auth.ok) {
+    return jsonResponse(403, { error: auth.error ?? "access denied" });
   }
 
   const { data: claimed, error: claimErr } = await deps.supa.rpc("claim_ticket_id");
@@ -143,12 +157,6 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     deps.now,
   );
 
-  const cfg: GithubConfig = deps.githubConfig ?? {
-    pat: GITHUB_PAT,
-    owner: GITHUB_OWNER,
-    repo: GITHUB_REPO,
-    branch: GITHUB_BRANCH,
-  };
   const commitMessage = `${rendered.ticket_id}: ${(validation.payload as TicketPayload).title}`;
   const ghResult = await commitFile(
     cfg,
@@ -162,13 +170,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return mapGithubError(ghResult);
   }
 
-  // Audit insert. Failure here does not unwind the GitHub commit; we log and
-  // still return success so the user knows their ticket exists.
+  const actor = actorName || auth.login || "unknown";
+
   const { error: auditErr } = await deps.supa.from("ticket_events").insert({
     ticket_id: rendered.ticket_id,
     from_status: null,
     to_status: "open",
-    actor: keyRow.label,
+    actor,
   });
   if (auditErr) {
     console.error(
@@ -177,7 +185,6 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     );
   }
 
-  // Broadcast so any open board picks up the new ticket in real time.
   try {
     const channel = deps.supa.channel("change-mate");
     await channel.send({
@@ -195,10 +202,9 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   }
 
   return jsonResponse(200, {
-    phase: 2,
     ticket_id: rendered.ticket_id,
     file_path: rendered.file_path,
-    actor: keyRow.label,
+    actor,
     github_created: true,
     commit_sha: ghResult.commit_sha,
     file_sha: ghResult.file_sha,
