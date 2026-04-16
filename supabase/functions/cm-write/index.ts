@@ -177,6 +177,23 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     );
   }
 
+  // Broadcast so any open board picks up the new ticket in real time.
+  try {
+    const channel = deps.supa.channel("change-mate");
+    await channel.send({
+      type: "broadcast",
+      event: "ticket_updated",
+      payload: {
+        ticket_id: rendered.ticket_id,
+        to_status: "open",
+        title: (validation.payload as TicketPayload).title,
+      },
+    });
+    await deps.supa.removeChannel(channel);
+  } catch (e) {
+    console.error(`[cm-write] broadcast failed for ${rendered.ticket_id}:`, e);
+  }
+
   return jsonResponse(200, {
     phase: 2,
     ticket_id: rendered.ticket_id,
