@@ -472,6 +472,19 @@ Deno.test("commitFile base64-encodes UTF-8 content correctly", async () => {
 // handle — HTTP orchestration (Phase 1 tests still valid)
 // ========================================
 
+Deno.test("handle returns 204 with CORS headers on OPTIONS", async () => {
+  const req = new Request("http://local/cm-write", { method: "OPTIONS" });
+  const r = await handle(req, deps(stubSupabase({})));
+  assertEquals(r.status, 204);
+  assertEquals(r.headers.get("access-control-allow-origin"), "*");
+  assertEquals(r.headers.get("access-control-allow-methods"), "POST, OPTIONS");
+});
+
+Deno.test("handle includes CORS headers on POST responses", async () => {
+  const r = await handle(post({ payload: {} }), deps(stubSupabase({})));
+  assertEquals(r.headers.get("access-control-allow-origin"), "*");
+});
+
 Deno.test("handle rejects non-POST", async () => {
   const req = new Request("http://local/cm-write", { method: "GET" });
   const r = await handle(req, deps(stubSupabase({})));

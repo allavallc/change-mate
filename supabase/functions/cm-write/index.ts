@@ -42,10 +42,16 @@ const GITHUB_OWNER = Deno.env.get("GITHUB_OWNER") ?? "";
 const GITHUB_REPO = Deno.env.get("GITHUB_REPO") ?? "";
 const GITHUB_BRANCH = Deno.env.get("GITHUB_BRANCH") ?? undefined;
 
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-allow-headers": "content-type, authorization, x-client-info, apikey",
+};
+
 function jsonResponse(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: { "content-type": "application/json; charset=utf-8", ...CORS_HEADERS },
   });
 }
 
@@ -81,6 +87,9 @@ export type Deps = {
 
 // Exported so _test.ts can drive it with mocked Supabase + fetch.
 export async function handle(req: Request, deps: Deps): Promise<Response> {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
   if (req.method !== "POST") {
     return jsonResponse(405, { error: "method not allowed" });
   }
