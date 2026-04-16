@@ -17,7 +17,8 @@ Authoritative workflow spec: `CHANGEMATE.md`. Read it before touching tickets.
 
 - `change-mate-config.json` holds `gist_id`, `project_name`, `supabase_url`, `supabase_publishable_key`
 - GitHub Actions secrets: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
-- Live Gist lock registry (legacy) requires `CHANGEMATE_GITHUB_TOKEN` env var — being replaced in feature-set-001 (Supabase upgrade)
+- Auth is GitHub — users authenticate with their own GitHub token (fine-grained PAT with `contents:write` on the repo). The cm-write Edge Function verifies push access via GitHub API. No separate key/password system.
+- Supabase secrets for cm-write: `GITHUB_PAT`, `GITHUB_OWNER`, `GITHUB_REPO` (set once via `supabase secrets set`)
 
 ## Code layout
 

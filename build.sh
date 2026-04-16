@@ -31,7 +31,6 @@ _cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
 SUPABASE_URL = os.environ.get('SUPABASE_URL') or _cfg.get('supabase_url', '')
 SUPABASE_PUBLISHABLE_KEY = os.environ.get('SUPABASE_PUBLISHABLE_KEY') or _cfg.get('supabase_publishable_key', '')
 PROJECT_NAME = _cfg.get('project_name', '')
-BOARD_MODE = _cfg.get('board_mode', 'public-write')
 
 
 def detect_github_repo():
@@ -134,7 +133,6 @@ cm_config_json = json.dumps({
     "supabase_url": SUPABASE_URL,
     "supabase_publishable_key": SUPABASE_PUBLISHABLE_KEY,
     "project_name": PROJECT_NAME,
-    "board_mode": BOARD_MODE,
 }, indent=2)
 
 HTML = """<!DOCTYPE html>
@@ -552,7 +550,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 <script>
 var D = PLACEHOLDER_JSON;
 var DEFAULT_REPO = PLACEHOLDER_REPO;
-var BOARD_MODE = PLACEHOLDER_BOARD_MODE;
 var CM_WRITE_URL = PLACEHOLDER_CM_WRITE_URL;
 var CM_ANON_KEY = PLACEHOLDER_CM_ANON_KEY;
 
@@ -1045,7 +1042,6 @@ _cm_write_url = (SUPABASE_URL.rstrip('/') + '/functions/v1/cm-write') if SUPABAS
 output = (HTML
     .replace("PLACEHOLDER_JSON", data_json)
     .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
-    .replace("PLACEHOLDER_BOARD_MODE", json.dumps(BOARD_MODE))
     .replace("PLACEHOLDER_CM_WRITE_URL", json.dumps(_cm_write_url))
     .replace("PLACEHOLDER_CM_ANON_KEY", json.dumps(SUPABASE_PUBLISHABLE_KEY))
     .replace("PLACEHOLDER_CONFIG", cm_config_json))
