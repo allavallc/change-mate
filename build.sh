@@ -31,6 +31,7 @@ _cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
 SUPABASE_URL = os.environ.get('SUPABASE_URL') or _cfg.get('supabase_url', '')
 SUPABASE_PUBLISHABLE_KEY = os.environ.get('SUPABASE_PUBLISHABLE_KEY') or _cfg.get('supabase_publishable_key', '')
 PROJECT_NAME = _cfg.get('project_name', '')
+BOARD_MODE = _cfg.get('board_mode', 'public-write')
 
 
 def detect_github_repo():
@@ -133,6 +134,7 @@ cm_config_json = json.dumps({
     "supabase_url": SUPABASE_URL,
     "supabase_publishable_key": SUPABASE_PUBLISHABLE_KEY,
     "project_name": PROJECT_NAME,
+    "board_mode": BOARD_MODE,
 }, indent=2)
 
 HTML = """<!DOCTYPE html>
@@ -381,26 +383,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   transition: border-color 100ms;
 }
 .btn-new:hover { border-color: var(--text2); }
-.btn-github {
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
-  background: var(--surface);
-  color: var(--text2);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: border-color 100ms;
-}
-.btn-github:hover { border-color: var(--text2); }
-.gh-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 200ms; }
-.gh-dot.connected { background: #22c55e; }
 .settings-note { font-size: 11px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
-.settings-note code { font-family: 'SFMono-Regular', Consolas, monospace; background: var(--surface); padding: 1px 4px; border-radius: 3px; border: 1px solid var(--border); }
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -492,6 +475,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 }
 .cm-moving { animation: cm-pulse 600ms ease; }
 .cm-new { animation: cm-fadein 300ms ease; }
+body.cm-gated main, body.cm-gated .header-right { visibility: hidden; }
+#key-modal .modal { max-width: 380px; }
 </style>
 </head>
 <body>
@@ -505,10 +490,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   </div>
   <div class="header-right">
     <span class="header-meta" id="gen-time"></span>
-    <button class="btn-github" onclick="openSettings()">
-      <span class="gh-dot" id="gh-dot"></span>GitHub
-    </button>
-    <button class="btn-new" onclick="openModal()">+ Add story</button>
+    <button class="btn-new" id="btn-add-story" onclick="openModal()">+ Add story</button>
   </div>
 </header>
 <main>
@@ -548,6 +530,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 <script>
 var D = PLACEHOLDER_JSON;
 var DEFAULT_REPO = PLACEHOLDER_REPO;
+var BOARD_MODE = PLACEHOLDER_BOARD_MODE;
+var CM_WRITE_URL = PLACEHOLDER_CM_WRITE_URL;
+var CM_ANON_KEY = PLACEHOLDER_CM_ANON_KEY;
 
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -741,85 +726,93 @@ function closeModal() {
   document.getElementById('f-featureset').value = '';
 }
 
-function getNextId() {
-  var nums = D.tickets.map(function(t) {
-    var m = (t.id || '').match(/^CM-(\\d+)$/);
-    return m ? parseInt(m[1], 10) : 0;
-  });
-  var max = nums.length ? Math.max.apply(null, nums) : 0;
-  var n = String(max + 1);
-  while (n.length < 3) n = '0' + n;
-  return 'CM-' + n;
+function getWriteKey() { return localStorage.getItem('cm_write_key') || ''; }
+function setWriteKey(k) { localStorage.setItem('cm_write_key', k); }
+function clearWriteKey() { localStorage.removeItem('cm_write_key'); }
+
+function promptWriteKey(onSuccess, errorMsg) {
+  var modal = document.getElementById('key-modal');
+  var input = document.getElementById('k-key');
+  var err = document.getElementById('k-error');
+  input.value = '';
+  if (errorMsg) { err.textContent = errorMsg; err.style.display = 'block'; }
+  else { err.style.display = 'none'; }
+  modal.style.display = 'flex';
+  modal._onSuccess = onSuccess;
+  setTimeout(function() { input.focus(); }, 50);
+}
+
+function submitWriteKey() {
+  var input = document.getElementById('k-key');
+  var key = input.value.trim();
+  if (!key) { input.focus(); return; }
+  setWriteKey(key);
+  var modal = document.getElementById('key-modal');
+  var cb = modal._onSuccess;
+  modal.style.display = 'none';
+  if (cb) cb(key);
+}
+
+function closeKeyModal() {
+  var modal = document.getElementById('key-modal');
+  if (BOARD_MODE === 'private' && !getWriteKey()) return;
+  modal.style.display = 'none';
 }
 
 async function createStory() {
   var title = document.getElementById('f-title').value.trim();
   if (!title) { document.getElementById('f-title').focus(); return; }
-  var id       = getNextId();
-  var ts       = Math.floor(Date.now() / 1000);
-  var filename = id + '-' + ts + '.md';
   var priority = document.getElementById('f-priority').value;
   var effort   = document.getElementById('f-effort').value;
-  var assigned = document.getElementById('f-assigned').value.trim();
-  var goal     = document.getElementById('f-goal').value.trim();
-  var why      = document.getElementById('f-why').value.trim();
-  var doneRaw  = document.getElementById('f-done').value.trim();
-  var notes    = document.getElementById('f-notes').value.trim();
-  var fsId     = document.getElementById('f-featureset').value;
-  var lines = ['# [' + id + '] ' + title, ''];
-  lines.push('- **Status**: open');
-  if (priority) lines.push('- **Priority**: ' + priority);
-  if (effort)   lines.push('- **Effort**: ' + effort);
-  lines.push('- **Assigned to**: ' + (assigned || ''));
-  lines.push('- **Started**: ');
-  lines.push('- **Completed**: ');
-  lines.push('', '## Goal', goal || '', '', '## Why', why || '', '', '## Done when');
-  if (doneRaw) {
-    doneRaw.split('\\n').forEach(function(l) { var t = l.trim(); if (t) lines.push('- ' + t); });
-  }
-  lines.push('', '## Notes', notes || '', '');
-  var content = lines.join('\\n');
-  var fsNote = '';
+  if (!priority || !effort) { showToast('Priority and effort are required.'); return; }
+
+  var key = getWriteKey();
+  if (!key) { promptWriteKey(function() { createStory(); }); return; }
+
+  var goal    = document.getElementById('f-goal').value.trim();
+  var why     = document.getElementById('f-why').value.trim();
+  var doneRaw = document.getElementById('f-done').value.trim();
+  var notes   = document.getElementById('f-notes').value.trim();
+  var fsId    = document.getElementById('f-featureset').value;
+
+  var payload = { title: title, goal: goal || 'TBD', done_when: doneRaw || 'TBD', priority: priority, effort: effort };
+  if (why) payload.why = why;
+  if (notes) payload.notes = notes;
   if (fsId) {
     var matchedFs = D.feature_sets.filter(function(fs) { return fs.id === fsId; })[0];
-    if (matchedFs) fsNote = '\\nAlso add ' + id + ' to the tickets list in ' + fsId + '.md';
+    if (matchedFs) payload.feature_set = matchedFs.name;
   }
-  closeModal();
-  var token = localStorage.getItem('cm_github_token');
-  var repo  = localStorage.getItem('cm_github_repo') || DEFAULT_REPO;
-  if (token && repo) {
-    try {
-      await createViaGitHub('change-mate/backlog/' + filename, content, id + ': add to backlog', token, repo);
-      showToast(filename + ' saved to backlog.' + fsNote);
-    } catch(e) {
-      showToast('GitHub error: ' + e.message);
-    }
-  } else {
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([content], {type: 'text/plain'}));
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    showToast(filename + ' downloaded — move to change-mate/backlog/ and run build.sh. Configure GitHub to save directly.' + fsNote);
-  }
-}
 
-async function createViaGitHub(path, content, message, token, repo) {
-  var encoded = btoa(unescape(encodeURIComponent(content)));
-  var res = await fetch('https://api.github.com/repos/' + repo + '/contents/' + path, {
-    method: 'PUT',
-    headers: {
-      'Authorization': 'token ' + token,
-      'Content-Type': 'application/json',
-      'Accept': 'application/vnd.github.v3+json'
-    },
-    body: JSON.stringify({message: message, content: encoded})
-  });
-  if (!res.ok) {
-    var err = await res.json().catch(function() { return {}; });
-    throw new Error(err.message || ('HTTP ' + res.status));
+  var btn = document.querySelector('#modal .btn-primary');
+  var origText = btn.textContent;
+  btn.textContent = 'Creating...';
+  btn.disabled = true;
+
+  try {
+    var res = await fetch(CM_WRITE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CM_ANON_KEY },
+      body: JSON.stringify({ write_key: key, payload: payload })
+    });
+    var data = await res.json().catch(function() { return {}; });
+
+    if (res.status === 401 || res.status === 403) {
+      clearWriteKey();
+      closeModal();
+      var msg = res.status === 403 ? 'Your write key has been revoked. Contact your admin for a new one.' : 'Invalid write key. Please try again.';
+      promptWriteKey(function() { openModal(); }, msg);
+      return;
+    }
+    if (!res.ok) { showToast('Error: ' + (data.error || 'HTTP ' + res.status)); return; }
+
+    closeModal();
+    showToast(data.ticket_id + ' created in backlog.');
+  } catch(e) {
+    showToast('Network error: ' + e.message);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
   }
-  return res.json();
 }
 
 var _toastTimer;
@@ -831,41 +824,30 @@ function showToast(msg) {
   _toastTimer = setTimeout(function() { el.classList.remove('show'); }, 5000);
 }
 
-function openSettings() {
-  document.getElementById('s-token').value = localStorage.getItem('cm_github_token') || '';
-  document.getElementById('s-repo').value = localStorage.getItem('cm_github_repo') || DEFAULT_REPO;
-  document.getElementById('settings-modal').style.display = 'flex';
-  setTimeout(function() { document.getElementById('s-token').focus(); }, 50);
-}
-
-function closeSettings() {
-  document.getElementById('settings-modal').style.display = 'none';
-}
-
-function saveSettings() {
-  var token = document.getElementById('s-token').value.trim();
-  var repo  = document.getElementById('s-repo').value.trim();
-  if (token) localStorage.setItem('cm_github_token', token);
-  else localStorage.removeItem('cm_github_token');
-  if (repo) localStorage.setItem('cm_github_repo', repo);
-  else localStorage.removeItem('cm_github_repo');
-  checkGitHubStatus();
-  closeSettings();
-  showToast('GitHub settings saved.');
-}
-
-function checkGitHubStatus() {
-  var dot = document.getElementById('gh-dot');
-  if (!dot) return;
-  if (localStorage.getItem('cm_github_token')) dot.classList.add('connected');
-  else dot.classList.remove('connected');
+function initBoardMode() {
+  var addBtn = document.getElementById('btn-add-story');
+  if (BOARD_MODE === 'public-readonly') {
+    if (addBtn) addBtn.style.display = 'none';
+    return;
+  }
+  if (BOARD_MODE === 'private') {
+    if (!getWriteKey()) {
+      document.body.classList.add('cm-gated');
+      if (addBtn) addBtn.style.display = 'none';
+      promptWriteKey(function() {
+        document.body.classList.remove('cm-gated');
+        if (addBtn) addBtn.style.display = '';
+      });
+      return;
+    }
+  }
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeModal(); closeSettings(); }
+  if (e.key === 'Escape') { closeModal(); closeKeyModal(); }
 });
 
-checkGitHubStatus();
+initBoardMode();
 </script>
 <script id="cm-config" type="application/json">PLACEHOLDER_CONFIG</script>
 <script>
@@ -987,21 +969,18 @@ checkGitHubStatus();
     </div>
   </div>
 </div>
-<div id="settings-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSettings()">
+<div id="key-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeKeyModal()">
   <div class="modal">
-    <div class="modal-title">GitHub settings</div>
+    <div class="modal-title">Enter your write key</div>
     <div class="field">
-      <label>Personal access token</label>
-      <input type="password" id="s-token" placeholder="ghp_...">
+      <label>Write key</label>
+      <input type="password" id="k-key" placeholder="Paste your write key" onkeydown="if(event.key==='Enter')submitWriteKey()">
     </div>
-    <div class="field">
-      <label>Repository</label>
-      <input type="text" id="s-repo" placeholder="owner/repo">
-    </div>
-    <p class="settings-note">Token needs <code>repo</code> scope. Stored in your browser only — never sent anywhere except GitHub's API.</p>
+    <p id="k-error" style="color:#991b1b;font-size:12px;margin-bottom:8px;display:none"></p>
+    <p class="settings-note">Your write key authorises you to create tickets. It is stored in your browser only.</p>
     <div class="modal-actions">
-      <button class="btn" onclick="closeSettings()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+      <button class="btn" onclick="closeKeyModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitWriteKey()">Continue</button>
     </div>
   </div>
 </div>
@@ -1009,9 +988,13 @@ checkGitHubStatus();
 </body>
 </html>"""
 
+_cm_write_url = (SUPABASE_URL.rstrip('/') + '/functions/v1/cm-write') if SUPABASE_URL else ''
 output = (HTML
     .replace("PLACEHOLDER_JSON", data_json)
     .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
+    .replace("PLACEHOLDER_BOARD_MODE", json.dumps(BOARD_MODE))
+    .replace("PLACEHOLDER_CM_WRITE_URL", json.dumps(_cm_write_url))
+    .replace("PLACEHOLDER_CM_ANON_KEY", json.dumps(SUPABASE_PUBLISHABLE_KEY))
     .replace("PLACEHOLDER_CONFIG", cm_config_json))
 Path("change-mate-board.html").write_text(output, encoding="utf-8")
 print("change-mate-board.html updated")
