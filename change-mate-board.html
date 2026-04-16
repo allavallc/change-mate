@@ -575,21 +575,26 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
-      "goal": "Board cards should display which agent or person is currently working on a ticket, using the `locks` table as the source of truth. When an agent claims a ticket (inserts a row into `locks`), the board should show their name on the card in real time.",
-      "why": "Right now you can't tell who's working on what just by looking at the board. In a multi-agent setup where several Claude instances are working in parallel, this visibility is critical \u2014 it prevents duplicate work and lets the human see at a glance what's happening.",
+      "goal": "Board cards should display which agent or person is working on a ticket \u2014 and once assigned, that name stays with the ticket for its entire life (in-progress, done, blocked, not-doing). Two layers: a **permanent assignment** baked into the ticket markdown, and a **live activity indicator** from the locks table.",
+      "why": "Right now you can't tell who's working on what just by looking at the board. In a multi-agent setup where several Claude instances are working in parallel, this visibility is critical \u2014 it prevents duplicate work and lets the human see at a glance what's happening. And when a ticket is done, you should still see who did it.",
       "done_when": [
-        "On board load, query the `locks` table and overlay the active agent indicator on any card that has a lock",
-        "When a lock is acquired or released, the board updates in real time (via Supabase broadcast or polling)",
-        "Active agent appears as a small crab icon (\ud83e\udd80) with a unique number or short name next to it \u2014 visually distinct from the static \"Assigned to\" field",
-        "Each agent/person picks their own name when they first enter their write key (e.g. \"\ud83e\udd80 crabFather\", \"\ud83e\udd80 Ada\") \u2014 the name is stored in localStorage alongside the key",
-        "Cards with active locks show a subtle visual differentiation (e.g. a colored left border or glow) so they stand out",
-        "Works correctly when multiple agents are working simultaneously \u2014 multiple crabs on separate cards"
+        "When a ticket moves to in-progress, the agent/person name is written to the `**Assigned to**` field in the ticket's markdown file (via a GitHub commit, same as cm-write)",
+        "The \ud83e\udd80 + name (e.g. \"\ud83e\udd80 crabFather\") shows on the card face AND in the expanded detail view",
+        "The name persists through every status change \u2014 in-progress, done, blocked, not-doing. It never disappears.",
+        "The `Assigned to` field in the markdown is the source of truth. The board renders it.",
+        "On board load, query the `locks` table and overlay a \"working now\" pulse/glow on cards with active locks",
+        "When a lock is acquired or released, the board updates in real time",
+        "The live indicator is visual only (e.g. a pulsing border or animated \ud83e\udd80) \u2014 distinct from the permanent name badge",
+        "Cards with active locks stand out at a glance",
+        "Works correctly when multiple agents are working simultaneously",
+        "Each agent/person picks their own name when they first enter their write key (stored in localStorage as `cm_agent_name`)",
+        "The name appears as \"\ud83e\udd80 crabFather\" on the card \u2014 the crab icon is the universal agent marker"
       ],
-      "desired_output": "A board where you can see a \ud83e\udd80 with a name on a card and instantly know which agent is working on it, updated live as agents pick up and release tickets.",
-      "success_signals": "- Opening the board while an agent is mid-task shows their name on the correct card\n- Lock release (agent finishes) removes the indicator within seconds\n- Multiple simultaneous agents each show on their respective cards",
-      "failure_signals": "- Stale lock indicators that persist after an agent finishes\n- Lock query failing silently and showing no indicators at all\n- Performance degradation from polling the locks table too aggressively",
-      "tests": "- Manual QA: start a task in one session, verify the board shows the lock\n- Manual QA: complete the task, verify the indicator disappears\n- Verify `locks` table RLS allows anon SELECT (currently it doesn't \u2014 may need a policy addition)",
-      "notes": "**RLS gap**: the `locks` table currently has no SELECT policy for anon/authenticated \u2014 it's invisible to the board's anon key. This ticket needs to add a read-only policy: `CREATE POLICY locks_select_all ON public.locks FOR SELECT TO anon, authenticated USING (true);` plus `GRANT SELECT ON public.locks TO anon, authenticated;`. This is safe because lock data (ticket_id + agent name + timestamp) is not sensitive.\n\n**Real-time options**: (a) Supabase Realtime `postgres_changes` on the `locks` table (requires Realtime enabled on the table), or (b) broadcast events from the Edge Function that acquires/releases locks (if one exists), or (c) poll on an interval. Option (a) is cleanest if Realtime is enabled.\n\n**Crab identity**: the agent/person picks their own name when entering their write key (stored as `cm_agent_name` in localStorage). The crab + name badge (\"\ud83e\udd80 crabFather\") sits in the top-right of the card face, visible without expanding. The name is passed to the `locks` table `agent` field when a lock is claimed, so the board can display it on any browser.\n\n**Color coding**: each crab gets a deterministic accent color derived from its name (pick from a small palette of 8\u201310 distinct colors). The card's left border uses the same color so you can scan the board and instantly group work by agent.",
+      "desired_output": "A board where every in-progress/done/blocked ticket shows \ud83e\udd80 + the name of who worked on it, permanently. Tickets being actively worked on RIGHT NOW also pulse or glow.",
+      "success_signals": "- Move a ticket to in-progress \u2192 the agent name is written to the markdown file and shows on the card\n- Ticket moves to done \u2192 the name is still there\n- Opening the board while an agent is mid-task shows their name + a live activity pulse\n- Lock release removes the pulse but NOT the name",
+      "failure_signals": "- Agent name disappearing when a ticket moves to done\n- Stale live indicators that persist after an agent finishes\n- Lock query failing silently and showing no indicators at all\n- Performance degradation from polling the locks table too aggressively",
+      "tests": "- Manual QA: move a ticket to in-progress \u2192 verify \ud83e\udd80 + name appears on card and in detail\n- Manual QA: move that ticket to done \u2192 verify the name is still there (permanent)\n- Manual QA: while an agent is actively working, verify the live pulse/glow appears\n- Manual QA: after agent finishes, verify pulse stops but name stays\n- Verify `locks` table RLS allows anon SELECT (currently it doesn't \u2014 needs a policy addition)\n- Verify `Assigned to` field in markdown file is updated when ticket moves to in-progress",
+      "notes": "**RLS gap**: the `locks` table currently has no SELECT policy for anon/authenticated \u2014 it's invisible to the board's anon key. This ticket needs to add a read-only policy: `CREATE POLICY locks_select_all ON public.locks FOR SELECT TO anon, authenticated USING (true);` plus `GRANT SELECT ON public.locks TO anon, authenticated;`. This is safe because lock data (ticket_id + agent name + timestamp) is not sensitive.\n\n**Real-time options**: (a) Supabase Realtime `postgres_changes` on the `locks` table (requires Realtime enabled on the table), or (b) broadcast events from the Edge Function that acquires/releases locks (if one exists), or (c) poll on an interval. Option (a) is cleanest if Realtime is enabled.\n\n**Crab identity**: the agent/person picks their own name when entering their write key (stored as `cm_agent_name` in localStorage). The crab + name badge (\"\ud83e\udd80 crabFather\") sits in the top-right of the card face, visible without expanding. When a ticket moves to in-progress, the name is written to the markdown `Assigned to` field (permanent) AND to the `locks` table `agent` field (transient, for live indicator).\n\n**Color coding**: each crab gets a deterministic accent color derived from its name (pick from a small palette of 8\u201310 distinct colors). The card's left border uses the same color so you can scan the board and instantly group work by agent.\n\n**Two-layer display**: the permanent name badge is always visible once assigned (rendered from the `Assigned to` field in the markdown). The live pulse/glow is an overlay that appears only while a lock is active. When the agent finishes and releases the lock, the pulse stops but the name stays.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -853,7 +858,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-16T15:06:19.401878+00:00"
+  "generated": "2026-04-16T15:09:22.713872+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var BOARD_MODE = "public-write";
