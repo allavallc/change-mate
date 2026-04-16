@@ -729,23 +729,31 @@ function closeModal() {
 function getWriteKey() { return localStorage.getItem('cm_write_key') || ''; }
 function setWriteKey(k) { localStorage.setItem('cm_write_key', k); }
 function clearWriteKey() { localStorage.removeItem('cm_write_key'); }
+function getAgentName() { return localStorage.getItem('cm_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('cm_agent_name', n); }
 
 function promptWriteKey(onSuccess, errorMsg) {
   var modal = document.getElementById('key-modal');
-  var input = document.getElementById('k-key');
+  var nameInput = document.getElementById('k-name');
+  var keyInput = document.getElementById('k-key');
   var err = document.getElementById('k-error');
-  input.value = '';
+  nameInput.value = getAgentName();
+  keyInput.value = '';
   if (errorMsg) { err.textContent = errorMsg; err.style.display = 'block'; }
   else { err.style.display = 'none'; }
   modal.style.display = 'flex';
   modal._onSuccess = onSuccess;
-  setTimeout(function() { input.focus(); }, 50);
+  setTimeout(function() { (getAgentName() ? keyInput : nameInput).focus(); }, 50);
 }
 
 function submitWriteKey() {
-  var input = document.getElementById('k-key');
-  var key = input.value.trim();
-  if (!key) { input.focus(); return; }
+  var nameInput = document.getElementById('k-name');
+  var keyInput = document.getElementById('k-key');
+  var name = nameInput.value.trim();
+  var key = keyInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  if (!key) { keyInput.focus(); return; }
+  setAgentName(name);
   setWriteKey(key);
   var modal = document.getElementById('key-modal');
   var cb = modal._onSuccess;
@@ -973,11 +981,15 @@ initBoardMode();
   <div class="modal">
     <div class="modal-title">Enter your write key</div>
     <div class="field">
+      <label>Your name</label>
+      <input type="text" id="k-name" placeholder="e.g. Ada, claude-pr-bot, Agent 7">
+    </div>
+    <div class="field">
       <label>Write key</label>
       <input type="password" id="k-key" placeholder="Paste your write key" onkeydown="if(event.key==='Enter')submitWriteKey()">
     </div>
     <p id="k-error" style="color:#991b1b;font-size:12px;margin-bottom:8px;display:none"></p>
-    <p class="settings-note">Your write key authorises you to create tickets. It is stored in your browser only.</p>
+    <p class="settings-note">Your name shows on the board when you're working on a ticket. Your write key authorises you to create tickets. Both are stored in your browser only.</p>
     <div class="modal-actions">
       <button class="btn" onclick="closeKeyModal()">Cancel</button>
       <button class="btn btn-primary" onclick="submitWriteKey()">Continue</button>
