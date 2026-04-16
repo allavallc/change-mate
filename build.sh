@@ -284,6 +284,27 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 .b-medium   { background: #fef9c3; color: #854d0e; }
 .b-low      { background: #f1f5f9; color: #475569; }
 .b-effort   { background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
+.card-crab {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes cm-active-pulse {
+  0%   { border-color: var(--border); }
+  50%  { border-color: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.3); }
+  100% { border-color: var(--border); }
+}
+.cm-active { animation: cm-active-pulse 2s ease-in-out infinite; }
 .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
 .card-assignee { font-size: 11px; color: var(--muted); }
 .card-fs {
@@ -538,6 +559,18 @@ function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+var CRAB_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899'];
+function crabColor(name) {
+  var h = 0;
+  for (var i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+  return CRAB_COLORS[Math.abs(h) % CRAB_COLORS.length];
+}
+function crabBadge(name) {
+  if (!name) return '';
+  var c = crabColor(name);
+  return '<span class="card-crab" style="border-color:' + c + ';color:' + c + '">\\u{1F980} ' + esc(name) + '</span>';
+}
+
 function priorityBadge(p) {
   var cls = {critical:'b-critical',high:'b-high',medium:'b-medium',low:'b-low'}[(p||'').toLowerCase()];
   return p ? '<span class="badge ' + (cls||'') + '">' + esc(p) + '</span>' : '';
@@ -623,7 +656,7 @@ function cardHTML(t, isRejected) {
   return '<div class="card' + rejClass + '" onclick="toggleCard(this)">'
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
-    + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
+    + '<div class="badges">' + crabBadge(t.assigned_to) + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + fsChip
@@ -870,11 +903,39 @@ initBoardMode();
     handleTicketUpdate(e.payload);
   });
 
+  channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locks' }, function(e) {
+    var row = e.new;
+    if (row && row.ticket_id) setCardActive(row.ticket_id, true);
+  });
+  channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'locks' }, function(e) {
+    var row = e.old;
+    if (row && row.ticket_id) setCardActive(row.ticket_id, false);
+  });
+
   channel.subscribe(function(status) {
     if (status === 'SUBSCRIBED') {
       document.getElementById('cm-live-indicator').style.display = 'flex';
+      client.from('locks').select('ticket_id, agent').then(function(res) {
+        if (res.data) res.data.forEach(function(lock) { setCardActive(lock.ticket_id, true); });
+      });
     }
   });
+
+  function findCard(ticketId) {
+    var found = null;
+    document.querySelectorAll('#view-board .card').forEach(function(card) {
+      var el = card.querySelector('.card-id');
+      if (el && el.textContent.trim() === ticketId) found = card;
+    });
+    return found;
+  }
+
+  function setCardActive(ticketId, active) {
+    var card = findCard(ticketId);
+    if (!card) return;
+    if (active) card.classList.add('cm-active');
+    else card.classList.remove('cm-active');
+  }
 
   function handleTicketUpdate(data) {
     var colMap = {
