@@ -446,40 +446,6 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-011",
-      "title": "Animated forge scenes at column headers",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "L",
-      "feature_set": "feature-set-003-visual-language",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Give each Kanban column a small animated SVG scene in its header showing a blacksmith at the matching stage of work \u2014 raw materials piled up for backlog, hammering on the anvil for in-progress, finished blades on a display rack for done, and so on.",
-      "why": "The board today is visually flat \u2014 text cards in gray columns. A thematic animated scene per column makes work state feel visceral, rewards progress (watching cards move toward the \"done\" rack is satisfying), and gives change-mate a memorable visual identity that stands out from every other Kanban tool.",
-      "done_when": [
-        "Each of the 5 Kanban columns (backlog / in-progress / done / blocked / not-doing) has a custom SVG scene at its header (~200\u00d7200px max)",
-        "Scenes are animated with CSS keyframes only \u2014 no external animation libraries, no sprite sheets",
-        "All five scenes share one cohesive visual style: forge / blacksmith workshop, line-art with muted fills",
-        "Dark mode palette preserves the mood (cooler, dimmer, still readable)",
-        "Animations remain smooth with 50+ tickets rendered across columns",
-        "Scenes degrade gracefully: static SVG renders correctly even if CSS animations fail",
-        "No per-card animation \u2014 cards remain compact and scannable"
-      ],
-      "desired_output": "A visually distinctive board that immediately communicates \"this is a workshop\" \u2014 each column header is a small animated vignette of the blacksmith working in that state. Tickets flowing across the board feel like material moving through a real workflow.",
-      "success_signals": "- First-time visitors notice and comment on the scenes\n- Animations loop smoothly at 60fps in Chrome, Safari, Firefox\n- Dark mode still feels alive (not dead/flat)\n- Board readability is unchanged or improved \u2014 users can still scan and click tickets without distraction\n- The visual identity becomes a reason people share screenshots",
-      "failure_signals": "- Animations distract from reading tickets \u2014 users can't scan cards easily\n- CPU spike with many cards rendered (animations repaint unnecessarily)\n- Scenes look broken, ugly, or pixelated on small screens\n- Scenes fail to render without JavaScript \u2014 should degrade to static SVG\n- Dark mode palette makes scenes muddy or unreadable\n- Scope creep into per-card animations, sprite sheets, or dependency-graph rendering",
-      "tests": "- Manual visual check in Chrome, Safari, Firefox (light + dark mode)\n- Manual responsive check at 560px, 900px, 1280px widths\n- Performance check: render 100 tickets across columns, verify 60fps on a mid-range laptop\n- Accessibility check: `prefers-reduced-motion` media query disables animation loops\n- Build pipeline check: scenes are CSS-only (no JS dependency); board renders on file:// without a server\n- Snapshot or visual regression test on the generated HTML (optional \u2014 flag if worth it)",
-      "notes": "**Design agreed with user**:\n- Theme **C (forge/blacksmith)** \u2014 matches the \"build things\" spirit of a dev tool; tree is generic, bird doesn't map to growth cleanly\n- Ambition level **V1** \u2014 column-header SVG scenes, not per-card animation, not sprite sheets\n- New feature set (feature-set-003-visual-language) \u2014 polish is going to be a recurring stream, keep workflow-hygiene clean\n\n**Scene-by-scene sketch**:\n- **Backlog**: pile of raw ore/ingots on the workshop floor, unlit forge in the background (static \u2014 nothing to animate, raw materials are just *there*)\n- **In progress**: blacksmith at the anvil, hammer lifting and striking on a slow loop (~1.5s), sparks bursting at each strike, flames flickering in the forge\n- **Done**: finished blade/gear on a display rack, slow light shimmer crossing the surface every 4\u20136s\n- **Blocked**: forge gone cold, blacksmith sitting on a barrel scratching his head, tool mid-project on the anvil, slow \"nope\" head-shake every few seconds\n- **Not-doing**: scrap bin outside the workshop with a discarded item tossed in, light dust puff settling on a loop\n\n**Alternatives considered**:\n- V0 (emoji + CSS pulses) \u2014 rejected; too thin to justify the effort, doesn't deliver the \"wow\"\n- V2 (sprite sheet + card-move handoff animations) \u2014 deferred; ship V1 first, verify the concept lands, then decide whether V2 is worth the production cost\n- Per-card animation \u2014 rejected for v1; clutters the card UX and hurts scan-readability\n- Tree / plant theme \u2014 rejected; generic, doesn't match the dev-tool spirit\n- Bird / egg theme \u2014 rejected; \"growth\" doesn't map onto the Kanban stages cleanly\n\n**Follow-on candidates** (if V1 lands well):\n- V2: pixel-art sprite sheets + card-move handoff animations (\"blacksmith picks up the card, slides it onto the anvil\")\n- Feature-set aggregate view: show each feature-set as a \"forge\" with N forged items\n- Staleness effect: in-progress card sitting for >7 days gets a subtle \"aging\" tint\n- Sound effects on card-move events (optional, off by default)\n\n**Sequencing**: opens feature-set-003. Low dependency on other work \u2014 could land any time. Defer until feature-set-001 (Supabase upgrade) is underway or done so mechanics work isn't delayed by polish work.\n\n**Out of scope for this ticket**:\n- Per-card animations (defer to V2)\n- Sprite-sheet production (defer to V2)\n- Sound design (defer)\n- Theme switcher beyond light/dark (separate ticket if desired)",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "done",
@@ -816,6 +782,40 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-011",
+      "title": "Animated forge scenes at column headers",
+      "status": "not doing",
+      "priority": "Medium",
+      "effort": "L",
+      "feature_set": "feature-set-003-visual-language",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Give each Kanban column a small animated SVG scene in its header showing a blacksmith at the matching stage of work \u2014 raw materials piled up for backlog, hammering on the anvil for in-progress, finished blades on a display rack for done, and so on.",
+      "why": "The board today is visually flat \u2014 text cards in gray columns. A thematic animated scene per column makes work state feel visceral, rewards progress (watching cards move toward the \"done\" rack is satisfying), and gives change-mate a memorable visual identity that stands out from every other Kanban tool.",
+      "done_when": [
+        "Each of the 5 Kanban columns (backlog / in-progress / done / blocked / not-doing) has a custom SVG scene at its header (~200\u00d7200px max)",
+        "Scenes are animated with CSS keyframes only \u2014 no external animation libraries, no sprite sheets",
+        "All five scenes share one cohesive visual style: forge / blacksmith workshop, line-art with muted fills",
+        "Dark mode palette preserves the mood (cooler, dimmer, still readable)",
+        "Animations remain smooth with 50+ tickets rendered across columns",
+        "Scenes degrade gracefully: static SVG renders correctly even if CSS animations fail",
+        "No per-card animation \u2014 cards remain compact and scannable"
+      ],
+      "desired_output": "A visually distinctive board that immediately communicates \"this is a workshop\" \u2014 each column header is a small animated vignette of the blacksmith working in that state. Tickets flowing across the board feel like material moving through a real workflow.",
+      "success_signals": "- First-time visitors notice and comment on the scenes\n- Animations loop smoothly at 60fps in Chrome, Safari, Firefox\n- Dark mode still feels alive (not dead/flat)\n- Board readability is unchanged or improved \u2014 users can still scan and click tickets without distraction\n- The visual identity becomes a reason people share screenshots",
+      "failure_signals": "- Animations distract from reading tickets \u2014 users can't scan cards easily\n- CPU spike with many cards rendered (animations repaint unnecessarily)\n- Scenes look broken, ugly, or pixelated on small screens\n- Scenes fail to render without JavaScript \u2014 should degrade to static SVG\n- Dark mode palette makes scenes muddy or unreadable\n- Scope creep into per-card animations, sprite sheets, or dependency-graph rendering",
+      "tests": "- Manual visual check in Chrome, Safari, Firefox (light + dark mode)\n- Manual responsive check at 560px, 900px, 1280px widths\n- Performance check: render 100 tickets across columns, verify 60fps on a mid-range laptop\n- Accessibility check: `prefers-reduced-motion` media query disables animation loops\n- Build pipeline check: scenes are CSS-only (no JS dependency); board renders on file:// without a server\n- Snapshot or visual regression test on the generated HTML (optional \u2014 flag if worth it)",
+      "notes": "**Design agreed with user**:\n- Theme **C (forge/blacksmith)** \u2014 matches the \"build things\" spirit of a dev tool; tree is generic, bird doesn't map to growth cleanly\n- Ambition level **V1** \u2014 column-header SVG scenes, not per-card animation, not sprite sheets\n- New feature set (feature-set-003-visual-language) \u2014 polish is going to be a recurring stream, keep workflow-hygiene clean\n\n**Scene-by-scene sketch**:\n- **Backlog**: pile of raw ore/ingots on the workshop floor, unlit forge in the background (static \u2014 nothing to animate, raw materials are just *there*)\n- **In progress**: blacksmith at the anvil, hammer lifting and striking on a slow loop (~1.5s), sparks bursting at each strike, flames flickering in the forge\n- **Done**: finished blade/gear on a display rack, slow light shimmer crossing the surface every 4\u20136s\n- **Blocked**: forge gone cold, blacksmith sitting on a barrel scratching his head, tool mid-project on the anvil, slow \"nope\" head-shake every few seconds\n- **Not-doing**: scrap bin outside the workshop with a discarded item tossed in, light dust puff settling on a loop\n\n**Alternatives considered**:\n- V0 (emoji + CSS pulses) \u2014 rejected; too thin to justify the effort, doesn't deliver the \"wow\"\n- V2 (sprite sheet + card-move handoff animations) \u2014 deferred; ship V1 first, verify the concept lands, then decide whether V2 is worth the production cost\n- Per-card animation \u2014 rejected for v1; clutters the card UX and hurts scan-readability\n- Tree / plant theme \u2014 rejected; generic, doesn't match the dev-tool spirit\n- Bird / egg theme \u2014 rejected; \"growth\" doesn't map onto the Kanban stages cleanly\n\n**Follow-on candidates** (if V1 lands well):\n- V2: pixel-art sprite sheets + card-move handoff animations (\"blacksmith picks up the card, slides it onto the anvil\")\n- Feature-set aggregate view: show each feature-set as a \"forge\" with N forged items\n- Staleness effect: in-progress card sitting for >7 days gets a subtle \"aging\" tint\n- Sound effects on card-move events (optional, off by default)\n\n**Sequencing**: opens feature-set-003. Low dependency on other work \u2014 could land any time. Defer until feature-set-001 (Supabase upgrade) is underway or done so mechanics work isn't delayed by polish work.\n\n**Out of scope for this ticket**:\n- Per-card animations (defer to V2)\n- Sprite-sheet production (defer to V2)\n- Sound design (defer)\n- Theme switcher beyond light/dark (separate ticket if desired)",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-045",
       "title": "Test ticket from curl",
       "status": "not doing",
@@ -927,13 +927,13 @@ var D = {
       "name": "[feature-set-003] Visual Language",
       "goal": "Give change-mate a distinctive, delightful visual identity \u2014 one that makes the board feel alive and rewards progress visually.",
       "rationale": "Workflow hygiene (feature-set-002) is about ticket mechanics; visual language is about how the board looks and feels when someone uses it. Keeping these streams separate prevents polish work from crowding out mechanics work (or vice versa). The set starts with animated forge scenes (CM-011); over time it's likely to grow with clickable relationship chips, dependency graph views, color themes, and card-move animations.",
-      "status": "Planned",
+      "status": "Parked \u2014 2026-04-16",
       "tickets": [
         "CM-011"
       ]
     }
   ],
-  "generated": "2026-04-17T01:45:21.548871+00:00"
+  "generated": "2026-04-17T02:07:30.138296+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
