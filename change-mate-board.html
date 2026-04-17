@@ -429,17 +429,21 @@ var D = {
       "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
       "why": "The product-manager skill (CM-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
       "done_when": [
-        "A configurable review step runs after the PM skill drafts a ticket",
-        "Review output is either: \"approved\" (pass through) or \"revise with: \u2026\" (draft rewritten once)",
-        "Config flag in `change-mate-config.json` (e.g. `reviewer_enabled: true/false`, `reviewer_persona: \"senior-pm\" | \"senior-tech-lead\"`)",
-        "Off by default; explicit opt-in",
-        "User sees the final (reviewed) draft \u2014 the review exchange is not shown unless they ask"
+        "Config file migrates from `change-mate-config.json` to `change-mate-config.jsonc` (JSONC = JSON + comments). Existing JSON readers updated to strip comments before parsing. Works in any project, no new runtime dependencies.",
+        "New block in the config:",
+        "Off by default. Explicit opt-in. Setup wizard does NOT prompt for it \u2014 users flip the flag themselves.",
+        "`reviewer_llm_engaged` absent or `false` \u2192 no review, no network call, no warning. Behavior identical to CM-004 baseline.",
+        "`reviewer_llm_engaged` true AND both `provider` + `api_key` non-empty \u2192 review pass runs.",
+        "`reviewer_llm_engaged` true AND `provider` or `api_key` missing/empty \u2192 **reject**: skip the review, print a one-line warning to stderr, append a one-line note to the draft the user sees (\"\u26a0 reviewer config incomplete \u2014 skipping review\"). Draft still proceeds normally.",
+        "Any runtime error during review (network failure, invalid key, bad provider response, unknown provider name) \u2192 **log the error to stderr, include a one-line note in the draft, continue with the unreviewed draft**. Never crash the PM skill or the session.",
+        "Review output is either: \"approved\" (pass through) or \"revise with: \u2026\" (draft rewritten exactly once \u2014 no loops).",
+        "User sees the final (reviewed) draft. The review exchange is not shown unless they ask."
       ],
-      "desired_output": "An optional critic pass that silently improves drafts.",
-      "success_signals": "- Turned on: drafts arrive with tighter acceptance criteria and clearer risk callouts\n- Turned off: behavior is identical to CM-004 baseline",
-      "failure_signals": "- Latency spike on ticket creation (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass",
-      "tests": "- Unit test: reviewer disabled \u2192 single draft pass-through unchanged\n- Unit test: reviewer enabled + approved \u2192 draft unchanged\n- Unit test: reviewer enabled + revise \u2192 draft rewritten exactly once, not looped",
-      "notes": "**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance",
+      "desired_output": "An optional critic pass that tightens drafts when turned on, and is a silent no-op when turned off. A misconfiguration is visible but non-fatal \u2014 it never blocks ticket creation.",
+      "success_signals": "- Engaged + valid: drafts arrive with tighter acceptance criteria and clearer risk callouts.\n- Engaged + misconfigured: user sees \"\u26a0 reviewer config incomplete\" and the draft still lands. They fix the config at their leisure.\n- Disengaged: behavior is identical to CM-004 baseline.\n- Runtime error mid-review: user sees \"\u26a0 reviewer errored \u2014 using unreviewed draft\" and the draft still lands.",
+      "failure_signals": "- Latency spike on ticket creation when engaged (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n- Any failure mode that crashes the PM skill instead of degrading gracefully",
+      "tests": "- Unit: `reviewer_llm_engaged` absent \u2192 single draft pass-through unchanged, no warning surfaced.\n- Unit: `reviewer_llm_engaged` false \u2192 identical to above.\n- Unit: `reviewer_llm_engaged` true, `provider` empty \u2192 draft passes through with warning, no LLM call made.\n- Unit: `reviewer_llm_engaged` true, `api_key` empty \u2192 same as above.\n- Unit: engaged + valid + reviewer returns \"approved\" \u2192 draft unchanged.\n- Unit: engaged + valid + reviewer returns \"revise\" \u2192 draft rewritten exactly once.\n- Unit: engaged + valid + reviewer call throws \u2192 draft passes through with warning, no crash.\n- Unit: JSONC parser handles: no comments, line `//` comments, block `/* */` comments, trailing commas disallowed (strict).",
+      "notes": "**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Config format decision**: JSONC over plain JSON because the optional reviewer block benefits from inline instructions. JSONC over TypeScript because change-mate must work in any project (Python, Go, static HTML, etc.) \u2014 forcing a TS runtime on non-TS users would break the \"zero dependencies beyond git\" promise.\n\n**Error surface**: stderr + a one-line note on the draft the user sees. No separate log file. The user finds out about misconfiguration at the moment it matters \u2014 when they're about to approve a draft.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance\n- TypeScript config file \u2192 rejected; forces TS runtime on every consumer (bash, python, board HTML) and breaks the \"any stack\" promise\n- Separate log file for reviewer errors \u2192 rejected; adds state the user has to know about; stderr + draft note reach the human when it matters",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -923,7 +927,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-17T02:16:50.284166+00:00"
+  "generated": "2026-04-17T02:25:50.776567+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
