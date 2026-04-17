@@ -11,7 +11,7 @@ Two levels. Pick the one you need.
 
 ## Step 1 — Install change-mate
 
-In a Claude Code session, say:
+From an agent session (any AI agent or bot that can run shell commands), say:
 
 ```
 I want to use change-mate. Set it up from https://github.com/allavallc/change-mate

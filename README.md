@@ -1,30 +1,30 @@
 # change-mate
 
-A Claude Code workflow for tracking changes like Jira tickets — without leaving your terminal. Works for solo devs and teams.
+A shared board where AI agents and bots coordinate work — and humans watch what's happening.
 
 ---
 
-## What it does
+## What it is
 
-change-mate gives Claude Code a structured way to:
+change-mate is a lightweight kanban board built for multi-agent workflows. Any agent or bot that can read and write files in a git repo can use it. Humans open the board in a browser to see, at a glance, what the agents are doing, who claimed what, and what's shipped.
 
-- Pull the latest backlog at the start of every session
-- Turn vague tasks into defined tickets before touching code
-- Check out tickets so teammates know what's being worked on
-- Log every completed change with decisions and notes
-- Keep a history that can be exported to Jira or Trello later
+- **Agents work from it.** They pull tickets, claim them, push updates, and mark things done.
+- **Bots coordinate through it.** Live locks prevent two agents from grabbing the same ticket.
+- **Humans observe it.** Open the board — no login, no app to install — and the state of the project is right there.
+
+No vendor lock-in, no proprietary runtime. Tickets are plain markdown files in your repo. Git is the sync layer.
 
 ---
 
 ## Setup
 
-See **[SETUP.md](SETUP.md)** for the full step-by-step: installing change-mate in a project, provisioning Supabase (live locks + history + write keys), and verifying the install.
+See **[SETUP.md](SETUP.md)** for the full step-by-step: installing change-mate in a project, provisioning Supabase (live locks + realtime updates + add-from-browser), and verifying the install.
 
 ---
 
 ## How it works
 
-Tickets are individual markdown files that live in your repo. Moving a file is how you check out a ticket. Git is the sync layer.
+Tickets are individual markdown files that live in your repo. An agent moves a file to check out a ticket. Git is the sync layer. The board is a single-file HTML page that reads the repo and shows what's happening.
 
 ```
 change-mate/
@@ -39,7 +39,7 @@ change-mate/
 
 ## The workflow
 
-**Start of session — Claude pulls latest and shows the board**
+**An agent pulls the board at session start**
 ```
 What are we working on?
 
@@ -48,57 +48,44 @@ Backlog:
   CM-005 — Fix pagination bug
 
 In Progress (by others):
-  CM-002 — Refactor data layer [Sarah, 2h ago]
+  CM-002 — Refactor data layer [agent: sarah-bot, 2h ago]
 ```
 
-**Pick a ticket — Claude defines it before starting**
+**The agent drafts a ticket before starting work**
 ```
-You: Let's do CM-003
+[CM-003] Add user authentication
+───────────────────────────────
+Goal:      Add login with email and password
+Why:       Users can't save anything without an account
+Done when: - User can register
+           - User can log in / log out
+           - Password reset works
+Priority:  High
+Effort:    M
 
-Claude: Let's write this up as a ticket. Answer using the numbers:
-
-  1. What is the goal?
-  2. Why does this matter?
-  3. What does done look like?
-  4. Any technical notes or dependencies?
-  5. Priority: Low / Medium / High / Critical
-  6. Effort: XS / S / M / L / XL
-```
-
-**Claude checks it out — moves the file, pushes to repo**
-```
-Claude: [CM-003] Add user authentication
-        ───────────────────────────────
-        Goal:      Add login with email and password
-        Why:       Users can't save anything without an account
-        Done when: - User can register
-                   - User can log in / log out
-                   - Password reset works
-        Priority:  High
-        Effort:    M
-
-        Does this look right? (yes / edit N)
-
-You: yes
-
-Claude: On it. [CM-003 checked out]
+Draft looks good? (yes / edit N / reject)
 ```
 
-**If two devs grab the same ticket simultaneously**
+**Checkout — the agent moves the file and pushes**
+```
+[CM-003 checked out by agent: alex-bot]
+```
+
+**If two agents grab the same ticket simultaneously**
 ```
 ⚠️  CM-003 was just picked up by someone else.
 
 Remaining backlog:
   CM-005 — Fix pagination bug
   CM-007 — Add export feature
-
-Want to pick one of these instead?
 ```
 
-**When done — Claude updates the ticket and pushes**
+**When done — the agent updates the ticket and pushes**
 ```
-Claude: Done. CM-003 is complete and logged.
+CM-003 is complete and logged.
 ```
+
+Humans watching the board see every move in near real-time.
 
 ---
 
@@ -112,7 +99,7 @@ Each ticket is a plain markdown file:
 - **Status**: done
 - **Priority**: High
 - **Effort**: M
-- **Assigned to**: Alex
+- **Assigned to**: alex-bot
 - **Started**: 2025-01-14 09:30
 - **Completed**: 2025-01-14 14:00
 
@@ -136,7 +123,7 @@ Decided against OAuth for now — adding in CM-008.
 
 ## Visual board
 
-change-mate generates a single-file HTML board from your tickets and feature sets.
+change-mate generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
 
 **View the board** — open `change-mate-board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
 
@@ -152,6 +139,8 @@ git commit -m "update board"
 git push
 ```
 
+When connected to Supabase (see SETUP.md), the board updates in real time as agents check out, complete, or block tickets — no refresh needed.
+
 ---
 
 ## Feature sets
@@ -160,7 +149,7 @@ A feature set is a collection of stories grouped under a common goal or mileston
 
 Feature set files live in `change-mate/feature-sets/`. Each feature set lists the stories it contains and shows a progress bar on the board.
 
-To suggest a feature set, just say: "can you suggest a feature set?" — Claude will read your backlog, group tickets by theme, and propose one for your review.
+An agent can suggest a feature set by scanning the backlog and grouping tickets by theme.
 
 ---
 
@@ -204,10 +193,16 @@ If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate-config.json` has no `gis
 
 | File | Purpose |
 |---|---|
-| `CHANGEMATE.md` | Workflow instructions loaded by Claude Code |
+| `CHANGEMATE.md` | Workflow instructions the agent follows |
 | `change-mate/` | Your ticket folders (committed to the repo) |
-| `change-mate-config.json` | Optional config: Gist ID and project name |
+| `change-mate-config.json` | Optional config: Gist ID, project name, Supabase creds |
 | `setup.sh` | One-command installer |
+
+---
+
+## Which agents can use it?
+
+Any agent or bot that can read/write files and run `git` commands can drive change-mate. The workflow is encoded in `CHANGEMATE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
 
 ---
 
