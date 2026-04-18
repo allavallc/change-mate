@@ -89,8 +89,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 .view { display: none; }
 .view.active { display: block; animation: fadeIn 150ms ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.board.show-rejected { grid-template-columns: repeat(5, 1fr); }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.board.show-rejected { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .col-rejected { display: none; }
 .board.show-rejected .col-rejected { display: block; }
 .card.not-doing { opacity: 0.5; }
@@ -110,7 +110,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 }
 .btn-toggle-rejected:hover { color: var(--text2); border-color: var(--text2); }
 .btn-toggle-rejected.active { color: var(--text); border-color: var(--text2); }
-@media (max-width: 900px) { .board { grid-template-columns: 1fr 1fr; } .board.show-rejected { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px) { .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .board.show-rejected { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 @media (max-width: 560px) { .board { grid-template-columns: 1fr; } .board.show-rejected { grid-template-columns: 1fr; } }
 .col-head {
   display: flex;
@@ -168,7 +168,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   100% { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
 }
 .card.status-inprogress { animation: cm-active-pulse 2s ease-in-out infinite; }
-.card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; overflow-wrap: anywhere; }
 .card-assignee { font-size: 11px; color: var(--muted); }
 .card-fs {
   display: inline-block;
@@ -927,7 +927,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-17T02:33:23.357233+00:00"
+  "generated": "2026-04-18T19:40:14.567723+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
