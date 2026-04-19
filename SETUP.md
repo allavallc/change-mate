@@ -1,13 +1,29 @@
 # Setting up change-mate
 
-Two levels. Pick the one you need.
+Two paths. Pick the one that fits.
 
-| Level | What you get | Time |
-|---|---|---|
-| **Basic** (step 1) | A board you can look at. No creating tickets from the browser. | 2 minutes |
-| **Full** (steps 1–3) | Live board with real-time updates. Create tickets from the browser. See which agents are working on what. | 15 minutes |
+## Are you solo or a team?
+
+**Solo** — just you, using change-mate in your own repo.
+- You view the board in your browser.
+- You add or move tickets by editing markdown files in the repo and pushing.
+- No accounts, no tokens. ~2 minutes.
+- → Jump to **[Solo path](#solo-path)**.
+
+**Team** — multiple people or agents working together.
+- Everyone sees the board update in real-time.
+- Anyone can click "Add story" in the browser and create tickets without touching the command line.
+- Live locks prevent two people from grabbing the same ticket at the same time.
+- One person does a ~15-minute setup once. Everyone else just opens the board.
+- → Jump to **[Team path](#team-path)**.
+
+You can start solo and upgrade to team later. Your tickets stay where they are — nothing to migrate.
 
 ---
+
+# Solo path
+
+Everything you need to view and manage a board by yourself.
 
 ## Step 1 — Install change-mate
 
@@ -31,29 +47,45 @@ git commit -m "add change-mate"
 git push
 ```
 
-Open `change-mate-board.html` to see your board:
+## Step 2 — Open the board
 
-- **On your computer:** double-click the file. It opens in your browser.
+- **On your computer:** double-click `change-mate-board.html`. It opens in your browser.
 - **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/change-mate-board.html`.
 
 **Board visibility follows repo visibility.** Public repo = public board. Private repo = private board (requires GitHub Pro for private Pages).
 
-If you just want to look at the board, **you're done.** Stop here.
+## Step 3 — Add or move tickets
+
+You edit markdown files in the repo.
+
+- **New ticket:** create a file in `change-mate/backlog/` named `CM-XXX-<timestamp>.md`. Use any existing ticket as a template.
+- **Start work:** move the file to `change-mate/in-progress/`.
+- **Finish:** move the file to `change-mate/done/`.
+
+Commit and push. GitHub rebuilds the board automatically on every push to `main`.
+
+**That's it.** You're done.
+
+Want the "Add story" button to work from the browser, or live updates as tickets move? That's the [Team path](#team-path) — you can upgrade anytime.
 
 ---
 
-## Step 2 — Connect to Supabase (live updates)
+# Team path
 
-This gives the board a database for real-time updates — you'll see tickets appear and move as agents work on them.
+Everything solo gives you, plus: real-time board updates, "Add story" button in the browser, and live locks so two people can't grab the same ticket.
 
-### 2.1 — Create a Supabase project
+**Do the Solo path first** — you need change-mate installed in your repo before the team features can connect to it.
+
+One person does the three steps below. Everyone else just opens the board and follows [Adding people to the team](#adding-people-to-the-team).
+
+## Step 1 — Create a Supabase project
 
 1. Go to **[supabase.com/dashboard](https://supabase.com/dashboard)** and sign in (GitHub login works).
 2. Click **New project**.
 3. Name it anything (e.g. `change-mate`). Generate a database password and save it. Pick your region.
 4. Click **Create new project**. Wait ~2 minutes.
 
-### 2.2 — Copy your connection details
+### Copy your connection details
 
 1. Click the **gear icon** (bottom-left) → **API**.
 2. Copy these two values somewhere:
@@ -61,7 +93,7 @@ This gives the board a database for real-time updates — you'll see tickets app
    - **anon public key** — long string starting with `sb_publishable_` or `eyJ`
 3. Scroll to **Data API**. If there's an **Enable Data API** toggle, turn it ON, make sure `public` is in the dropdown, Save.
 
-### 2.3 — Set up the database
+### Set up the database
 
 1. In the sidebar, click **SQL Editor** → **New query**.
 2. Open `supabase/migrations/0001_initial.sql` from this repo. Select all, copy, paste into the editor. Click **Run**.
@@ -70,7 +102,7 @@ This gives the board a database for real-time updates — you'll see tickets app
 
 All three should say **Success. No rows returned.**
 
-### 2.4 — Enable Realtime on the locks table
+### Enable Realtime on the locks table
 
 1. In the sidebar, click **Database → Replication** (or **Publications**).
 2. Click on **supabase_realtime**.
@@ -78,7 +110,7 @@ All three should say **Success. No rows returned.**
 
 This lets the board show which agents are actively working on tickets.
 
-### 2.5 — Connect change-mate to Supabase
+### Connect change-mate to Supabase
 
 Open `change-mate-config.json` and fill in your values:
 
@@ -93,7 +125,7 @@ Open `change-mate-config.json` and fill in your values:
 
 If you use GitHub Actions, also add repo secrets: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (repo → Settings → Secrets → Actions).
 
-### 2.6 — Verify
+### Verify
 
 ```bash
 py scripts/verify_supabase.py
@@ -101,11 +133,9 @@ py scripts/verify_supabase.py
 
 You should see three `[PASS]` lines. If not, re-run the SQL migrations.
 
----
+## Step 2 — Enable "Add story" from the browser
 
-## Step 3 — Enable "Add Story" (create tickets from the board)
-
-### 3.1 — Install the Supabase CLI and deploy
+### Install the Supabase CLI and link your project
 
 ```bash
 npm install -g supabase
@@ -115,7 +145,7 @@ supabase link --project-ref abcdefg
 
 Replace `abcdefg` with your project ref (the part before `.supabase.co` in your URL).
 
-### 3.2 — Create a GitHub token for the server
+### Create a GitHub token for the server
 
 This token lets the server commit ticket files to your repo. Create it once.
 
@@ -126,7 +156,7 @@ This token lets the server commit ticket files to your repo. Create it once.
 5. **Permissions → Repository permissions → Contents:** Read and write.
 6. Click **Generate token**. Copy it. Save it in your password manager.
 
-### 3.3 — Deploy
+### Deploy the function
 
 ```bash
 supabase secrets set GITHUB_PAT=your-token-here
@@ -135,23 +165,25 @@ supabase secrets set GITHUB_REPO=your-repo-name
 supabase functions deploy cm-write --no-verify-jwt
 ```
 
-### 3.4 — Try it
+## Step 3 — Try it
 
 1. Open the board in your browser.
 2. Click **+ Add story**.
-3. It will ask for your name and a GitHub token. This is YOUR personal token (not the server one from 3.2 — create a second one the same way, or reuse if you want).
+3. It will ask for your name and a GitHub token. This is YOUR personal token (not the server one — create a second one the same way, or reuse if you want).
 4. Fill in the form. Click **Create story**.
 5. The ticket should appear in the backlog.
 
-**This setup is one-time.** The board remembers your name and token.
+**Team setup is done.** The board remembers your name and token.
 
 ---
 
-## Adding other people
+## Adding people to the team
 
-1. Add them as a **GitHub collaborator** on your repo (repo → Settings → Collaborators → Add people).
-2. They create their own GitHub token (same steps as 3.2 — takes 2 minutes).
-3. They open the board, click Add Story, enter their name and token once. Done.
+Someone else on the setup person's GitHub repo wants to use the board:
+
+1. The setup person adds them as a **GitHub collaborator** on the repo (repo → Settings → Collaborators → Add people).
+2. They create their own GitHub token (same steps as [Create a GitHub token for the server](#create-a-github-token-for-the-server), but just for themselves — takes 2 minutes).
+3. They open the board, click **Add story**, enter their name and token once. Done.
 
 **Removing someone:** Remove them as a GitHub collaborator. Their token stops working immediately.
 
@@ -162,8 +194,8 @@ supabase functions deploy cm-write --no-verify-jwt
 | What you see | What to do |
 |---|---|
 | Board loads but no live indicator | Check `supabase_url` and `supabase_publishable_key` in `change-mate-config.json` |
-| Add Story says "Network error" | The cm-write function isn't deployed. Do step 3.3. |
-| Add Story says "Access denied" | Your GitHub token doesn't have push access to this repo. Create a new one (step 3.2). |
+| Add story says "Network error" | The cm-write function isn't deployed. Do [Deploy the function](#deploy-the-function). |
+| Add story says "Access denied" | Your GitHub token doesn't have push access to this repo. Create a new one (see [Adding people to the team](#adding-people-to-the-team), step 2). |
 | `PGRST002` error | Data API is off. Supabase → Settings → API → Data API → Enable → Save. |
 | Everything stopped working | Free Supabase projects pause after ~1 week. Go to dashboard → click **Restore**. |
 

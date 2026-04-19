@@ -18,7 +18,12 @@ No vendor lock-in, no proprietary runtime. Tickets are plain markdown files in y
 
 ## Setup
 
-See **[SETUP.md](SETUP.md)** for the full step-by-step: installing change-mate in a project, provisioning Supabase (live locks + realtime updates + add-from-browser), and verifying the install.
+Two paths. Pick the one that fits.
+
+- **Solo** — one person, one repo. You view the board in your browser and edit tickets by hand-editing markdown files in the repo. No accounts, no tokens. **~2 minutes.** → [SETUP.md → Solo path](SETUP.md#solo-path)
+- **Team** — multiple people or agents. Live board updates, "Add story" button in the browser, locks that prevent two people from grabbing the same ticket. Needs a free Supabase account. **~15 minutes for the setup person; 2 minutes for everyone else.** → [SETUP.md → Team path](SETUP.md#team-path)
+
+You can start solo and upgrade to team later — your tickets stay where they are.
 
 ---
 
