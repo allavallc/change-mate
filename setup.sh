@@ -101,7 +101,23 @@ EOF
   echo -e "${GREEN}✓${NC} created CLAUDE.md"
 fi
 
-# Check .gitignore — change-mate/ must not be ignored
+# Add change-mate/ to existing deploy-ignore files so dev tooling never ships to prod.
+# Only touch files that already exist — don't surprise adopters by creating new tooling files.
+CM_IGNORE_LINE="change-mate/"
+for ignore_file in .dockerignore .gcloudignore .vercelignore; do
+  if [ -f "$ignore_file" ]; then
+    if grep -qxF "$CM_IGNORE_LINE" "$ignore_file"; then
+      echo -e "${YELLOW}~${NC} $ignore_file already excludes change-mate/, skipping"
+    else
+      # Ensure trailing newline before appending to avoid joining lines
+      [ -s "$ignore_file" ] && [ "$(tail -c1 "$ignore_file" 2>/dev/null | wc -l)" = "0" ] && echo "" >> "$ignore_file"
+      echo "$CM_IGNORE_LINE" >> "$ignore_file"
+      echo -e "${GREEN}✓${NC} added change-mate/ to $ignore_file"
+    fi
+  fi
+done
+
+# Check .gitignore — change-mate/ must not be ignored, and leave a dev-only-tooling marker.
 if [ -f ".gitignore" ]; then
   if grep -qE "^change-mate" .gitignore; then
     echo ""
@@ -109,6 +125,12 @@ if [ -f ".gitignore" ]; then
     echo "   Tickets won't sync between teammates until you remove it."
     echo "   Remove this line from .gitignore: change-mate"
     echo ""
+  fi
+  GIT_MARKER="# change-mate/ is dev-only tooling; do not ignore unless using local-only mode (see change-mate/CHANGEMATE.md)"
+  if ! grep -qF "$GIT_MARKER" .gitignore; then
+    [ -s ".gitignore" ] && [ "$(tail -c1 .gitignore 2>/dev/null | wc -l)" = "0" ] && echo "" >> .gitignore
+    echo "$GIT_MARKER" >> .gitignore
+    echo -e "${GREEN}✓${NC} added dev-only-tooling marker comment to .gitignore"
   fi
 fi
 
