@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>change-mate board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --border: #e5e5e5;
+  --text: #111111;
+  --text2: #666666;
+  --muted: #999999;
+  --accent: #111111;
+  --prog-fill: #111111;
+  --prog-bg: #e5e5e5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111111;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #f5f5f5;
+    --text2: #888888;
+    --muted: #555555;
+    --accent: #f5f5f5;
+    --prog-fill: #f5f5f5;
+    --prog-bg: #2a2a2a;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--text);
+}
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.logo { font-size: 14px; font-weight: 500; letter-spacing: -0.2px; }
+.header-meta { font-size: 12px; color: var(--muted); }
+main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  width: fit-content;
+  margin-bottom: 24px;
+}
+.tab {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  font-family: inherit;
+  transition: color 0.1s, background 0.1s;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  background: var(--bg);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  .tab.active { box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+}
+.view { display: none; }
+.view.active { display: block; animation: fadeIn 150ms ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.board.show-rejected { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.col-rejected { display: none; }
+.board.show-rejected .col-rejected { display: block; }
+.card.not-doing { opacity: 0.5; }
+.card.not-doing .card-title { text-decoration: line-through; color: var(--text2); }
+.btn-toggle-rejected {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  background: none;
+  color: var(--muted);
+  margin-bottom: 16px;
+  transition: color 100ms, border-color 100ms;
+}
+.btn-toggle-rejected:hover { color: var(--text2); border-color: var(--text2); }
+.btn-toggle-rejected.active { color: var(--text); border-color: var(--text2); }
+@media (max-width: 900px) { .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .board.show-rejected { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (max-width: 560px) { .board { grid-template-columns: 1fr; } .board.show-rejected { grid-template-columns: 1fr; } }
+.col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.col-name { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.col-count { font-size: 11px; color: var(--muted); font-weight: 500; }
+.cards { display: flex; flex-direction: column; gap: 8px; }
+.card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+.card:hover { border-color: var(--text2); }
+.card.status-done { border-color: #22c55e; }
+.card.status-inprogress { border-color: #22c55e; }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.card-id {
+  font-size: 11px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  color: var(--muted);
+}
+.badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.badge { font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 4px; }
+.b-critical { background: #fee2e2; color: #991b1b; }
+.b-high     { background: #ffedd5; color: #9a3412; }
+.b-medium   { background: #fef9c3; color: #854d0e; }
+.b-low      { background: #f1f5f9; color: #475569; }
+.b-effort   { background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
+.card-crab {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes cm-active-pulse {
+  0%   { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
+  50%  { border-color: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
+  100% { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
+}
+.card.status-inprogress { animation: cm-active-pulse 2s ease-in-out infinite; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; overflow-wrap: anywhere; }
+.card-assignee { font-size: 11px; color: var(--muted); }
+.card-fs {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+.card-rels { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.card-rel {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+.card-rel-more { color: var(--muted); font-family: inherit; }
+.dl-val.pre { white-space: pre-line; }
+.card-detail { max-height: 0; overflow: hidden; transition: max-height 200ms ease; }
+.card.open .card-detail { max-height: 600px; }
+.detail-inner {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dl-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 3px; }
+.dl-val { font-size: 12px; color: var(--text2); }
+.dl-list { list-style: none; font-size: 12px; color: var(--text2); }
+.dl-list li { padding-left: 12px; position: relative; margin-bottom: 2px; }
+.dl-list li::before { content: '\00b7'; position: absolute; left: 0; color: var(--muted); }
+.empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+.feature-sets { display: flex; flex-direction: column; gap: 16px; }
+.feature-set { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.feature-set-head {
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.feature-set-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.feature-set-goal { font-size: 12px; color: var(--text2); }
+.feature-set-status {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+.feature-set-prog-row {
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.prog-bar { flex: 1; height: 4px; background: var(--prog-bg); border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--prog-fill); border-radius: 2px; }
+.prog-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.feature-set-cards { padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.feature-set-cards .card { width: calc(25% - 6px); min-width: 180px; }
+@media (max-width: 900px) { .feature-set-cards .card { width: calc(50% - 4px); } }
+@media (max-width: 560px) { .feature-set-cards .card { width: 100%; } }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.btn-new {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  white-space: nowrap;
+  transition: border-color 100ms;
+}
+.btn-new:hover { border-color: var(--text2); }
+.settings-note { font-size: 11px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fadeIn 150ms ease;
+}
+@media (prefers-color-scheme: dark) {
+  .modal-overlay { background: rgba(0,0,0,0.6); }
+}
+.modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+@media (prefers-color-scheme: dark) { .modal { box-shadow: 0 20px 60px rgba(0,0,0,0.5); } }
+.modal-title { font-size: 15px; font-weight: 500; margin-bottom: 20px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 5px; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 100ms;
+}
+.field select { cursor: pointer; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--text2); }
+.field textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.field-row .field { margin-bottom: 0; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text2);
+  transition: border-color 100ms;
+}
+.btn:hover { border-color: var(--text2); }
+.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary:hover { opacity: 0.85; }
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  max-width: 560px;
+  width: calc(100% - 48px);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 200ms, transform 200ms;
+  pointer-events: none;
+  z-index: 100;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@keyframes cm-pulse {
+  0%   { background: var(--surface); }
+  30%  { background: #fef9c3; }
+  100% { background: var(--surface); }
+}
+@keyframes cm-fadein {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cm-moving { animation: cm-pulse 600ms ease; }
+.cm-new { animation: cm-fadein 300ms ease; }
+#setup-modal .modal { max-width: 380px; }
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="logo">change-mate</span>
+    <span id="cm-live-indicator" style="display:none; align-items:center; gap:5px; font-size:12px; color:#666;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+      live
+    </span>
+  </div>
+  <div class="header-right">
+    <span class="header-meta" id="gen-time"></span>
+    <button class="btn-new" id="btn-add-story" onclick="openModal()">+ Add story</button>
+  </div>
+</header>
+<main>
+  <div class="tabs">
+    <button class="tab active" data-view="board" onclick="switchTab(this)">Board</button>
+    <button class="tab" data-view="feature-sets" onclick="switchTab(this)">Feature Sets</button>
+  </div>
+  <div class="view active" id="view-board">
+    <button class="btn-toggle-rejected" id="btn-rejected" onclick="toggleRejected()" style="display:none">Show rejected</button>
+    <div class="board" id="board-grid">
+      <div>
+        <div class="col-head"><span class="col-name">Backlog</span><span class="col-count" id="n-backlog">0</span></div>
+        <div class="cards" id="c-backlog"></div>
+      </div>
+      <div>
+        <div class="col-head"><span class="col-name">In Progress</span><span class="col-count" id="n-inprogress">0</span></div>
+        <div class="cards" id="c-inprogress"></div>
+      </div>
+      <div>
+        <div class="col-head"><span class="col-name">Done</span><span class="col-count" id="n-done">0</span></div>
+        <div class="cards" id="c-done"></div>
+      </div>
+      <div>
+        <div class="col-head"><span class="col-name">Blocked</span><span class="col-count" id="n-blocked">0</span></div>
+        <div class="cards" id="c-blocked"></div>
+      </div>
+      <div class="col-rejected">
+        <div class="col-head"><span class="col-name">Not Doing</span><span class="col-count" id="n-notdoing">0</span></div>
+        <div class="cards" id="c-notdoing"></div>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-feature-sets">
+    <div class="feature-sets" id="feature-set-list"></div>
+  </div>
+</main>
+<script>
+var D = {
+  "tickets": [
+    {
+      "id": "CM-049",
+      "title": "Consolidate change-mate footprint into change-mate/ folder",
+      "status": "open",
+      "priority": "High",
+      "effort": "L",
+      "feature_set": "feature-set-003-scope-hygiene",
+      "related": [
+        "CM-048"
+      ],
+      "blocks": [
+        "CM-050"
+      ],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Move every change-mate artifact that currently sits at repo root (`CHANGEMATE.md`, `build.sh`, `build_lib.py`, `change-mate-board.html`, `change-mate-config.json`) into the `change-mate/` folder, so that the rule \"anything under `change-mate/` is dev tooling\" becomes mechanically true and `.dockerignore` / `.gcloudignore` exclusions collapse to one line.",
+      "why": "The current scattered layout forces every adopter and every LLM to independently build a mental model of which files belong to change-mate and which are product. That mental model fails \u2014 see CM-048's underlying feedback. Consolidation makes the rule enforceable by tooling instead of tribal knowledge, and it's the enabler for CM-050's single-line deploy-ignore default.",
+      "done_when": [
+        "`CHANGEMATE.md` lives at `change-mate/CHANGEMATE.md`.",
+        "`build.sh` lives at `change-mate/build.sh`. It still runs from repo root (`bash change-mate/build.sh`).",
+        "`build_lib.py` lives at `change-mate/build_lib.py`.",
+        "Board is emitted at `change-mate/board.html`.",
+        "`change-mate-config.json` lives at `change-mate/config.json`.",
+        "`setup.sh` writes the CLAUDE.md import as `@change-mate/CHANGEMATE.md`, and installs the new layout for fresh installs.",
+        "`setup.sh` detects the legacy layout (root-level `CHANGEMATE.md` + root-level `change-mate-board.html`) and offers an explicit migration step that moves the five files and rewrites the CLAUDE.md import. Migration is opt-in, not forced silently, and is idempotent.",
+        "`.github/workflows/build-board.yml` updated: `run: bash change-mate/build.sh`, `git add change-mate/board.html`.",
+        "`tests/` updated so every test references the new paths. `test_build.py` integration test runs the script from its new location.",
+        "README.md, SETUP.md, docs/onboarding/README.md, CLAUDE.md references all updated to new paths. No stale `change-mate-board.html` or `change-mate-config.json` references remain in live code/docs.",
+        "Generated board HTML has no hard-coded references to the old filenames."
+      ],
+      "desired_output": "After this lands, `ls` at the repo root of an adopter shows `change-mate/` and `setup.sh` \u2014 nothing else is change-mate's. Adding `change-mate/` to `.dockerignore` fully excludes change-mate from every deploy artifact. A new contributor opens the repo and instantly knows which folder is workflow tooling.",
+      "success_signals": "- `.dockerignore` exclusion for change-mate is one line (`change-mate/`), verified in a sample adopter repo.\n- No adopter reports \"change-mate files leaked into my deploy\" post-ship.\n- LLMs asked to summarize recent changes in an adopter repo cleanly bucket change-mate vs product commits by folder.",
+      "failure_signals": "- Existing adopters' boards break silently because their workflow still references `build.sh` at root. Mitigation: setup.sh migration path + release note.\n- `bash change-mate/build.sh` breaks on Windows Git Bash paths. Mitigation: CI integration test.\n- `build.sh` reads config by absolute path (e.g. `change-mate-config.json` as sibling) and the move breaks credential loading.\n- Adopters with bookmarked `change-mate-board.html` URLs (GitHub Pages) hit a 404 until they update the link.",
+      "tests": "- `tests/test_build.py`: run `bash change-mate/build.sh` from repo root, confirm `change-mate/board.html` is produced, confirm old `change-mate-board.html` is NOT produced.\n- Unit: `parse_ticket` and `parse_feature_set` still work unchanged (pure functions, just moved).\n- Manual: on a throwaway clone with the legacy layout, run setup.sh migration path \u2014 verify it moves all five files correctly and rewrites the CLAUDE.md import. Run migration again \u2014 verify no-op.\n- Manual: `grep -r \"change-mate-board.html\" .` and `grep -r \"change-mate-config.json\" .` after the change \u2014 the only hits should be historical ticket bodies and changelog notes.\n- Manual: open the generated `change-mate/board.html` in a browser and verify cards, Supabase live locks, and Add Story still function.",
+      "notes": "- **Alternative considered**: keep the root layout but aggressively prefix files (`change-mate-build.sh` etc.). Rejected \u2014 doesn't solve the one-line deploy-exclude problem and leaves the mental model fractured.\n- **Alternative considered**: keep `CHANGEMATE.md` at root, move the rest. Rejected \u2014 feedback explicitly calls out root-level CHANGEMATE.md as part of the \"looks like product\" problem. Keeping it out of the folder breaks the one-folder rule that makes everything else mechanical.\n- **Alternative considered**: emit the board as `change-mate/index.html` so Pages serves it at `/change-mate/`. Attractive but out of scope for this ticket \u2014 stick with `board.html` and let a future ticket decide the public URL story.\n- **Breaking change**: yes. Existing adopters must run migration. Ship with a visible changelog entry and tested setup.sh migration path.\n- **Out of scope**: deploy-ignore defaults (CM-050), opt-in CI commits (CM-051), any change to ticket format.\n- **Risk (highest)**: `setup.sh` runs remotely via `curl | bash`. Migration branch must be idempotent and must not destroy local uncommitted changes to any of the five files.\n- **Confidence**: 75%. Mechanically obvious, but the breaking-change cost is real.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-050",
+      "title": "setup.sh writes deploy-ignore defaults for change-mate/",
+      "status": "open",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-003-scope-hygiene",
+      "related": [
+        "CM-048"
+      ],
+      "blocks": [],
+      "blocked_by": [
+        "CM-049"
+      ],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Make setup.sh the place that prevents change-mate from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
+      "why": "CM-048 tells readers that change-mate must not enter deploys. CM-049 makes that rule mechanically enforceable with one folder. CM-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read CHANGEMATE.md, internalize the rule, and wire it themselves.",
+      "done_when": [
+        "`setup.sh` detects the presence of `.dockerignore`, `.gcloudignore`, `.vercelignore` and for each that exists, appends `change-mate/` as an exclusion if not already present.",
+        "If an ignore file does not exist, setup.sh does NOT create it (don't surprise adopters with new tooling files; only modify what's already there).",
+        "Appends are idempotent \u2014 re-running setup.sh does not duplicate entries.",
+        "setup.sh prints a one-line confirmation per file touched (e.g. `\u2713 added change-mate/ to .dockerignore`).",
+        "`.gitignore` gets a *commented* marker line `# change-mate/ is dev-only tooling; do not ignore unless using local-only mode (see change-mate/CHANGEMATE.md)`. This is documentation, not an exclusion.",
+        "The existing `.gitignore` warning (fire if `change-mate` is actually ignored) stays and is consistent with the new comment."
+      ],
+      "desired_output": "An adopter runs `setup.sh` in a repo that already has Docker. The next `docker build` excludes `change-mate/` from the image. No configuration, no thought required. Verifiable with `docker run <image> ls /app/change-mate` \u2192 not found.",
+      "success_signals": "- Adopters running Docker-based deploys see zero change-mate files in their images post-ship.\n- No issue reports of \"change-mate files ended up in my deploy\".",
+      "failure_signals": "- setup.sh appends to an ignore file using a non-default format (e.g. `.gcloudignore` syntax differs subtly) and breaks the file.\n- Append runs on re-install and duplicates entries (idempotency bug).\n- Adopter using the local-only mode from CM-048 is confused when `.gitignore` comment contradicts their usage. Mitigation: comment references CM-048's doc section.\n- Adopter has carefully tuned ignore files and resents the append. Mitigation: single clear line with a comment explaining why.",
+      "tests": "- Integration (new): run setup.sh twice in a temp dir with a pre-existing `.dockerignore` \u2014 confirm `change-mate/` is added once, not twice.\n- Integration (new): run setup.sh in a temp dir with no ignore files \u2014 confirm nothing is created.\n- Manual: verify `docker build` in a sample adopter repo excludes `change-mate/` after install.\n- Manual: verify `.gitignore` gets the commented explanation line, not an exclusion line.",
+      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `change-mate.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (CM-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on CM-049**: if change-mate files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-051",
+      "title": "Board rebuild workflow: mode-aware auto-commit + rename",
+      "status": "open",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-003-scope-hygiene",
+      "related": [
+        "CM-048",
+        "CM-049"
+      ],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Stop the board-rebuild workflow from silently producing noise commits on `main` for solo adopters while keeping the \"humans watch a fresh Pages-hosted board\" primitive working for teams. Default is mode-aware: Supabase configured \u2192 auto-commit on; no Supabase \u2192 off. Config flag overrides. Rename the workflow so its purpose is self-evident in the GitHub Actions UI.",
+      "why": "Adopter feedback from hana-core: \"the auto-rebuild created noise commits in git log that made it hard to see real product changes.\" A flat default of `false` would kill the noise but break the Pages-fresh-board experience for teams. A flat default of `true` keeps the status quo noise. Mode-aware splits correctly: solo users (no Supabase, usually open the board locally) get a quiet log; teams (Supabase-configured, usually Pages-hosted) stay fresh automatically. Explicit config always wins, so anyone in the edge case (solo on Pages, team viewing locally) has a one-line escape.",
+      "done_when": [
+        "`change-mate-config.json` accepts a new optional field `auto_commit_board`: boolean.",
+        "Default is **mode-aware**: when `supabase_url` is present and non-empty in the config, the workflow treats the flag as `true`; when absent or empty string, treats as `false`. An explicit value always wins over the default.",
+        "Workflow reads the flag using `jq` against the config file and only runs `git add / commit / push` when the resolved value is `true`.",
+        "When resolved to `false`, the workflow still **builds** the board (for CI signal and to surface build failures) \u2014 it just does not commit it.",
+        "Workflow file renamed: `.github/workflows/build-board.yml` \u2192 `.github/workflows/change-mate-rebuild-board.yml`.",
+        "Workflow `name:` field updated to `change-mate: rebuild board` so it's clearly namespaced in the Actions UI.",
+        "CHANGEMATE.md \"Board rules\" section documents the flag, mode-aware default, and how to override.",
+        "README.md / SETUP.md updated with the same.",
+        "Release note explicitly calls out the behavior change for anyone using the workflow today."
+      ],
+      "desired_output": "Team adopters on GitHub Pages see their board stay fresh automatically (status quo preserved). Solo adopters stop seeing `chore: rebuild board [skip ci]` noise in `git log`. Either group can override with `\"auto_commit_board\": true/false` if their setup doesn't match the default.",
+      "success_signals": "- Noise commits from change-mate on `main` drop to near-zero for solo adopters using default config.\n- Team adopters report no change in board freshness.\n- No adopter needs to edit the workflow YAML to change behavior \u2014 config flag is the sole surface.",
+      "failure_signals": "- Solo adopter hosting on Pages sees their board go stale without understanding why. Mitigation: SETUP.md solo-mode section mentions the override.\n- Mode detection misfires \u2014 e.g. `supabase_url: \"\"` reads as present and triggers auto-commit. Treat empty string as absent.\n- Config key typo (`auto-commit-board` vs `auto_commit_board`) silently takes the default and looks like the flag doesn't work.\n- `jq` missing on a minimal runner. GitHub-hosted runners have it \u2014 verify explicitly.",
+      "tests": "- Workflow test: config with `supabase_url` set + no flag \u2192 commit happens.\n- Workflow test: config with no `supabase_url` + no flag \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: false` + Supabase set \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: true` + no Supabase \u2192 commit.\n- Workflow test: `supabase_url: \"\"` treated as absent (no commit by default).\n- Manual: confirm workflow UI shows \"change-mate: rebuild board\".\n- Manual: read SETUP.md / CHANGEMATE.md and confirm the mode-aware default is documented clearly.",
+      "notes": "- **Alternative considered**: flat default `false` for everyone. Rejected \u2014 breaks the \"humans watch\" primitive for Pages-hosted team boards until they find the flag.\n- **Alternative considered**: flat default `true` for everyone. Rejected \u2014 status quo; feedback is that the noise is a real problem for solo users.\n- **Alternative considered**: emit the board via Actions deploy to Pages instead of committing to main. Cleaner for Pages adopters but bigger scope \u2014 own ticket if pulled for.\n- **Out of scope**: rewriting build.sh (CM-049), deploy-ignore defaults (CM-050).\n- **Risk**: mode detection uses `supabase_url` as a proxy for \"team mode.\" Adopters with Supabase configured but no Pages get auto-commit they don't need \u2014 one-line config fix.\n- **Confidence**: 85% (up from 70% with the mode-aware default \u2014 solves the Pages-freshness concern surfaced during drafting).",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-001",
+      "title": "Test ticket",
+      "status": "done",
+      "priority": "Low",
+      "effort": "XS",
+      "feature_set": "",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "adefilippo",
+      "started": "2026-04-13 00:00",
+      "completed": "2026-04-14",
+      "goal": "Test that the live board and GitHub Pages are working correctly.",
+      "why": "Verify end-to-end flow from ticket creation to board update.",
+      "done_when": [
+        "Ticket appears on the live board at the GitHub Pages URL"
+      ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "Created as a test of the Supabase Realtime + GitHub Pages setup. End-to-end flow verified: ticket creation \u2192 GitHub Actions rebuild \u2192 live board update.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-002",
+      "title": "Test 2",
+      "status": "done",
+      "priority": "Low",
+      "effort": "XS",
+      "feature_set": "",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-13 14:45",
+      "completed": "2026-04-14",
+      "goal": "Test live card animation from backlog to in-progress.",
+      "why": "Verify the Supabase Realtime board fix works correctly.",
+      "done_when": [
+        "Card animates from Backlog to In Progress without a page refresh"
+      ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "Second test ticket for Realtime animation fix verification. Confirmed `handleTicketUpdate` scope fix (commit b9e4bff) works \u2014 cards animate between columns without full page refresh.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-003",
+      "title": "Ticket relationships (related / blocks / blocked-by)",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-002-workflow-hygiene",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-14 18:38",
+      "completed": "2026-04-14",
+      "goal": "Let tickets reference other tickets so humans and agents can see dependencies and cross-ticket context at a glance.",
+      "why": "Today \"blocked\" is just a folder \u2014 we lose *what* blocks *what*. Adding explicit relationships surfaces feature-set cohesion, reveals dependency chains, and makes the board useful beyond a flat list of cards.",
+      "done_when": [
+        "Ticket format supports `Related`, `Blocks`, `Blocked by` fields (comma-separated CM-IDs) \u2705",
+        "`CHANGEMATE.md` documents how agents set and read these fields \u2705",
+        "Board renders relationships on the card (chips with cap + \"+N more\" overflow) \u2705",
+        "Board auto-infers the inverse of `Blocks` \u2192 `Blocked by` at render time (not persisted in files) \u2705",
+        "Moving a ticket to `blocked/` requires a `Blocked by` value \u2705 (documented in CHANGEMATE.md)",
+        "Round-trips cleanly through `build.sh` without data loss \u2705"
+      ],
+      "desired_output": "Three new optional fields in every ticket, rendered as chips on the card face, with the inverse edge inferred automatically. Build-time warnings for orphaned or cyclic references.",
+      "success_signals": "- New tickets created after this ships include the new fields where applicable\n- Chips on CM-A say \"Blocks: CM-B\" and CM-B's card automatically shows \"Blocked by: CM-A\" without the user writing it twice\n- Legacy tickets without these fields still parse and render\n- Overflow displays cleanly on tickets with many relationships",
+      "failure_signals": "- Orphaned references (CM-XXX listed but file not found) \u2014 build logs a warning, chip is skipped\n- Cycles (A blocks B blocks A) \u2014 build logs a warning, cards still render\n- Board layout breaking when a ticket has many relationships \u2014 overflow cap prevents this\n- Symmetric inference double-renders an edge (deduped in Python pre-render pass)",
+      "tests": "- Parser unit tests: each field present / missing / single ID / multiple IDs / malformed / empty-value / whitespace / dedupe (7 tests in `tests/test_parser.py`)\n- Build-time subprocess tests: orphan produces stderr warning + exit 0, cycle produces stderr warning + exit 0, inferred `blocked_by` appears in output HTML (3 tests in `tests/test_build.py`)",
+      "notes": "**Design decisions agreed with user**:\n- **Symmetry**: inferred at render time, not persisted. One side of the edge is written; renderer walks the reverse map and shows the counterpart automatically.\n- **Placement**: all chips on card face, cap at 3 with \"+N more\" overflow; full list grouped by kind on card-detail open.\n- **Orphan / cycle handling**: warn in build log (stderr), skip broken chip, keep building (non-fatal).\n\n**Phase-by-phase ship log**:\n- Phase 1: parser + format docs + 7 tests \u2014 commit `b5ed2f5`\n- Phase 2: build.sh renderer + symmetry inference + orphan/cycle warnings \u2014 commit `191f6b8`\n- Phase 3: PM skill \"Set relationships\" step + 3 build-time tests \u2014 commit `eddf73d`\n\n**Not in scope** (left for future work):\n- Clickable chips that scroll/highlight the target card\n- Visual graph view of relationships\n- Dependency enforcement at workflow time (refusing to mark a ticket done while it still blocks something)\n\n**Follow-on**: feature-set-002-workflow-hygiene now at 2 of 3 tickets done (CM-003 + CM-004); only CM-010 (second-LLM review) remains \u2014 Low priority, deliberately waiting for the PM skill to see real use. Natural next pick is CM-005 (Supabase schema, opens feature-set-001).",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-004",
+      "title": "Reframe CHANGEMATE.md agent persona: senior technical PM, not senior dev",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-002-workflow-hygiene",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-14 14:56",
+      "completed": "2026-04-14",
+      "goal": "Rewrite the persona and working-style sections of `CHANGEMATE.md` so the agent operates as a senior technical product manager shaping features inside feature sets \u2014 not as a senior developer. Add a reusable `product-manager` skill that owns ticket intake.",
+      "why": "The original opening line (\"You are a senior developer and project manager\") pushed agents toward implementation voice. The real job at the ticket layer is PM work: crisp problem statements, desired outputs, success/failure criteria, and handoff notes that tell the developer what to watch. Developer tone belongs downstream, inside the build phase.",
+      "done_when": [
+        "Opening persona rewritten to senior technical PM voice \u2705",
+        "6-question numbered intake retired; replaced with PM-skill-driven \"draft first, ask second\" flow \u2705",
+        "Ticket format gains `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests` \u2705",
+        "Ticket format gains `**Feature set**` field \u2705",
+        "New `skills/product-manager/SKILL.md` written from scratch (no external clone), wired into `setup.sh` \u2705",
+        "`build_lib.py` parses new sections + feature_set; legacy tickets still parse \u2705",
+        "`build.sh` renders feature set on card face, new sections on card open \u2705",
+        "pytest harness + GitHub Actions CI runs on every PR \u2705",
+        "CM-003 and CM-005\u2013CM-009 backfilled into the new format (plus CM-010 which was added mid-build) \u2705",
+        "Work split into 6 phases (\u22645 files each), each with explicit user approval gate \u2705"
+      ],
+      "desired_output": "The agent that intercepts \"add a story about X\" produces a fully-drafted, PM-grade ticket \u2014 including success/failure signals and test directives \u2014 instead of asking the user a numbered question list.",
+      "success_signals": "- New tickets created after this ships contain all four new sections without prompting\n- Tickets carry a feature-set assignment at creation time\n- Parser + renderer handle legacy and new formats with zero errors\n- pytest runs green in CI",
+      "failure_signals": "- Parser crashes on malformed sections from older or hand-written tickets\n- LLM drifts back into dev-voice on sub-tasks (skill prompt needs to be firm)\n- Feature-set proposals feel random \u2014 skill needs clear heuristics for \"is this a match\"\n- Board card face becomes visually crowded by the feature-set label\n- Tests flake on CRLF/LF line ending differences (Windows \u2194 CI) \u2014 addressed via `.gitattributes` in Phase 5",
+      "tests": "- `test_parse_legacy_ticket` \u2014 old format parses cleanly, new fields are None\n- `test_parse_new_ticket_full` \u2014 all four new sections + feature_set populate\n- `test_parse_partial_new_ticket` \u2014 some new sections missing\n- `test_parse_feature_set_new_format` \u2014 section-based feature set file parses\n- `test_every_committed_ticket_parses_without_error` \u2014 regression sweep\n- Manual: live board renders feature-set chip on card face and new sections on card open",
+      "notes": "**Plan lived in**: `tasks/todo.md`.\n\n**Phase-by-phase ship log**:\n- Phase 1: CHANGEMATE.md persona sweep \u2014 commit `1bb1499`\n- Phase 2: product-manager skill + setup.sh wiring \u2014 commit `bf78dc9`\n- Phase 3: build_lib.py parser updates \u2014 commit `43c061a`\n- Phase 4: build.sh renderer updates \u2014 commit `776d683`\n- Phase 5: pytest harness + GitHub Actions test workflow + .gitattributes \u2014 commit `3d33982`\n- Phase 6a: feature sets + backfill CM-003/004/005 \u2014 commit `4c0a17a`\n- Phase 6b: backfill CM-006/007/008/009/010 \u2014 commit `7d43476`\n\n**Key decisions made during build**:\n- PM skill written from scratch \u2014 did not clone the external reference the user linked (wrong shape for this context: too many human-team assumptions that don't apply to a solo-dev + AI, git-backed board)\n- CM-010 (second-LLM review) was spun out as a separate ticket rather than bundled into CM-004\n- Stale `feature-set-001.md` placeholder template removed during Phase 6a cleanup (conflicting ID, no real references)\n- `.gitattributes` added in Phase 5 to fix a Windows-only CRLF issue that was breaking the pre-existing `test_build.py` subprocess tests\n\n**Out of scope** (lived separately):\n- Relationship chips on card face \u2192 CM-003\n- Second-LLM review of drafts \u2192 CM-010\n\n**Sequencing**: landed before CM-003 so relationship fields will slot cleanly into the new ticket format.\n\n**Follow-on**: feature-set-002-workflow-hygiene is now in progress with CM-003 and CM-010 remaining. The Supabase upgrade feature set (feature-set-001) is still planned \u2014 next coherent chunk of work.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-005",
+      "title": "Supabase schema: locks, ticket_events, write_keys + RLS",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-14",
+      "completed": "2026-04-15",
+      "goal": "Create the Supabase Postgres schema that powers the next-generation board: atomic locking, event history, and per-person write keys \u2014 all protected by Row Level Security.",
+      "why": "Current state: locking lives in a GitHub Gist (fragile, not atomic), there is zero history, and there is no access control. This schema is the foundation every other piece of the next build sits on \u2014 nothing else ships without it.",
+      "done_when": [
+        "`locks` table: `ticket_id` (PK), `agent`, `started_at`, atomic insert-or-fail semantics",
+        "`ticket_events` table: `id`, `ticket_id`, `from_status`, `to_status`, `actor`, `created_at`",
+        "`write_keys` table: `key_hash` (PK), `label`, `role` (`human` | `agent`), `created_at`, `revoked_at`",
+        "RLS policies: anon role read-only on `ticket_events`; write-key-gated inserts on `locks` and `ticket_events`; `write_keys` readable only by service role",
+        "SQL migration script committed to repo under `supabase/migrations/`",
+        "Idempotent: re-running the script against an already-migrated database is a no-op"
+      ],
+      "desired_output": "A single SQL file a maintainer can run in the Supabase SQL editor to provision the project, plus a documented \"verify install\" check.",
+      "success_signals": "- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key",
+      "failure_signals": "- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket",
+      "tests": "- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds",
+      "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (CM-006 through CM-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `change-mate-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-006",
+      "title": "Supabase Edge Function `cm-write` (validated ticket writes via GitHub API)",
+      "status": "done",
+      "priority": "High",
+      "effort": "L",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-15",
+      "completed": "2026-04-16",
+      "goal": "Build a Supabase Edge Function that validates a caller's write key, then creates/updates tickets in the GitHub repo on their behalf \u2014 keeping the GitHub PAT server-side only.",
+      "why": "Today the \"Add story\" button on the board requires every user to paste their own GitHub PAT into localStorage. That is clunky, insecure, and blocks non-technical users. An Edge Function with the PAT stored as a Supabase secret is the right shape: one shared write path, per-person write keys, no tokens in the browser.",
+      "done_when": [
+        "Edge Function `cm-write` deployed to Supabase",
+        "Accepts: write key, ticket payload (title, goal, why, done-when, priority, effort, notes)",
+        "Validates write key against `write_keys` table (hashed lookup)",
+        "On success: creates the markdown file in `change-mate/backlog/` via GitHub API (authenticated with server-side PAT)",
+        "On success: inserts a row into `ticket_events`",
+        "On failure: returns structured error (`401` invalid key, `403` revoked, `422` bad payload, `500` GitHub API failure)",
+        "Rate limit: per-key throttle (e.g. 10 writes/minute)"
+      ],
+      "desired_output": "A callable HTTPS endpoint the board JS hits with a write key and a ticket payload. PAT never reaches the client.",
+      "success_signals": "- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never appears in client bundle, browser network logs, or function output logs",
+      "failure_signals": "- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting CM-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes",
+      "tests": "- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions",
+      "notes": "**Sequencing**: depends on CM-005 (needs `write_keys` + `ticket_events` tables). Blocks CM-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-007",
+      "title": "Board modes + write-key prompt + Add Story via Edge Function",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-15",
+      "completed": "2026-04-16",
+      "goal": "Teach the live board to operate in three distinct modes (`public-readonly`, `public-write`, `private`) and wire the Add Story button to the `cm-write` Edge Function instead of raw GitHub PAT + browser localStorage.",
+      "why": "A single mode (\"anyone can see, nobody can write without their own PAT\") does not fit real projects. Some boards are fully public, some accept anonymous-but-gated contributions, some need to be private. Tying Add Story to a server-side write path also kills the per-user PAT setup friction that today makes the button a non-starter for non-technical users.",
+      "done_when": [
+        "`change-mate-config.json` gains a `board_mode` field: `public-readonly` | `public-write` | `private`",
+        "`public-readonly`: no Add Story button, board visible to anyone",
+        "`public-write`: Add Story button visible, prompts for write key on click, key cached in localStorage",
+        "`private`: board gated behind a write-key prompt on load; no content renders until validated",
+        "Add Story button POSTs to `cm-write` Edge Function with the cached key",
+        "Clear error UX for invalid/revoked keys (not a silent failure)",
+        "Old per-user GitHub PAT path removed from board JS"
+      ],
+      "desired_output": "The live board respects the mode in config, and the Add Story flow no longer touches a user's GitHub PAT.",
+      "success_signals": "- Flipping `board_mode` in config produces the expected UX on next build\n- Write key prompt appears exactly once per browser (cached in localStorage)\n- Add Story round-trips through the Edge Function in under 2s",
+      "failure_signals": "- Write keys leaking into analytics / Sentry / URL params\n- `private` mode flashing content before the gate renders (FOUC-style leak)\n- localStorage cache not invalidating when a key is revoked server-side",
+      "tests": "- Snapshot tests for each of the three modes (readonly, write, private)\n- Unit test for write-key prompt flow (first visit, cached visit, revoked key)\n- Manual QA checklist for each mode before merge",
+      "notes": "**Sequencing**: depends on CM-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.\n\n**Alternatives considered**:\n- Single mode toggle (public/private) without `public-write` \u2192 rejected; loses the most useful intermediate state for community projects\n- Server-rendered private board \u2192 rejected; breaks the static-HTML deployment model",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-008",
+      "title": "Migrate agent locking + event logging from Gist to Supabase",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-15",
+      "completed": "2026-04-16",
+      "goal": "Rewrite the agent locking and event-broadcast sections of `CHANGEMATE.md` and `build.sh` so that agents lock tickets against the Supabase `locks` table and write status changes into `ticket_events` \u2014 retiring the GitHub Gist lock registry.",
+      "why": "The Gist-based lock registry is fragile (race conditions on PATCH), requires every agent to carry a GitHub token with Gist scope, and records no history. Supabase gives us atomic locking and a permanent audit trail in one move \u2014 and it removes one more token from the agent environment.",
+      "done_when": [
+        "`CHANGEMATE.md` Live Lock Registry section rewritten to describe Supabase lock flow",
+        "Agents acquire a lock via insert into `locks` table (fails if row exists)",
+        "Agents release the lock via delete on ticket completion",
+        "Every status move (backlog \u2192 in-progress, \u2192 done, \u2192 blocked, \u2192 not-doing) inserts a row into `ticket_events`",
+        "`CHANGEMATE_GITHUB_TOKEN` references removed from `CHANGEMATE.md`",
+        "`change-mate-config.json` `gist_id` field deprecated (leave for backcompat but document as unused)",
+        "`build.sh` continues to function \u2014 board rebuild path unchanged"
+      ],
+      "desired_output": "Agents use Supabase for locking and history; the Gist path is gone; no agent needs `CHANGEMATE_GITHUB_TOKEN` anymore.",
+      "success_signals": "- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `CHANGEMATE_GITHUB_TOKEN` anymore",
+      "failure_signals": "- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)",
+      "tests": "- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent",
+      "notes": "**Sequencing**: depends on CM-005. Can land in parallel with CM-006/CM-007 since it touches a different surface (agent workflow, not board UI).\n\n**Alternatives considered**:\n- Keep Gist locking, add Supabase only for events \u2192 rejected; doesn't fix the atomicity bug or the token requirement\n- File-based lock in the repo itself \u2192 rejected; git push race conditions are worse than Gist races",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-009",
+      "title": "Setup docs for the new Supabase-backed architecture",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-15",
+      "completed": "2026-04-16",
+      "goal": "Write end-to-end setup documentation so a new project can install change-mate v5 (Supabase locks + events + write keys + Edge Function) from scratch in under 15 minutes.",
+      "why": "The new architecture touches four systems (Supabase Postgres, Supabase Edge Functions, GitHub API, GitHub Actions). Without a clean setup guide, every new install becomes a support ticket. Docs are the final mile that makes CM-005 through CM-008 actually usable by anyone other than us.",
+      "done_when": [
+        "`docs/SETUP.md` (or README section) covers:",
+        "Creating a Supabase project",
+        "Running the schema migration",
+        "Deploying the `cm-write` Edge Function",
+        "Creating and distributing write keys",
+        "Setting `board_mode` and Supabase credentials in `change-mate-config.json`",
+        "Configuring GitHub Actions secrets",
+        "Troubleshooting section: common errors (invalid key, stale lock, RLS misconfigured)",
+        "A \"verify install\" checklist the user can walk through after setup",
+        "`setup.sh` updated to scaffold the new config fields"
+      ],
+      "desired_output": "One markdown file that takes a new user from empty repo \u2192 working board with locking and access control.",
+      "success_signals": "- A person unfamiliar with the project completes setup from the doc alone\n- \"Verify install\" checklist catches misconfigured RLS and missing secrets",
+      "failure_signals": "- Docs drifting from the actual code (pin examples to real file names and commit SHAs)\n- Setup steps that assume prior Supabase knowledge without linking to their docs\n- Missing coverage of the write-key lifecycle (create / distribute / revoke)",
+      "tests": "- Dogfood: run through the setup doc against a fresh Supabase project \u2014 time it, note every friction point\n- Doc-lint: all referenced file paths exist in the repo",
+      "notes": "**Sequencing**: last in the chain. Depends on CM-005, CM-006, CM-007, CM-008 all being live.\n\n**Alternatives considered**:\n- Defer docs and rely on code reading \u2192 rejected; new users are exactly the people who can't read four-system code\n- Video walkthrough \u2192 rejected for v1; videos rot faster than markdown when files change",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-012",
+      "title": "Show active agent/assignee on board cards via live locks",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-001-supabase-upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "allavallc",
+      "started": "2026-04-15",
+      "completed": "2026-04-16",
+      "goal": "Board cards should display which agent or person is working on a ticket \u2014 and once assigned, that name stays with the ticket for its entire life (in-progress, done, blocked, not-doing). Two layers: a **permanent assignment** baked into the ticket markdown, and a **live activity indicator** from the locks table.",
+      "why": "Right now you can't tell who's working on what just by looking at the board. In a multi-agent setup where several Claude instances are working in parallel, this visibility is critical \u2014 it prevents duplicate work and lets the human see at a glance what's happening. And when a ticket is done, you should still see who did it.",
+      "done_when": [
+        "When a ticket moves to in-progress, the agent/person name is written to the `**Assigned to**` field in the ticket's markdown file (via a GitHub commit, same as cm-write)",
+        "The \ud83e\udd80 + name (e.g. \"\ud83e\udd80 crabFather\") shows on the card face AND in the expanded detail view",
+        "The name persists through every status change \u2014 in-progress, done, blocked, not-doing. It never disappears.",
+        "The `Assigned to` field in the markdown is the source of truth. The board renders it.",
+        "On board load, query the `locks` table and overlay a \"working now\" pulse/glow on cards with active locks",
+        "When a lock is acquired or released, the board updates in real time",
+        "The live indicator is visual only (e.g. a pulsing border or animated \ud83e\udd80) \u2014 distinct from the permanent name badge",
+        "Cards with active locks stand out at a glance",
+        "Works correctly when multiple agents are working simultaneously",
+        "Each agent/person picks their own name when they first enter their write key (stored in localStorage as `cm_agent_name`)",
+        "The name appears as \"\ud83e\udd80 crabFather\" on the card \u2014 the crab icon is the universal agent marker"
+      ],
+      "desired_output": "A board where every in-progress/done/blocked ticket shows \ud83e\udd80 + the name of who worked on it, permanently. Tickets being actively worked on RIGHT NOW also pulse or glow.",
+      "success_signals": "- Move a ticket to in-progress \u2192 the agent name is written to the markdown file and shows on the card\n- Ticket moves to done \u2192 the name is still there\n- Opening the board while an agent is mid-task shows their name + a live activity pulse\n- Lock release removes the pulse but NOT the name",
+      "failure_signals": "- Agent name disappearing when a ticket moves to done\n- Stale live indicators that persist after an agent finishes\n- Lock query failing silently and showing no indicators at all\n- Performance degradation from polling the locks table too aggressively",
+      "tests": "- Manual QA: move a ticket to in-progress \u2192 verify \ud83e\udd80 + name appears on card and in detail\n- Manual QA: move that ticket to done \u2192 verify the name is still there (permanent)\n- Manual QA: while an agent is actively working, verify the live pulse/glow appears\n- Manual QA: after agent finishes, verify pulse stops but name stays\n- Verify `locks` table RLS allows anon SELECT (currently it doesn't \u2014 needs a policy addition)\n- Verify `Assigned to` field in markdown file is updated when ticket moves to in-progress",
+      "notes": "**RLS gap**: the `locks` table currently has no SELECT policy for anon/authenticated \u2014 it's invisible to the board's anon key. This ticket needs to add a read-only policy: `CREATE POLICY locks_select_all ON public.locks FOR SELECT TO anon, authenticated USING (true);` plus `GRANT SELECT ON public.locks TO anon, authenticated;`. This is safe because lock data (ticket_id + agent name + timestamp) is not sensitive.\n\n**Real-time options**: (a) Supabase Realtime `postgres_changes` on the `locks` table (requires Realtime enabled on the table), or (b) broadcast events from the Edge Function that acquires/releases locks (if one exists), or (c) poll on an interval. Option (a) is cleanest if Realtime is enabled.\n\n**Crab identity**: the agent/person picks their own name when entering their write key (stored as `cm_agent_name` in localStorage). The crab + name badge (\"\ud83e\udd80 crabFather\") sits in the top-right of the card face, visible without expanding. When a ticket moves to in-progress, the name is written to the markdown `Assigned to` field (permanent) AND to the `locks` table `agent` field (transient, for live indicator).\n\n**Color coding**: each crab gets a deterministic accent color derived from its name (pick from a small palette of 8\u201310 distinct colors). The card's left border uses the same color so you can scan the board and instantly group work by agent.\n\n**Two-layer display**: the permanent name badge is always visible once assigned (rendered from the `Assigned to` field in the markdown). The live pulse/glow is an overlay that appears only while a lock is active. When the agent finishes and releases the lock, the pulse stops but the name stays.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-048",
+      "title": "Scope, dependency, and LLM guardrails in CHANGEMATE.md",
+      "status": "done",
+      "priority": "High",
+      "effort": "S",
+      "feature_set": "feature-set-003-scope-hygiene",
+      "related": [
+        "CM-049",
+        "CM-050",
+        "CM-051"
+      ],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-24 14:00",
+      "completed": "2026-04-24",
+      "goal": "Rewrite the top of CHANGEMATE.md so any reader (human or LLM) finishes the first screen knowing change-mate is local dev tooling that must never enter a deploy artifact, code must not depend on change-mate paths, git is the intended sync layer, and change-mate files should be excluded from code-quality passes.",
+      "why": "An adopter using change-mate inside hana-core (a production repo) reported that both humans and LLMs in the repo could not tell whether `change-mate-board.html` was a deployable asset or a dev artifact, so change-mate files drifted into WIP branches and caused deploy-pipeline worry. The feedback author's own TL;DR: \"one sentence at the top of CHANGEMATE.md saying this is local dev tooling, not product, and must never deploy\" is the single highest-leverage change available \u2014 everything else in this feature set flows from that.",
+      "done_when": [
+        "CHANGEMATE.md has a new \"Scope\" section at the very top (before anything else) stating change-mate is dev-only tooling and must never appear in a deploy artifact.",
+        "CHANGEMATE.md has a new \"One-way dependency\" rule stating change-mate knows about code but code must not reference change-mate paths or tickets.",
+        "CHANGEMATE.md has a new \"Sync modes\" note stating git-sync is the default and documenting that adopters who want change-mate private per-machine can add `change-mate/` to `.gitignore` (with an explicit call-out that this disables collaboration).",
+        "CHANGEMATE.md has a new \"LLM guidance\" block: do not lint/typecheck/format change-mate files as part of code-quality passes, exclude change-mate changes from repo-change summaries by default, assume `change-mate/` does not exist at deploy/build time.",
+        "README.md \"Files\" table updated to tag each change-mate file as \"dev-only tooling\".",
+        "No code change. Docs only."
+      ],
+      "desired_output": "A reader opening CHANGEMATE.md for the first time finishes the first screen knowing: what change-mate is, where it must not appear, how code and change-mate relate, whether they can run it privately, and how to treat change-mate files during code review. No inference required.",
+      "success_signals": "- Future adopter feedback does not repeat the \"is this product code?\" confusion.\n- LLMs (Claude, Codex, other agents) reading the repo do not propose wiring code references to change-mate paths when drafting feature work.\n- Solo-only users no longer ask whether they should commit `change-mate/` to a shared remote.",
+      "failure_signals": "- Scope statement drifts out of sync with actual behavior (e.g. a future ticket ships something that does deploy change-mate files \u2014 then the statement is a lie).\n- \"Do not lint/typecheck\" guidance gets over-interpreted and adopters exclude change-mate from ALL tooling including basic repo hygiene (trailing whitespace, etc.).\n- Local-only `.gitignore` guidance causes adopters to skip commits and then discover their tickets vanished on machine switch.",
+      "tests": "- Manual: read the first two screens of the updated CHANGEMATE.md from cold and verify scope, dependency rule, sync modes, and LLM guidance are present and unambiguous.\n- Manual: verify README.md files table labels change-mate files as dev-only.\n- Existing pytest suite passes unchanged.",
+      "notes": "- **Alternative considered**: split into four tiny tickets (one per feedback item). Rejected \u2014 all four changes touch the same CHANGEMATE.md preamble, splitting just creates edit churn and four board rebuilds.\n- **Alternative considered (sync modes)**: build first-class support for local-only mode (no git sync, live-lock and Realtime still work per-user). Rejected as out of scope \u2014 the lock/Realtime design assumes shared ticket state. One-paragraph doc note is correct for v1; revisit if there's real demand.\n- **Out of scope**: folder layout changes (CM-049), setup.sh deploy-ignore defaults (CM-050), workflow changes (CM-051).\n- **Risk**: LLM guidance is advisory only \u2014 adopters' own linters will still run on `change-mate/` unless they exclude it themselves. CM-050 handles the mechanical exclusion.\n- **Confidence**: 95%. Highest-ROI ticket in this feature set per the feedback author's own TL;DR.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-010",
+      "title": "Second-LLM review pass on ticket drafts before user sees them",
+      "status": "not doing",
+      "priority": "Low",
+      "effort": "M",
+      "feature_set": "feature-set-002-workflow-hygiene",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
+      "why": "The product-manager skill (CM-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
+      "done_when": [
+        "Config file migrates from `change-mate-config.json` to `change-mate-config.jsonc` (JSONC = JSON + comments). Existing JSON readers updated to strip comments before parsing. Works in any project, no new runtime dependencies.",
+        "New block in the config:",
+        "Off by default. Explicit opt-in. Setup wizard does NOT prompt for it \u2014 users flip the flag themselves.",
+        "`reviewer_llm_engaged` absent or `false` \u2192 no review, no network call, no warning. Behavior identical to CM-004 baseline.",
+        "`reviewer_llm_engaged` true AND both `provider` + `api_key` non-empty \u2192 review pass runs.",
+        "`reviewer_llm_engaged` true AND `provider` or `api_key` missing/empty \u2192 **reject**: skip the review, print a one-line warning to stderr, append a one-line note to the draft the user sees (\"\u26a0 reviewer config incomplete \u2014 skipping review\"). Draft still proceeds normally.",
+        "Any runtime error during review (network failure, invalid key, bad provider response, unknown provider name) \u2192 **log the error to stderr, include a one-line note in the draft, continue with the unreviewed draft**. Never crash the PM skill or the session.",
+        "Review output is either: \"approved\" (pass through) or \"revise with: \u2026\" (draft rewritten exactly once \u2014 no loops).",
+        "User sees the final (reviewed) draft. The review exchange is not shown unless they ask."
+      ],
+      "desired_output": "An optional critic pass that tightens drafts when turned on, and is a silent no-op when turned off. A misconfiguration is visible but non-fatal \u2014 it never blocks ticket creation.",
+      "success_signals": "- Engaged + valid: drafts arrive with tighter acceptance criteria and clearer risk callouts.\n- Engaged + misconfigured: user sees \"\u26a0 reviewer config incomplete\" and the draft still lands. They fix the config at their leisure.\n- Disengaged: behavior is identical to CM-004 baseline.\n- Runtime error mid-review: user sees \"\u26a0 reviewer errored \u2014 using unreviewed draft\" and the draft still lands.",
+      "failure_signals": "- Latency spike on ticket creation when engaged (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n- Any failure mode that crashes the PM skill instead of degrading gracefully",
+      "tests": "- Unit: `reviewer_llm_engaged` absent \u2192 single draft pass-through unchanged, no warning surfaced.\n- Unit: `reviewer_llm_engaged` false \u2192 identical to above.\n- Unit: `reviewer_llm_engaged` true, `provider` empty \u2192 draft passes through with warning, no LLM call made.\n- Unit: `reviewer_llm_engaged` true, `api_key` empty \u2192 same as above.\n- Unit: engaged + valid + reviewer returns \"approved\" \u2192 draft unchanged.\n- Unit: engaged + valid + reviewer returns \"revise\" \u2192 draft rewritten exactly once.\n- Unit: engaged + valid + reviewer call throws \u2192 draft passes through with warning, no crash.\n- Unit: JSONC parser handles: no comments, line `//` comments, block `/* */` comments, trailing commas disallowed (strict).",
+      "notes": "**Sequencing**: depends on CM-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Config format decision**: JSONC over plain JSON because the optional reviewer block benefits from inline instructions. JSONC over TypeScript because change-mate must work in any project (Python, Go, static HTML, etc.) \u2014 forcing a TS runtime on non-TS users would break the \"zero dependencies beyond git\" promise.\n\n**Error surface**: stderr + a one-line note on the draft the user sees. No separate log file. The user finds out about misconfiguration at the moment it matters \u2014 when they're about to approve a draft.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance\n- TypeScript config file \u2192 rejected; forces TS runtime on every consumer (bash, python, board HTML) and breaks the \"any stack\" promise\n- Separate log file for reviewer errors \u2192 rejected; adds state the user has to know about; stderr + draft note reach the human when it matters",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-011",
+      "title": "Animated forge scenes at column headers",
+      "status": "not doing",
+      "priority": "Medium",
+      "effort": "L",
+      "feature_set": "feature-set-003-visual-language",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Give each Kanban column a small animated SVG scene in its header showing a blacksmith at the matching stage of work \u2014 raw materials piled up for backlog, hammering on the anvil for in-progress, finished blades on a display rack for done, and so on.",
+      "why": "The board today is visually flat \u2014 text cards in gray columns. A thematic animated scene per column makes work state feel visceral, rewards progress (watching cards move toward the \"done\" rack is satisfying), and gives change-mate a memorable visual identity that stands out from every other Kanban tool.",
+      "done_when": [
+        "Each of the 5 Kanban columns (backlog / in-progress / done / blocked / not-doing) has a custom SVG scene at its header (~200\u00d7200px max)",
+        "Scenes are animated with CSS keyframes only \u2014 no external animation libraries, no sprite sheets",
+        "All five scenes share one cohesive visual style: forge / blacksmith workshop, line-art with muted fills",
+        "Dark mode palette preserves the mood (cooler, dimmer, still readable)",
+        "Animations remain smooth with 50+ tickets rendered across columns",
+        "Scenes degrade gracefully: static SVG renders correctly even if CSS animations fail",
+        "No per-card animation \u2014 cards remain compact and scannable"
+      ],
+      "desired_output": "A visually distinctive board that immediately communicates \"this is a workshop\" \u2014 each column header is a small animated vignette of the blacksmith working in that state. Tickets flowing across the board feel like material moving through a real workflow.",
+      "success_signals": "- First-time visitors notice and comment on the scenes\n- Animations loop smoothly at 60fps in Chrome, Safari, Firefox\n- Dark mode still feels alive (not dead/flat)\n- Board readability is unchanged or improved \u2014 users can still scan and click tickets without distraction\n- The visual identity becomes a reason people share screenshots",
+      "failure_signals": "- Animations distract from reading tickets \u2014 users can't scan cards easily\n- CPU spike with many cards rendered (animations repaint unnecessarily)\n- Scenes look broken, ugly, or pixelated on small screens\n- Scenes fail to render without JavaScript \u2014 should degrade to static SVG\n- Dark mode palette makes scenes muddy or unreadable\n- Scope creep into per-card animations, sprite sheets, or dependency-graph rendering",
+      "tests": "- Manual visual check in Chrome, Safari, Firefox (light + dark mode)\n- Manual responsive check at 560px, 900px, 1280px widths\n- Performance check: render 100 tickets across columns, verify 60fps on a mid-range laptop\n- Accessibility check: `prefers-reduced-motion` media query disables animation loops\n- Build pipeline check: scenes are CSS-only (no JS dependency); board renders on file:// without a server\n- Snapshot or visual regression test on the generated HTML (optional \u2014 flag if worth it)",
+      "notes": "**Design agreed with user**:\n- Theme **C (forge/blacksmith)** \u2014 matches the \"build things\" spirit of a dev tool; tree is generic, bird doesn't map to growth cleanly\n- Ambition level **V1** \u2014 column-header SVG scenes, not per-card animation, not sprite sheets\n- New feature set (feature-set-003-visual-language) \u2014 polish is going to be a recurring stream, keep workflow-hygiene clean\n\n**Scene-by-scene sketch**:\n- **Backlog**: pile of raw ore/ingots on the workshop floor, unlit forge in the background (static \u2014 nothing to animate, raw materials are just *there*)\n- **In progress**: blacksmith at the anvil, hammer lifting and striking on a slow loop (~1.5s), sparks bursting at each strike, flames flickering in the forge\n- **Done**: finished blade/gear on a display rack, slow light shimmer crossing the surface every 4\u20136s\n- **Blocked**: forge gone cold, blacksmith sitting on a barrel scratching his head, tool mid-project on the anvil, slow \"nope\" head-shake every few seconds\n- **Not-doing**: scrap bin outside the workshop with a discarded item tossed in, light dust puff settling on a loop\n\n**Alternatives considered**:\n- V0 (emoji + CSS pulses) \u2014 rejected; too thin to justify the effort, doesn't deliver the \"wow\"\n- V2 (sprite sheet + card-move handoff animations) \u2014 deferred; ship V1 first, verify the concept lands, then decide whether V2 is worth the production cost\n- Per-card animation \u2014 rejected for v1; clutters the card UX and hurts scan-readability\n- Tree / plant theme \u2014 rejected; generic, doesn't match the dev-tool spirit\n- Bird / egg theme \u2014 rejected; \"growth\" doesn't map onto the Kanban stages cleanly\n\n**Follow-on candidates** (if V1 lands well):\n- V2: pixel-art sprite sheets + card-move handoff animations (\"blacksmith picks up the card, slides it onto the anvil\")\n- Feature-set aggregate view: show each feature-set as a \"forge\" with N forged items\n- Staleness effect: in-progress card sitting for >7 days gets a subtle \"aging\" tint\n- Sound effects on card-move events (optional, off by default)\n\n**Sequencing**: opens feature-set-003. Low dependency on other work \u2014 could land any time. Defer until feature-set-001 (Supabase upgrade) is underway or done so mechanics work isn't delayed by polish work.\n\n**Out of scope for this ticket**:\n- Per-card animations (defer to V2)\n- Sprite-sheet production (defer to V2)\n- Sound design (defer)\n- Theme switcher beyond light/dark (separate ticket if desired)",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-045",
+      "title": "Test ticket from curl",
+      "status": "not doing",
+      "priority": "Low",
+      "effort": "XS",
+      "feature_set": "",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Verify cm-write works.",
+      "why": "",
+      "done_when": [],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-046",
+      "title": "test",
+      "status": "not doing",
+      "priority": "Low",
+      "effort": "XS",
+      "feature_set": "[feature-set-001] Supabase Upgrade",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "test",
+      "why": "test",
+      "done_when": [],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "test",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-047",
+      "title": "testing flow 1",
+      "status": "not doing",
+      "priority": "Low",
+      "effort": "XS",
+      "feature_set": "",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Demo the real-time board flow.",
+      "why": "",
+      "done_when": [],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    }
+  ],
+  "feature_sets": [
+    {
+      "id": "feature-set-001-supabase-upgrade",
+      "name": "[feature-set-001] Supabase Upgrade",
+      "goal": "Replace the Gist-based locking and per-user GitHub PAT setup with a Supabase-backed multi-user, access-controlled, live ticket board.",
+      "rationale": "The current setup uses a fragile GitHub Gist for locking, has zero history of ticket transitions, and requires every user to bring their own GitHub PAT for the Add Story button. CM-005 through CM-009 together replace that surface \u2014 schema, server-side write path, board access modes, agent locking via Supabase, and setup docs \u2014 into one coherent architectural cut. Bundling them prevents partial migrations that leave the system in two states at once.",
+      "status": "Done \u2014 2026-04-16",
+      "tickets": [
+        "CM-005",
+        "CM-006",
+        "CM-007",
+        "CM-008",
+        "CM-009",
+        "CM-012"
+      ]
+    },
+    {
+      "id": "feature-set-002-workflow-hygiene",
+      "name": "[feature-set-002] Workflow Hygiene",
+      "goal": "Reshape the change-mate ticket workflow so the agent operates as a senior technical PM, ticket structure carries explicit success/failure signals, tickets can reference each other, and ticket drafts can optionally pass through a critic.",
+      "rationale": "Tickets created by the LLM today follow a thin format and a developer-voice persona, with no way to express relationships between work items. CM-003, CM-004, and CM-010 collectively address all three: relationship fields (CM-003), PM persona + new sections + product-manager skill (CM-004), and second-LLM critic on drafts (CM-010). Bundling keeps the ticket-format changes coherent and avoids two formats coexisting mid-rollout.",
+      "status": "In progress",
+      "tickets": [
+        "CM-003",
+        "CM-004",
+        "CM-010"
+      ]
+    },
+    {
+      "id": "feature-set-003-scope-hygiene",
+      "name": "[feature-set-003] Scope & footprint hygiene",
+      "goal": "Make it mechanically clear that change-mate is dev workflow tooling, not product code \u2014 through explicit scope docs, folder consolidation, install-time deploy-ignore defaults, and a quieter CI workflow.",
+      "rationale": "An adopter running change-mate inside a production monorepo (hana-core) reported that change-mate files leaked into their mental model of product code, caused deploy-pipeline anxiety, and created noise commits on `main`. Root cause: change-mate's files are scattered across repo root and the docs don't explicitly mark the project as dev-only. This feature set hardens the line between \"change-mate (dev workflow)\" and \"product code\" through four coherent changes. Bundled because CM-050 depends on CM-049, and CM-048 documents the rule that CM-049/050/051 make enforceable.",
+      "status": "In progress",
+      "tickets": [
+        "CM-048",
+        "CM-049",
+        "CM-050",
+        "CM-051"
+      ]
+    }
+  ],
+  "generated": "2026-04-24T18:51:19.346768+00:00"
+};
+var DEFAULT_REPO = "allavallc/change-mate";
+var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
+var CM_ANON_KEY = "sb_publishable_AahlzUKVHc3CacNbmk20-A_VpAACweo";
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+var CRAB_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899'];
+function crabColor(name) {
+  var h = 0;
+  for (var i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+  return CRAB_COLORS[Math.abs(h) % CRAB_COLORS.length];
+}
+function crabBadge(name) {
+  if (!name) return '';
+  var c = crabColor(name);
+  return '<span class="card-crab" style="border-color:' + c + ';color:' + c + '">\u{1F980} ' + esc(name) + '</span>';
+}
+
+function priorityBadge(p) {
+  var cls = {critical:'b-critical',high:'b-high',medium:'b-medium',low:'b-low'}[(p||'').toLowerCase()];
+  return p ? '<span class="badge ' + (cls||'') + '">' + esc(p) + '</span>' : '';
+}
+
+function bulletOrProse(s) {
+  if (!s) return '';
+  var lines = String(s).split(/\r?\n/);
+  var bullets = lines.filter(function(l) { return /^\s*-\s+/.test(l); });
+  if (bullets.length && bullets.length === lines.filter(function(l) { return l.trim(); }).length) {
+    return '<ul class="dl-list">'
+      + bullets.map(function(l) { return '<li>' + esc(l.replace(/^\s*-\s+/, '')) + '</li>'; }).join('')
+      + '</ul>';
+  }
+  return '<div class="dl-val pre">' + esc(s) + '</div>';
+}
+
+function detailRow(label, content) {
+  if (!content) return '';
+  return '<div><div class="dl-label">' + label + '</div>' + content + '</div>';
+}
+
+function buildRelChips(t) {
+  var all = [];
+  (t.related || []).forEach(function(id) { all.push({kind:'related', id:id, prefix:'\u2194'}); });
+  (t.blocks || []).forEach(function(id) { all.push({kind:'blocks', id:id, prefix:'\u2192'}); });
+  var bb = {};
+  (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
+  (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
+  Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\u2190'}); });
+  return all;
+}
+
+function relChipsFaceHTML(chips, cap) {
+  if (!chips.length) return '';
+  var visible = chips.slice(0, cap);
+  var extra = chips.length - visible.length;
+  var html = visible.map(function(c) {
+    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : 'Blocked by ') + c.id;
+    return '<span class="card-rel" title="' + esc(title) + '">' + c.prefix + ' ' + esc(c.id) + '</span>';
+  }).join('');
+  if (extra > 0) html += '<span class="card-rel card-rel-more">+' + extra + ' more</span>';
+  return '<div class="card-rels">' + html + '</div>';
+}
+
+function relDetailHTML(chips) {
+  if (!chips.length) return '';
+  var groups = {related: [], blocks: [], blocked_by: []};
+  chips.forEach(function(c) { groups[c.kind].push(c.id); });
+  var parts = [];
+  if (groups.related.length)    parts.push('<div><div class="dl-label">Related</div><div class="dl-val">'    + groups.related.map(esc).join(', ')    + '</div></div>');
+  if (groups.blocks.length)     parts.push('<div><div class="dl-label">Blocks</div><div class="dl-val">'     + groups.blocks.map(esc).join(', ')     + '</div></div>');
+  if (groups.blocked_by.length) parts.push('<div><div class="dl-label">Blocked by</div><div class="dl-val">' + groups.blocked_by.map(esc).join(', ') + '</div></div>');
+  return parts.join('');
+}
+
+function cardHTML(t, isRejected) {
+  var rejClass = (isRejected || t.status === 'not-doing') ? ' not-doing' : '';
+  var statusClass = '';
+  if (t.status === 'done') statusClass = ' status-done';
+  else if (t.status === 'in-progress') statusClass = ' status-inprogress';
+  var fsChip = t.feature_set ? '<div class="card-fs">' + esc(t.feature_set) + '</div>' : '';
+  var relChips = buildRelChips(t);
+  var relFace = relChipsFaceHTML(relChips, 3);
+  var relDetail = relDetailHTML(relChips);
+  var assignee = t.assigned_to ? '<div class="card-assignee">' + esc(t.assigned_to) + '</div>' : '';
+
+  var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
+  var why   = t.why   ? '<div><div class="dl-label">Why</div><div class="dl-val">'   + esc(t.why)   + '</div></div>' : '';
+  var dw = '';
+  if (t.done_when && t.done_when.length) {
+    dw = '<div><div class="dl-label">Done when</div><ul class="dl-list">'
+      + t.done_when.map(function(d) { return '<li>' + esc(d) + '</li>'; }).join('')
+      + '</ul></div>';
+  }
+  var desired = detailRow('Desired output', bulletOrProse(t.desired_output));
+  var success = detailRow('Success signals', bulletOrProse(t.success_signals));
+  var failure = detailRow('Failure signals', bulletOrProse(t.failure_signals));
+  var tests   = detailRow('Tests', bulletOrProse(t.tests));
+  var notes = t.notes ? '<div><div class="dl-label">Notes</div><div class="dl-val pre">' + esc(t.notes) + '</div></div>' : '';
+  var rejection = (t.rejection_reason && t.rejection_reason.toLowerCase() !== 'n/a')
+    ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
+    : '';
+
+  var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
+    + '<div class="card-top">'
+    + '<span class="card-id">' + esc(t.id) + '</span>'
+    + '<div class="badges">' + crabBadge(t.assigned_to) + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
+    + '</div>'
+    + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
+    + fsChip
+    + relFace
+    + assignee
+    + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
+    + '</div>';
+}
+
+function toggleCard(el) {
+  el.classList.toggle('open');
+}
+
+function toggleRejected() {
+  var btn = document.getElementById('btn-rejected');
+  var board = document.getElementById('board-grid');
+  var showing = board.classList.toggle('show-rejected');
+  btn.textContent = showing ? 'Hide rejected' : 'Show rejected';
+  btn.classList.toggle('active', showing);
+}
+
+function switchTab(btn) {
+  var view = btn.getAttribute('data-view');
+  document.querySelectorAll('.tab').forEach(function(b) { b.classList.toggle('active', b === btn); });
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.toggle('active', v.id === 'view-' + view); });
+}
+
+function render() {
+  var gen = D.generated ? new Date(D.generated).toLocaleString() : '';
+  if (gen) document.getElementById('gen-time').textContent = 'generated ' + gen;
+
+  var buckets = {open:[], 'in-progress':[], done:[], blocked:[], 'not-doing':[]};
+  D.tickets.forEach(function(t) { if (buckets[t.status]) buckets[t.status].push(t); });
+  var colKeys = {open:'backlog','in-progress':'inprogress',done:'done',blocked:'blocked'};
+  Object.keys(colKeys).forEach(function(status) {
+    var list = buckets[status];
+    var k = colKeys[status];
+    document.getElementById('c-'+k).innerHTML = list.length ? list.map(function(t) { return cardHTML(t); }).join('') : '<div class="empty">No tickets</div>';
+    document.getElementById('n-'+k).textContent = list.length;
+  });
+  var ndList = buckets['not-doing'];
+  document.getElementById('c-notdoing').innerHTML = ndList.length ? ndList.map(function(t) { return cardHTML(t, true); }).join('') : '<div class="empty">No tickets</div>';
+  document.getElementById('n-notdoing').textContent = ndList.length;
+  if (ndList.length) document.getElementById('btn-rejected').style.display = '';
+
+  var byId = {};
+  D.tickets.forEach(function(t) { byId[t.id] = t; });
+  var assigned = {};
+  D.feature_sets.forEach(function(fs) { fs.tickets.forEach(function(id) { assigned[id] = true; }); });
+  var unassigned = D.tickets.filter(function(t) { return !assigned[t.id]; });
+  var sections = D.feature_sets.slice();
+  if (unassigned.length) {
+    sections.push({id:'__unassigned', name:'Unassigned', goal:'', status:'', tickets:unassigned.map(function(t){return t.id;})});
+  }
+
+  var featureSetList = document.getElementById('feature-set-list');
+  if (!sections.length) {
+    featureSetList.innerHTML = '<div class="empty">No feature sets yet.</div>';
+    return;
+  }
+
+  featureSetList.innerHTML = sections.map(function(featureSet) {
+    var list = featureSet.tickets.map(function(id) { return byId[id]; }).filter(Boolean);
+    var done = list.filter(function(t) { return t.status === 'done'; }).length;
+    var total = list.filter(function(t) { return t.status !== 'not-doing'; }).length;
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var isUnassigned = featureSet.id === '__unassigned';
+    var progRow = !isUnassigned
+      ? '<div class="feature-set-prog-row"><div class="prog-bar"><div class="prog-fill" style="width:' + pct + '%"></div></div><span class="prog-label">' + done + ' / ' + total + ' tickets done</span></div>'
+      : '';
+    var statusBadge = featureSet.status ? '<span class="feature-set-status">' + esc(featureSet.status) + '</span>' : '';
+    return '<div class="feature-set">'
+      + '<div class="feature-set-head"><div>'
+      + '<div class="feature-set-name">' + esc(featureSet.name) + '</div>'
+      + (featureSet.goal ? '<div class="feature-set-goal">' + esc(featureSet.goal) + '</div>' : '')
+      + '</div>' + statusBadge + '</div>'
+      + progRow
+      + '<div class="feature-set-cards">' + (list.length ? list.map(cardHTML).join('') : '<div class="empty">No tickets</div>') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+render();
+
+function openModal() {
+  var sel = document.getElementById('f-featureset');
+  sel.innerHTML = '<option value="">None</option>'
+    + D.feature_sets.map(function(s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>'; }).join('');
+  document.getElementById('modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('f-title').focus(); }, 50);
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  ['f-title','f-assigned','f-goal','f-why','f-done','f-notes'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-priority').value = '';
+  document.getElementById('f-effort').value = '';
+  document.getElementById('f-featureset').value = '';
+}
+
+function getGithubToken() { return localStorage.getItem('cm_github_token') || ''; }
+function setGithubToken(t) { localStorage.setItem('cm_github_token', t); }
+function clearGithubToken() { localStorage.removeItem('cm_github_token'); }
+function getAgentName() { return localStorage.getItem('cm_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('cm_agent_name', n); }
+
+function promptSetup(onSuccess, errorMsg) {
+  var modal = document.getElementById('setup-modal');
+  var nameInput = document.getElementById('s-name');
+  var tokenInput = document.getElementById('s-token');
+  var err = document.getElementById('s-error');
+  nameInput.value = getAgentName();
+  tokenInput.value = '';
+  if (errorMsg) { err.textContent = errorMsg; err.style.display = 'block'; }
+  else { err.style.display = 'none'; }
+  modal.style.display = 'flex';
+  modal._onSuccess = onSuccess;
+  setTimeout(function() { (getAgentName() ? tokenInput : nameInput).focus(); }, 50);
+}
+
+function submitSetup() {
+  var nameInput = document.getElementById('s-name');
+  var tokenInput = document.getElementById('s-token');
+  var name = nameInput.value.trim();
+  var token = tokenInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  if (!token) { tokenInput.focus(); return; }
+  setAgentName(name);
+  setGithubToken(token);
+  var modal = document.getElementById('setup-modal');
+  var cb = modal._onSuccess;
+  modal.style.display = 'none';
+  if (cb) cb();
+}
+
+function closeSetupModal() {
+  document.getElementById('setup-modal').style.display = 'none';
+}
+
+async function createStory() {
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { document.getElementById('f-title').focus(); return; }
+  var priority = document.getElementById('f-priority').value;
+  var effort   = document.getElementById('f-effort').value;
+  if (!priority || !effort) { showToast('Priority and effort are required.'); return; }
+
+  var token = getGithubToken();
+  if (!token) { promptSetup(function() { createStory(); }); return; }
+
+  var goal    = document.getElementById('f-goal').value.trim();
+  var why     = document.getElementById('f-why').value.trim();
+  var doneRaw = document.getElementById('f-done').value.trim();
+  var notes   = document.getElementById('f-notes').value.trim();
+  var fsId    = document.getElementById('f-featureset').value;
+
+  var payload = { title: title, goal: goal || 'TBD', done_when: doneRaw || 'TBD', priority: priority, effort: effort };
+  if (why) payload.why = why;
+  if (notes) payload.notes = notes;
+  if (fsId) {
+    var matchedFs = D.feature_sets.filter(function(fs) { return fs.id === fsId; })[0];
+    if (matchedFs) payload.feature_set = matchedFs.name;
+  }
+
+  var btn = document.querySelector('#modal .btn-primary');
+  var origText = btn.textContent;
+  btn.textContent = 'Creating...';
+  btn.disabled = true;
+
+  try {
+    var res = await fetch(CM_WRITE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CM_ANON_KEY },
+      body: JSON.stringify({ github_token: token, actor_name: getAgentName(), payload: payload })
+    });
+    var data = await res.json().catch(function() { return {}; });
+
+    if (res.status === 403) {
+      clearGithubToken();
+      closeModal();
+      promptSetup(function() { openModal(); }, data.error || 'Access denied. Check your GitHub token.');
+      return;
+    }
+    if (!res.ok) { showToast('Error: ' + (data.error || 'HTTP ' + res.status)); return; }
+
+    closeModal();
+    showToast(data.ticket_id + ' created in backlog.');
+  } catch(e) {
+    showToast('Network error: ' + e.message);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+var _toastTimer;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { el.classList.remove('show'); }, 5000);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
+});
+</script>
+<script id="cm-config" type="application/json">{
+  "supabase_url": "https://asxkalerueoenltawxmg.supabase.co",
+  "supabase_publishable_key": "sb_publishable_AahlzUKVHc3CacNbmk20-A_VpAACweo",
+  "project_name": "my project"
+}</script>
+<script>
+(function() {
+  var cfg = JSON.parse(document.getElementById('cm-config').textContent);
+  if (!cfg.supabase_url || !cfg.supabase_publishable_key) return;
+
+  var client = supabase.createClient(cfg.supabase_url, cfg.supabase_publishable_key);
+  var channel = client.channel('change-mate');
+
+  channel.on('broadcast', { event: 'ticket_updated' }, function(e) {
+    handleTicketUpdate(e.payload);
+  });
+
+  channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locks' }, function(e) {
+    var row = e.new;
+    if (row && row.ticket_id) setCardActive(row.ticket_id, true);
+  });
+  channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'locks' }, function(e) {
+    var row = e.old;
+    if (row && row.ticket_id) setCardActive(row.ticket_id, false);
+  });
+
+  channel.subscribe(function(status) {
+    if (status === 'SUBSCRIBED') {
+      document.getElementById('cm-live-indicator').style.display = 'flex';
+      client.from('locks').select('ticket_id, agent').then(function(res) {
+        if (res.data) res.data.forEach(function(lock) { setCardActive(lock.ticket_id, true); });
+      });
+    }
+  });
+
+  function findCard(ticketId) {
+    var found = null;
+    document.querySelectorAll('#view-board .card').forEach(function(card) {
+      var el = card.querySelector('.card-id');
+      if (el && el.textContent.trim() === ticketId) found = card;
+    });
+    return found;
+  }
+
+  function setCardActive(ticketId, active) {
+    var card = findCard(ticketId);
+    if (!card) return;
+    if (active) card.classList.add('cm-active');
+    else card.classList.remove('cm-active');
+  }
+
+  function handleTicketUpdate(data) {
+    var colMap = {
+      'backlog': 'c-backlog', 'open': 'c-backlog',
+      'in-progress': 'c-inprogress', 'done': 'c-done',
+      'blocked': 'c-blocked', 'not-doing': 'c-notdoing'
+    };
+    var targetColId = colMap[data.to_status];
+    if (!targetColId) return;
+    var targetCol = document.getElementById(targetColId);
+    if (!targetCol) return;
+
+    var existing = null;
+    document.querySelectorAll('#view-board .card').forEach(function(card) {
+      var el = card.querySelector('.card-id');
+      if (el && el.textContent.trim() === data.ticket_id) existing = card;
+    });
+
+    if (existing) {
+      existing.classList.add('cm-moving');
+      existing.parentNode.removeChild(existing);
+      targetCol.insertBefore(existing, targetCol.firstChild);
+      setTimeout(function() { existing.classList.remove('cm-moving'); }, 600);
+    } else {
+      var card = document.createElement('div');
+      card.className = 'card cm-new';
+      card.onclick = function() { toggleCard(this); };
+      card.innerHTML = '<div class="card-top"><span class="card-id">' + esc(data.ticket_id) + '</span></div>'
+        + '<div class="card-title">' + esc(data.title || data.ticket_id) + '</div>';
+      targetCol.insertBefore(card, targetCol.firstChild);
+    }
+
+    ['c-backlog','c-inprogress','c-done','c-blocked','c-notdoing'].forEach(function(id) {
+      var col = document.getElementById(id);
+      var cnt = document.getElementById(id.replace('c-', 'n-'));
+      if (col && cnt) cnt.textContent = col.querySelectorAll('.card').length;
+    });
+  }
+})();
+</script>
+<div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">New story</div>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="f-title" placeholder="What needs to happen?">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Priority</label>
+        <select id="f-priority">
+          <option value="">—</option>
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Effort</label>
+        <select id="f-effort">
+          <option value="">—</option>
+          <option>XS</option>
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Feature set</label>
+        <select id="f-featureset"></select>
+      </div>
+      <div class="field">
+        <label>Assigned to</label>
+        <input type="text" id="f-assigned" placeholder="Name or handle">
+      </div>
+    </div>
+    <div class="field">
+      <label>Goal</label>
+      <textarea id="f-goal" placeholder="One sentence: what does this do?"></textarea>
+    </div>
+    <div class="field">
+      <label>Why</label>
+      <textarea id="f-why" placeholder="Why does this matter?"></textarea>
+    </div>
+    <div class="field">
+      <label>Done when</label>
+      <textarea id="f-done" placeholder="One criterion per line"></textarea>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="f-notes" placeholder="Constraints, gotchas, decisions..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createStory()">Create story</button>
+    </div>
+  </div>
+</div>
+<div id="setup-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSetupModal()">
+  <div class="modal">
+    <div class="modal-title">Connect to GitHub</div>
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="s-name" placeholder="e.g. Ada, crabFather, Agent 7">
+    </div>
+    <div class="field">
+      <label>GitHub token</label>
+      <input type="password" id="s-token" placeholder="github_pat_..." onkeydown="if(event.key==='Enter')submitSetup()">
+    </div>
+    <p id="s-error" style="color:#991b1b;font-size:12px;margin-bottom:8px;display:none"></p>
+    <p class="settings-note">One-time setup. Create a token at <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--text2)">github.com/settings/tokens</a> with <strong>Contents: Read and write</strong> on this repo. Stored in your browser only.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSetupModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitSetup()">Connect</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+</body>
+</html>
