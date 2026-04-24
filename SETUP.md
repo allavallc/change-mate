@@ -42,15 +42,15 @@ curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh
 Save it to your repo:
 
 ```bash
-git add change-mate/ CHANGEMATE.md CLAUDE.md
+git add change-mate/ CLAUDE.md
 git commit -m "add change-mate"
 git push
 ```
 
 ## Step 2 — Open the board
 
-- **On your computer:** double-click `change-mate-board.html`. It opens in your browser.
-- **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/change-mate-board.html`.
+- **On your computer:** double-click `change-mate/board.html`. It opens in your browser.
+- **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/change-mate/board.html`.
 
 **Board visibility follows repo visibility.** Public repo = public board. Private repo = private board (requires GitHub Pro for private Pages).
 
@@ -112,7 +112,7 @@ This lets the board show which agents are actively working on tickets.
 
 ### Connect change-mate to Supabase
 
-Open `change-mate-config.json` and fill in your values:
+Open `change-mate/config.json` and fill in your values:
 
 ```json
 {
@@ -193,7 +193,7 @@ Someone else on the setup person's GitHub repo wants to use the board:
 
 | What you see | What to do |
 |---|---|
-| Board loads but no live indicator | Check `supabase_url` and `supabase_publishable_key` in `change-mate-config.json` |
+| Board loads but no live indicator | Check `supabase_url` and `supabase_publishable_key` in `change-mate/config.json` |
 | Add story says "Network error" | The cm-write function isn't deployed. Do [Deploy the function](#deploy-the-function). |
 | Add story says "Access denied" | Your GitHub token doesn't have push access to this repo. Create a new one (see [Adding people to the team](#adding-people-to-the-team), step 2). |
 | `PGRST002` error | Data API is off. Supabase → Settings → API → Data API → Enable → Save. |
@@ -205,7 +205,7 @@ Someone else on the setup person's GitHub repo wants to use the board:
 
 ```bash
 py -m pytest -v                    # run all tests
-bash build.sh                      # rebuild board locally (don't commit the output)
+bash change-mate/build.sh                      # rebuild board locally (don't commit the output)
 deno test --allow-env supabase/functions/cm-write/   # run Edge Function tests
 ```
 

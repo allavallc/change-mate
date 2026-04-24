@@ -130,16 +130,16 @@ Decided against OAuth for now — adding in CM-008.
 
 change-mate generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
 
-**View the board** — open `change-mate-board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
+**View the board** — open `change-mate/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
 
 **Regenerate manually:**
 ```bash
-bash build.sh
+bash change-mate/build.sh
 ```
 
 **Commit the board** so teammates always have the latest version without running anything:
 ```bash
-git add change-mate-board.html
+git add change-mate/board.html
 git commit -m "update board"
 git push
 ```
@@ -181,7 +181,7 @@ When multiple agents work in parallel, change-mate can check a shared Gist befor
 **Setup:**
 
 1. Create a **secret** GitHub Gist at [gist.github.com](https://gist.github.com). The filename and content don't matter — change-mate will manage the content.
-2. Copy the Gist ID (the hash at the end of the URL) and paste it into `change-mate-config.json`:
+2. Copy the Gist ID (the hash at the end of the URL) and paste it into `change-mate/config.json`:
    ```json
    {
      "gist_id": "your-gist-id-here",
@@ -190,7 +190,7 @@ When multiple agents work in parallel, change-mate can check a shared Gist befor
    ```
 3. Set `CHANGEMATE_GITHUB_TOKEN` as an environment variable (or shell secret) with **Gist read/write** scope.
 
-If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate-config.json` has no `gist_id`, the check is skipped — change-mate works normally without it.
+If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate/config.json` has no `gist_id`, the check is skipped — change-mate works normally without it.
 
 ---
 
@@ -198,16 +198,16 @@ If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate-config.json` has no `gis
 
 | File | Purpose |
 |---|---|
-| `CHANGEMATE.md` | Workflow instructions the agent follows *(dev-only tooling)* |
+| `change-mate/CHANGEMATE.md` | Workflow instructions the agent follows *(dev-only tooling)* |
 | `change-mate/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
-| `change-mate-config.json` | Optional config: Gist ID, project name, Supabase creds *(dev-only tooling)* |
+| `change-mate/config.json` | Optional config: Gist ID, project name, Supabase creds *(dev-only tooling)* |
 | `setup.sh` | One-command installer *(dev-only tooling)* |
 
 ---
 
 ## Which agents can use it?
 
-Any agent or bot that can read/write files and run `git` commands can drive change-mate. The workflow is encoded in `CHANGEMATE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
+Any agent or bot that can read/write files and run `git` commands can drive change-mate. The workflow is encoded in `change-mate/CHANGEMATE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
 
 ---
 
