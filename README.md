@@ -198,10 +198,10 @@ If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate-config.json` has no `gis
 
 | File | Purpose |
 |---|---|
-| `CHANGEMATE.md` | Workflow instructions the agent follows |
-| `change-mate/` | Your ticket folders (committed to the repo) |
-| `change-mate-config.json` | Optional config: Gist ID, project name, Supabase creds |
-| `setup.sh` | One-command installer |
+| `CHANGEMATE.md` | Workflow instructions the agent follows *(dev-only tooling)* |
+| `change-mate/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
+| `change-mate-config.json` | Optional config: Gist ID, project name, Supabase creds *(dev-only tooling)* |
+| `setup.sh` | One-command installer *(dev-only tooling)* |
 
 ---
 
