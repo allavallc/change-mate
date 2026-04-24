@@ -469,7 +469,7 @@ var D = {
       "goal": "Stop the board-rebuild workflow from silently producing noise commits on `main` for solo adopters while keeping the \"humans watch a fresh Pages-hosted board\" primitive working for teams. Default is mode-aware: Supabase configured \u2192 auto-commit on; no Supabase \u2192 off. Config flag overrides. Rename the workflow so its purpose is self-evident in the GitHub Actions UI.",
       "why": "Adopter feedback from hana-core: \"the auto-rebuild created noise commits in git log that made it hard to see real product changes.\" A flat default of `false` would kill the noise but break the Pages-fresh-board experience for teams. A flat default of `true` keeps the status quo noise. Mode-aware splits correctly: solo users (no Supabase, usually open the board locally) get a quiet log; teams (Supabase-configured, usually Pages-hosted) stay fresh automatically. Explicit config always wins, so anyone in the edge case (solo on Pages, team viewing locally) has a one-line escape.",
       "done_when": [
-        "`change-mate-config.json` accepts a new optional field `auto_commit_board`: boolean.",
+        "`change-mate/config.json` accepts a new optional field `auto_commit_board`: boolean.",
         "Default is **mode-aware**: when `supabase_url` is present and non-empty in the config, the workflow treats the flag as `true`; when absent or empty string, treats as `false`. An explicit value always wins over the default.",
         "Workflow reads the flag using `jq` against the config file and only runs `git add / commit / push` when the resolved value is `true`.",
         "When resolved to `false`, the workflow still **builds** the board (for CI signal and to surface build failures) \u2014 it just does not commit it.",
@@ -1095,7 +1095,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-24T19:14:50.060762+00:00"
+  "generated": "2026-04-24T19:16:50.778877+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
