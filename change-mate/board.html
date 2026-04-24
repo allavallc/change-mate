@@ -414,43 +414,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
-      "id": "CM-050",
-      "title": "setup.sh writes deploy-ignore defaults for change-mate/",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-003-scope-hygiene",
-      "related": [
-        "CM-048"
-      ],
-      "blocks": [],
-      "blocked_by": [
-        "CM-049"
-      ],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Make setup.sh the place that prevents change-mate from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
-      "why": "CM-048 tells readers that change-mate must not enter deploys. CM-049 makes that rule mechanically enforceable with one folder. CM-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read CHANGEMATE.md, internalize the rule, and wire it themselves.",
-      "done_when": [
-        "`setup.sh` detects the presence of `.dockerignore`, `.gcloudignore`, `.vercelignore` and for each that exists, appends `change-mate/` as an exclusion if not already present.",
-        "If an ignore file does not exist, setup.sh does NOT create it (don't surprise adopters with new tooling files; only modify what's already there).",
-        "Appends are idempotent \u2014 re-running setup.sh does not duplicate entries.",
-        "setup.sh prints a one-line confirmation per file touched (e.g. `\u2713 added change-mate/ to .dockerignore`).",
-        "`.gitignore` gets a *commented* marker line `# change-mate/ is dev-only tooling; do not ignore unless using local-only mode (see change-mate/CHANGEMATE.md)`. This is documentation, not an exclusion.",
-        "The existing `.gitignore` warning (fire if `change-mate` is actually ignored) stays and is consistent with the new comment."
-      ],
-      "desired_output": "An adopter runs `setup.sh` in a repo that already has Docker. The next `docker build` excludes `change-mate/` from the image. No configuration, no thought required. Verifiable with `docker run <image> ls /app/change-mate` \u2192 not found.",
-      "success_signals": "- Adopters running Docker-based deploys see zero change-mate files in their images post-ship.\n- No issue reports of \"change-mate files ended up in my deploy\".",
-      "failure_signals": "- setup.sh appends to an ignore file using a non-default format (e.g. `.gcloudignore` syntax differs subtly) and breaks the file.\n- Append runs on re-install and duplicates entries (idempotency bug).\n- Adopter using the local-only mode from CM-048 is confused when `.gitignore` comment contradicts their usage. Mitigation: comment references CM-048's doc section.\n- Adopter has carefully tuned ignore files and resents the append. Mitigation: single clear line with a comment explaining why.",
-      "tests": "- Integration (new): run setup.sh twice in a temp dir with a pre-existing `.dockerignore` \u2014 confirm `change-mate/` is added once, not twice.\n- Integration (new): run setup.sh in a temp dir with no ignore files \u2014 confirm nothing is created.\n- Manual: verify `docker build` in a sample adopter repo excludes `change-mate/` after install.\n- Manual: verify `.gitignore` gets the commented explanation line, not an exclusion line.",
-      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `change-mate.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (CM-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on CM-049**: if change-mate files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-051",
       "title": "Board rebuild workflow: mode-aware auto-commit + rename",
       "status": "open",
@@ -905,6 +868,43 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-050",
+      "title": "setup.sh writes deploy-ignore defaults for change-mate/",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-003-scope-hygiene",
+      "related": [
+        "CM-048"
+      ],
+      "blocks": [],
+      "blocked_by": [
+        "CM-049"
+      ],
+      "assigned_to": "claude",
+      "started": "2026-04-24 15:00",
+      "completed": "2026-04-24",
+      "goal": "Make setup.sh the place that prevents change-mate from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
+      "why": "CM-048 tells readers that change-mate must not enter deploys. CM-049 makes that rule mechanically enforceable with one folder. CM-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read CHANGEMATE.md, internalize the rule, and wire it themselves.",
+      "done_when": [
+        "`setup.sh` detects the presence of `.dockerignore`, `.gcloudignore`, `.vercelignore` and for each that exists, appends `change-mate/` as an exclusion if not already present.",
+        "If an ignore file does not exist, setup.sh does NOT create it (don't surprise adopters with new tooling files; only modify what's already there).",
+        "Appends are idempotent \u2014 re-running setup.sh does not duplicate entries.",
+        "setup.sh prints a one-line confirmation per file touched (e.g. `\u2713 added change-mate/ to .dockerignore`).",
+        "`.gitignore` gets a *commented* marker line `# change-mate/ is dev-only tooling; do not ignore unless using local-only mode (see change-mate/CHANGEMATE.md)`. This is documentation, not an exclusion.",
+        "The existing `.gitignore` warning (fire if `change-mate` is actually ignored) stays and is consistent with the new comment."
+      ],
+      "desired_output": "An adopter runs `setup.sh` in a repo that already has Docker. The next `docker build` excludes `change-mate/` from the image. No configuration, no thought required. Verifiable with `docker run <image> ls /app/change-mate` \u2192 not found.",
+      "success_signals": "- Adopters running Docker-based deploys see zero change-mate files in their images post-ship.\n- No issue reports of \"change-mate files ended up in my deploy\".",
+      "failure_signals": "- setup.sh appends to an ignore file using a non-default format (e.g. `.gcloudignore` syntax differs subtly) and breaks the file.\n- Append runs on re-install and duplicates entries (idempotency bug).\n- Adopter using the local-only mode from CM-048 is confused when `.gitignore` comment contradicts their usage. Mitigation: comment references CM-048's doc section.\n- Adopter has carefully tuned ignore files and resents the append. Mitigation: single clear line with a comment explaining why.",
+      "tests": "- Integration (new): run setup.sh twice in a temp dir with a pre-existing `.dockerignore` \u2014 confirm `change-mate/` is added once, not twice.\n- Integration (new): run setup.sh in a temp dir with no ignore files \u2014 confirm nothing is created.\n- Manual: verify `docker build` in a sample adopter repo excludes `change-mate/` after install.\n- Manual: verify `.gitignore` gets the commented explanation line, not an exclusion line.",
+      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `change-mate.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (CM-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on CM-049**: if change-mate files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1095,7 +1095,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-24T19:19:21.444057+00:00"
+  "generated": "2026-04-24T19:35:30.036119+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
