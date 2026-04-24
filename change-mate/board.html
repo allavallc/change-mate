@@ -414,45 +414,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
-      "id": "CM-051",
-      "title": "Board rebuild workflow: mode-aware auto-commit + rename",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-003-scope-hygiene",
-      "related": [
-        "CM-048",
-        "CM-049"
-      ],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Stop the board-rebuild workflow from silently producing noise commits on `main` for solo adopters while keeping the \"humans watch a fresh Pages-hosted board\" primitive working for teams. Default is mode-aware: Supabase configured \u2192 auto-commit on; no Supabase \u2192 off. Config flag overrides. Rename the workflow so its purpose is self-evident in the GitHub Actions UI.",
-      "why": "Adopter feedback from hana-core: \"the auto-rebuild created noise commits in git log that made it hard to see real product changes.\" A flat default of `false` would kill the noise but break the Pages-fresh-board experience for teams. A flat default of `true` keeps the status quo noise. Mode-aware splits correctly: solo users (no Supabase, usually open the board locally) get a quiet log; teams (Supabase-configured, usually Pages-hosted) stay fresh automatically. Explicit config always wins, so anyone in the edge case (solo on Pages, team viewing locally) has a one-line escape.",
-      "done_when": [
-        "`change-mate/config.json` accepts a new optional field `auto_commit_board`: boolean.",
-        "Default is **mode-aware**: when `supabase_url` is present and non-empty in the config, the workflow treats the flag as `true`; when absent or empty string, treats as `false`. An explicit value always wins over the default.",
-        "Workflow reads the flag using `jq` against the config file and only runs `git add / commit / push` when the resolved value is `true`.",
-        "When resolved to `false`, the workflow still **builds** the board (for CI signal and to surface build failures) \u2014 it just does not commit it.",
-        "Workflow file renamed: `.github/workflows/build-board.yml` \u2192 `.github/workflows/change-mate-rebuild-board.yml`.",
-        "Workflow `name:` field updated to `change-mate: rebuild board` so it's clearly namespaced in the Actions UI.",
-        "CHANGEMATE.md \"Board rules\" section documents the flag, mode-aware default, and how to override.",
-        "README.md / SETUP.md updated with the same.",
-        "Release note explicitly calls out the behavior change for anyone using the workflow today."
-      ],
-      "desired_output": "Team adopters on GitHub Pages see their board stay fresh automatically (status quo preserved). Solo adopters stop seeing `chore: rebuild board [skip ci]` noise in `git log`. Either group can override with `\"auto_commit_board\": true/false` if their setup doesn't match the default.",
-      "success_signals": "- Noise commits from change-mate on `main` drop to near-zero for solo adopters using default config.\n- Team adopters report no change in board freshness.\n- No adopter needs to edit the workflow YAML to change behavior \u2014 config flag is the sole surface.",
-      "failure_signals": "- Solo adopter hosting on Pages sees their board go stale without understanding why. Mitigation: SETUP.md solo-mode section mentions the override.\n- Mode detection misfires \u2014 e.g. `supabase_url: \"\"` reads as present and triggers auto-commit. Treat empty string as absent.\n- Config key typo (`auto-commit-board` vs `auto_commit_board`) silently takes the default and looks like the flag doesn't work.\n- `jq` missing on a minimal runner. GitHub-hosted runners have it \u2014 verify explicitly.",
-      "tests": "- Workflow test: config with `supabase_url` set + no flag \u2192 commit happens.\n- Workflow test: config with no `supabase_url` + no flag \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: false` + Supabase set \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: true` + no Supabase \u2192 commit.\n- Workflow test: `supabase_url: \"\"` treated as absent (no commit by default).\n- Manual: confirm workflow UI shows \"change-mate: rebuild board\".\n- Manual: read SETUP.md / CHANGEMATE.md and confirm the mode-aware default is documented clearly.",
-      "notes": "- **Alternative considered**: flat default `false` for everyone. Rejected \u2014 breaks the \"humans watch\" primitive for Pages-hosted team boards until they find the flag.\n- **Alternative considered**: flat default `true` for everyone. Rejected \u2014 status quo; feedback is that the noise is a real problem for solo users.\n- **Alternative considered**: emit the board via Actions deploy to Pages instead of committing to main. Cleaner for Pages adopters but bigger scope \u2014 own ticket if pulled for.\n- **Out of scope**: rewriting build.sh (CM-049), deploy-ignore defaults (CM-050).\n- **Risk**: mode detection uses `supabase_url` as a proxy for \"team mode.\" Adopters with Supabase configured but no Pages get auto-commit they don't need \u2014 one-line config fix.\n- **Confidence**: 85% (up from 70% with the mode-aware default \u2014 solves the Pages-freshness concern surfaced during drafting).",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "done",
@@ -905,6 +866,45 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-051",
+      "title": "Board rebuild workflow: mode-aware auto-commit + rename",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-003-scope-hygiene",
+      "related": [
+        "CM-048",
+        "CM-049"
+      ],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-24 15:30",
+      "completed": "2026-04-24",
+      "goal": "Stop the board-rebuild workflow from silently producing noise commits on `main` for solo adopters while keeping the \"humans watch a fresh Pages-hosted board\" primitive working for teams. Default is mode-aware: Supabase configured \u2192 auto-commit on; no Supabase \u2192 off. Config flag overrides. Rename the workflow so its purpose is self-evident in the GitHub Actions UI.",
+      "why": "Adopter feedback from hana-core: \"the auto-rebuild created noise commits in git log that made it hard to see real product changes.\" A flat default of `false` would kill the noise but break the Pages-fresh-board experience for teams. A flat default of `true` keeps the status quo noise. Mode-aware splits correctly: solo users (no Supabase, usually open the board locally) get a quiet log; teams (Supabase-configured, usually Pages-hosted) stay fresh automatically. Explicit config always wins, so anyone in the edge case (solo on Pages, team viewing locally) has a one-line escape.",
+      "done_when": [
+        "`change-mate/config.json` accepts a new optional field `auto_commit_board`: boolean.",
+        "Default is **mode-aware**: when `supabase_url` is present and non-empty in the config, the workflow treats the flag as `true`; when absent or empty string, treats as `false`. An explicit value always wins over the default.",
+        "Workflow reads the flag using `jq` against the config file and only runs `git add / commit / push` when the resolved value is `true`.",
+        "When resolved to `false`, the workflow still **builds** the board (for CI signal and to surface build failures) \u2014 it just does not commit it.",
+        "Workflow file renamed: `.github/workflows/build-board.yml` \u2192 `.github/workflows/change-mate-rebuild-board.yml`.",
+        "Workflow `name:` field updated to `change-mate: rebuild board` so it's clearly namespaced in the Actions UI.",
+        "CHANGEMATE.md \"Board rules\" section documents the flag, mode-aware default, and how to override.",
+        "README.md / SETUP.md updated with the same.",
+        "Release note explicitly calls out the behavior change for anyone using the workflow today."
+      ],
+      "desired_output": "Team adopters on GitHub Pages see their board stay fresh automatically (status quo preserved). Solo adopters stop seeing `chore: rebuild board [skip ci]` noise in `git log`. Either group can override with `\"auto_commit_board\": true/false` if their setup doesn't match the default.",
+      "success_signals": "- Noise commits from change-mate on `main` drop to near-zero for solo adopters using default config.\n- Team adopters report no change in board freshness.\n- No adopter needs to edit the workflow YAML to change behavior \u2014 config flag is the sole surface.",
+      "failure_signals": "- Solo adopter hosting on Pages sees their board go stale without understanding why. Mitigation: SETUP.md solo-mode section mentions the override.\n- Mode detection misfires \u2014 e.g. `supabase_url: \"\"` reads as present and triggers auto-commit. Treat empty string as absent.\n- Config key typo (`auto-commit-board` vs `auto_commit_board`) silently takes the default and looks like the flag doesn't work.\n- `jq` missing on a minimal runner. GitHub-hosted runners have it \u2014 verify explicitly.",
+      "tests": "- Workflow test: config with `supabase_url` set + no flag \u2192 commit happens.\n- Workflow test: config with no `supabase_url` + no flag \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: false` + Supabase set \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: true` + no Supabase \u2192 commit.\n- Workflow test: `supabase_url: \"\"` treated as absent (no commit by default).\n- Manual: confirm workflow UI shows \"change-mate: rebuild board\".\n- Manual: read SETUP.md / CHANGEMATE.md and confirm the mode-aware default is documented clearly.",
+      "notes": "- **Alternative considered**: flat default `false` for everyone. Rejected \u2014 breaks the \"humans watch\" primitive for Pages-hosted team boards until they find the flag.\n- **Alternative considered**: flat default `true` for everyone. Rejected \u2014 status quo; feedback is that the noise is a real problem for solo users.\n- **Alternative considered**: emit the board via Actions deploy to Pages instead of committing to main. Cleaner for Pages adopters but bigger scope \u2014 own ticket if pulled for.\n- **Out of scope**: rewriting build.sh (CM-049), deploy-ignore defaults (CM-050).\n- **Risk**: mode detection uses `supabase_url` as a proxy for \"team mode.\" Adopters with Supabase configured but no Pages get auto-commit they don't need \u2014 one-line config fix.\n- **Confidence**: 85% (up from 70% with the mode-aware default \u2014 solves the Pages-freshness concern surfaced during drafting).",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1095,7 +1095,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-24T19:35:30.036119+00:00"
+  "generated": "2026-04-24T19:38:12.747504+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
