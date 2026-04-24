@@ -1,0 +1,54 @@
+name: change-mate rebuild board
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build board
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: bash change-mate/build.sh
+
+      - name: Resolve auto_commit_board
+        id: resolve
+        run: |
+          if [ ! -f change-mate/config.json ]; then
+            echo "should_commit=false" >> "$GITHUB_OUTPUT"
+            echo "reason=no config.json → solo mode default"
+            exit 0
+          fi
+          EXPLICIT=$(jq -r '.auto_commit_board // empty' change-mate/config.json)
+          if [ "$EXPLICIT" = "true" ]; then
+            echo "should_commit=true" >> "$GITHUB_OUTPUT"
+            echo "reason=explicit auto_commit_board=true"
+          elif [ "$EXPLICIT" = "false" ]; then
+            echo "should_commit=false" >> "$GITHUB_OUTPUT"
+            echo "reason=explicit auto_commit_board=false"
+          else
+            SB_URL=$(jq -r '.supabase_url // empty' change-mate/config.json)
+            if [ -n "$SB_URL" ]; then
+              echo "should_commit=true" >> "$GITHUB_OUTPUT"
+              echo "reason=mode-aware default: supabase_url present → team mode"
+            else
+              echo "should_commit=false" >> "$GITHUB_OUTPUT"
+              echo "reason=mode-aware default: no supabase_url → solo mode"
+            fi
+          fi
+
+      - name: Commit and push updated board
+        if: steps.resolve.outputs.should_commit == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add change-mate/board.html
+          git diff --cached --quiet || git commit -m "chore: rebuild board [skip ci]"
+          git push

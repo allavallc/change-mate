@@ -8,7 +8,7 @@ Authoritative workflow spec: `change-mate/CHANGEMATE.md`. Read it before touchin
 
 ## Board
 
-- `change-mate/board.html` is auto-rebuilt by GitHub Actions (`.github/workflows/build-board.yml`) on every push to `main` — **never** run `bash change-mate/build.sh` manually and commit its output
+- `change-mate/board.html` is auto-rebuilt by GitHub Actions (`.github/workflows/change-mate-rebuild-board.yml`) on every push to `main`; whether the rebuild is committed depends on `auto_commit_board` in `change-mate/config.json` (mode-aware default: team mode on, solo mode off) — **never** run `bash change-mate/build.sh` manually and commit its output
 - `change-mate/build.sh` requires Python 3 (`py` / `python3` / `python`)
 - Local builds for verification are fine as long as you `git checkout -- change-mate/board.html` before committing
 - Tests run in GitHub Actions (`.github/workflows/test.yml`) on push + PR

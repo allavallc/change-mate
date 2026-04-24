@@ -54,6 +54,8 @@ git push
 
 **Board visibility follows repo visibility.** Public repo = public board. Private repo = private board (requires GitHub Pro for private Pages).
 
+**Solo-on-Pages note:** solo mode defaults to *not* auto-committing the rebuilt board to `main` (to avoid noise commits). If you want your Pages-hosted board to stay fresh automatically, add `"auto_commit_board": true` to `change-mate/config.json`. Otherwise run `bash change-mate/build.sh && git add change-mate/board.html && git commit -m "refresh board" && git push` when you want the public board to update.
+
 ## Step 3 — Add or move tickets
 
 You edit markdown files in the repo.
@@ -62,7 +64,7 @@ You edit markdown files in the repo.
 - **Start work:** move the file to `change-mate/in-progress/`.
 - **Finish:** move the file to `change-mate/done/`.
 
-Commit and push. GitHub rebuilds the board automatically on every push to `main`.
+Commit and push. GitHub rebuilds the board on every push to `main` (whether the rebuild is auto-committed depends on `auto_commit_board` in `change-mate/config.json` — see the solo-on-Pages note above).
 
 **That's it.** You're done.
 
