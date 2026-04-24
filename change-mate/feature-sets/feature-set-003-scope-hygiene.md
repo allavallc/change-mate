@@ -13,4 +13,7 @@ An adopter running change-mate inside a production monorepo (hana-core) reported
 - CM-051 — Board rebuild workflow: mode-aware auto-commit + rename
 
 ## Status
-In progress
+Done — 2026-04-24
+
+## Outcome
+Shipped. Repo root is now `change-mate/` + `setup.sh` only; all dev tooling lives under the folder. CHANGEMATE.md opens with explicit scope, one-way-dependency, sync-mode, and LLM-guidance blocks. setup.sh has an idempotent legacy-migration branch for existing adopters and appends `change-mate/` to any existing `.dockerignore` / `.gcloudignore` / `.vercelignore` plus a dev-only-tooling marker to `.gitignore`. The board-rebuild workflow was renamed `change-mate-rebuild-board.yml` and now auto-commits only when `auto_commit_board` resolves to true (mode-aware default: team mode on, solo mode off). Breaking changes: GitHub Pages URL rename from `/change-mate-board.html` to `/change-mate/board.html`; solo adopters without Supabase see the quiet default. 77-test pytest suite passes throughout.
