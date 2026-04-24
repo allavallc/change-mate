@@ -16,12 +16,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: bash build.sh
+        run: bash change-mate/build.sh
 
       - name: Commit and push updated board
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add change-mate-board.html
+          git add change-mate/board.html
           git diff --cached --quiet || git commit -m "chore: rebuild board [skip ci]"
           git push
