@@ -11,25 +11,7 @@ echo ""
 echo "setting up change-mate..."
 echo ""
 
-# Download CHANGEMATE.md
-curl -fsSL "$REPO_URL/CHANGEMATE.md" -o CHANGEMATE.md
-echo -e "${GREEN}✓${NC} downloaded CHANGEMATE.md"
-
-# Install product-manager skill into ~/.claude/skills/
-SKILL_DIR="$HOME/.claude/skills/product-manager"
-SKILL_FILE="$SKILL_DIR/SKILL.md"
-
-mkdir -p "$SKILL_DIR"
-
-if [ -f "$SKILL_FILE" ]; then
-  echo -e "${YELLOW}~${NC} product-manager skill already installed at $SKILL_FILE"
-  echo "   delete it and re-run setup if you want the latest version"
-else
-  curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$SKILL_FILE"
-  echo -e "${GREEN}✓${NC} installed product-manager skill to $SKILL_FILE"
-fi
-
-# Create folder structure
+# Create folder structure first so we can drop files into it
 mkdir -p change-mate/backlog
 mkdir -p change-mate/in-progress
 mkdir -p change-mate/done
@@ -45,12 +27,66 @@ touch change-mate/not-doing/.gitkeep
 
 echo -e "${GREEN}✓${NC} created change-mate/ folder structure"
 
+# Migrate legacy layout (root-level files) into change-mate/ if detected.
+# Idempotent — only runs when legacy files are actually present.
+LEGACY=0
+for f in CHANGEMATE.md build.sh build_lib.py change-mate-board.html change-mate-config.json; do
+  [ -f "$f" ] && LEGACY=1 && break
+done
+
+if [ $LEGACY -eq 1 ]; then
+  echo ""
+  echo -e "${YELLOW}legacy layout detected${NC} — these files live at repo root and should move into change-mate/:"
+  for f in CHANGEMATE.md build.sh build_lib.py change-mate-board.html change-mate-config.json; do
+    [ -f "$f" ] && echo "  • $f"
+  done
+  echo ""
+  read -r -p "migrate now? [y/N] " REPLY
+  if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; then
+    [ -f CHANGEMATE.md ]            && mv CHANGEMATE.md change-mate/CHANGEMATE.md            && echo -e "${GREEN}✓${NC} moved CHANGEMATE.md → change-mate/CHANGEMATE.md"
+    [ -f build.sh ]                 && mv build.sh change-mate/build.sh                      && echo -e "${GREEN}✓${NC} moved build.sh → change-mate/build.sh"
+    [ -f build_lib.py ]             && mv build_lib.py change-mate/build_lib.py              && echo -e "${GREEN}✓${NC} moved build_lib.py → change-mate/build_lib.py"
+    [ -f change-mate-board.html ]   && mv change-mate-board.html change-mate/board.html      && echo -e "${GREEN}✓${NC} moved change-mate-board.html → change-mate/board.html"
+    [ -f change-mate-config.json ]  && mv change-mate-config.json change-mate/config.json    && echo -e "${GREEN}✓${NC} moved change-mate-config.json → change-mate/config.json"
+    if [ -f CLAUDE.md ] && grep -qF "@CHANGEMATE.md" CLAUDE.md && ! grep -qF "@change-mate/CHANGEMATE.md" CLAUDE.md; then
+      sed -i.bak 's|@CHANGEMATE\.md|@change-mate/CHANGEMATE.md|g' CLAUDE.md && rm -f CLAUDE.md.bak
+      echo -e "${GREEN}✓${NC} updated CLAUDE.md import to @change-mate/CHANGEMATE.md"
+    fi
+    echo -e "${GREEN}migration complete.${NC} commit the moves with git."
+  else
+    echo "skipped migration — nothing changed."
+  fi
+  echo ""
+fi
+
+# Download CHANGEMATE.md into change-mate/ if we don't have one yet
+if [ ! -f "change-mate/CHANGEMATE.md" ]; then
+  curl -fsSL "$REPO_URL/change-mate/CHANGEMATE.md" -o change-mate/CHANGEMATE.md
+  echo -e "${GREEN}✓${NC} downloaded change-mate/CHANGEMATE.md"
+else
+  echo -e "${YELLOW}~${NC} change-mate/CHANGEMATE.md already present, skipping download"
+fi
+
+# Install product-manager skill into ~/.claude/skills/
+SKILL_DIR="$HOME/.claude/skills/product-manager"
+SKILL_FILE="$SKILL_DIR/SKILL.md"
+
+mkdir -p "$SKILL_DIR"
+
+if [ -f "$SKILL_FILE" ]; then
+  echo -e "${YELLOW}~${NC} product-manager skill already installed at $SKILL_FILE"
+  echo "   delete it and re-run setup if you want the latest version"
+else
+  curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$SKILL_FILE"
+  echo -e "${GREEN}✓${NC} installed product-manager skill to $SKILL_FILE"
+fi
+
 # Append import to CLAUDE.md if not already there
-IMPORT_LINE="@CHANGEMATE.md"
+IMPORT_LINE="@change-mate/CHANGEMATE.md"
 
 if [ -f "CLAUDE.md" ]; then
   if grep -qF "$IMPORT_LINE" CLAUDE.md; then
-    echo -e "${YELLOW}~${NC} CLAUDE.md already imports CHANGEMATE.md, skipping"
+    echo -e "${YELLOW}~${NC} CLAUDE.md already imports change-mate/CHANGEMATE.md, skipping"
   else
     echo "" >> CLAUDE.md
     echo "# change-mate" >> CLAUDE.md
