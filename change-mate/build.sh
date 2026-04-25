@@ -313,11 +313,11 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   animation: cm-robot-walk 12s linear infinite;
 }
 @keyframes cm-robot-walk {
-  0%   { top: -9px;                left: 4px; }
-  25%  { top: -9px;                left: calc(100% - 22px); }
-  50%  { top: calc(100% - 9px);    left: calc(100% - 22px); }
-  75%  { top: calc(100% - 9px);    left: 4px; }
-  100% { top: -9px;                left: 4px; }
+  0%   { top: -10px;               left: -10px; }
+  25%  { top: -10px;               left: calc(100% - 8px); }
+  50%  { top: calc(100% - 8px);    left: calc(100% - 8px); }
+  75%  { top: calc(100% - 8px);    left: -10px; }
+  100% { top: -10px;               left: -10px; }
 }
 .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; overflow-wrap: anywhere; }
 .card-assignee { font-size: 11px; color: var(--muted); }
