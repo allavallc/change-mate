@@ -162,12 +162,26 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-@keyframes cm-active-pulse {
-  0%   { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
-  50%  { border-color: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
-  100% { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
+.card.status-inprogress { position: relative; }
+.cm-robot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 0 3px rgba(34,197,94,0.7));
+  animation: cm-robot-walk 12s linear infinite;
 }
-.card.status-inprogress { animation: cm-active-pulse 2s ease-in-out infinite; }
+@keyframes cm-robot-walk {
+  0%   { top: -9px;                left: 4px; }
+  25%  { top: -9px;                left: calc(100% - 22px); }
+  50%  { top: calc(100% - 9px);    left: calc(100% - 22px); }
+  75%  { top: calc(100% - 9px);    left: 4px; }
+  100% { top: -9px;                left: 4px; }
+}
 .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; overflow-wrap: anywhere; }
 .card-assignee { font-size: 11px; color: var(--muted); }
 .card-fs {
@@ -413,35 +427,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 <script>
 var D = {
   "tickets": [
-    {
-      "id": "CM-052",
-      "title": "Test ticket \u2014 visual baseline for in-progress animation",
-      "status": "in-progress",
-      "priority": "Low",
-      "effort": "XS",
-      "feature_set": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "test-agent",
-      "started": "2026-04-25 09:00",
-      "completed": "",
-      "goal": "Have a single live in-progress card on the board so the user can see existing animation behavior and evaluate proposed additions.",
-      "why": "Empty `in-progress/` means no card to animate against. This ticket is a placeholder \u2014 close or delete once the in-progress animation work lands.",
-      "done_when": [
-        "Card appears on the board in the In Progress column.",
-        "User has chosen and shipped the in-progress animation, OR explicitly rejects all proposals."
-      ],
-      "desired_output": "",
-      "success_signals": "",
-      "failure_signals": "",
-      "tests": "",
-      "notes": "Pure visual placeholder \u2014 not real work. Delete (move to not-doing) when the animation decision lands.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
     {
       "id": "CM-001",
       "title": "Test ticket",
@@ -934,6 +919,39 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-052",
+      "title": "Walking-robot perimeter animation on in-progress cards",
+      "status": "done",
+      "priority": "Low",
+      "effort": "S",
+      "feature_set": "feature-set-004-board-ux",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-25 09:00",
+      "completed": "2026-04-25",
+      "goal": "Replace the existing border-glow pulse on in-progress cards (which is too subtle to read as \"active\") with a small \ud83e\udd16 emoji that walks clockwise around the card perimeter. Reads instantly as \"work is being done here\" without being noisy.",
+      "why": "The current `cm-active-pulse` (border color + box-shadow oscillation) is invisible to the user \u2014 they reported not seeing it. Humans need a clearer signal that a ticket is being worked on. A patrolling robot is universally legible as \"active worker,\" uses zero dependencies (pure CSS + emoji), and only animates the four cards that actually need attention.",
+      "done_when": [
+        "The `cm-active-pulse` keyframes and the `animation: cm-active-pulse ...` rule on `.card.status-inprogress` are removed.",
+        "A new `.cm-robot` element is injected into in-progress cards via the cardHTML renderer.",
+        "A new `cm-robot-walk` keyframe animation walks the robot clockwise around the card perimeter on a 12s loop, infinite, linear easing.",
+        "`.card.status-inprogress` keeps a static green border so the status remains visually distinguishable from open/blocked cards.",
+        "The robot has a soft green drop-shadow so it stays visible against both light and dark card backgrounds.",
+        "pytest suite passes (existing 77 tests + a new assertion that `cm-robot` markup appears in HTML for in-progress tickets)."
+      ],
+      "desired_output": "A human opens the board, sees one or more in-progress cards, and immediately notices small robot emoji walking around their borders. Multiple in-progress cards each have their own robot, each at different points in the loop (independent animations) \u2014 the board looks alive without being chaotic.",
+      "success_signals": "- User reports the animation is visible and reads as \"in progress\" without being told.\n- No layout shift or scroll jank introduced.\n- Animation continues smoothly when the board's Realtime updates fire.",
+      "failure_signals": "- Robot escapes the card boundary (positioning bug).\n- Robot interferes with click targets on the card (catches pointer events it shouldn't).\n- Animation stutters or pauses when other JS work happens.\n- Emoji renders as a different glyph on some platform and breaks the metaphor.",
+      "tests": "- Unit (existing): all 77 pytest tests still pass.\n- Unit (new): `test_build.py` asserts the rendered HTML for an in-progress ticket contains `cm-robot`.\n- Manual: open `change-mate/board.html` in browser \u2192 confirm robot is visible, walks the four edges in order, completes loop in ~12s.\n- Manual: dark mode toggle \u2192 robot still visible against dark card.",
+      "notes": "- **Alternative considered**: typing-dots indicator. Rejected \u2014 less playful and doesn't tie to the existing visual vocabulary (\ud83e\udd80 crab badges already established a friendly-creature aesthetic).\n- **Alternative considered**: shimmer sweep across card. Rejected \u2014 decorative, not semantic. Robot is clearer about \"what is happening here.\"\n- **Alternative considered**: rotate the robot to face the direction of travel. Skipped for v1 \u2014 keyframe complexity grows and the emoji's symmetric face makes the rotation read weirdly.\n- **Out of scope**: animations on done/blocked/not-doing cards, sound, server-side push of \"agent is typing\" state.\n- **Risk**: emoji glyph variation across OSes. \ud83e\udd16 is widely supported (since Unicode 6.0); if it ever fails we fall back to a tiny inline SVG.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1122,9 +1140,19 @@ var D = {
         "CM-050",
         "CM-051"
       ]
+    },
+    {
+      "id": "feature-set-004-board-ux",
+      "name": "[feature-set-004] Board UX",
+      "goal": "Make the board feel alive to humans watching, while keeping the presentation calm and the implementation dependency-free.",
+      "rationale": "The board is the primary \"humans watch what bots are doing\" surface. Static cards do not communicate that work is actually happening; subtle animation does. This feature set collects polish work that improves the watching experience without adding runtime dependencies or heavy assets.",
+      "status": "Active \u2014 CM-052 done 2026-04-25",
+      "tickets": [
+        "CM-052"
+      ]
     }
   ],
-  "generated": "2026-04-25T19:55:17.899573+00:00"
+  "generated": "2026-04-25T20:04:48.509799+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
@@ -1231,7 +1259,9 @@ function cardHTML(t, isRejected) {
     : '';
 
   var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var robot = (t.status === 'in-progress') ? '<div class="cm-robot" aria-hidden="true">\u{1F916}</div>' : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
+    + robot
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
     + '<div class="badges">' + crabBadge(t.assigned_to) + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
