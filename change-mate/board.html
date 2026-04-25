@@ -414,6 +414,35 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
+      "id": "CM-052",
+      "title": "Test ticket \u2014 visual baseline for in-progress animation",
+      "status": "in-progress",
+      "priority": "Low",
+      "effort": "XS",
+      "feature_set": "",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "test-agent",
+      "started": "2026-04-25 09:00",
+      "completed": "",
+      "goal": "Have a single live in-progress card on the board so the user can see existing animation behavior and evaluate proposed additions.",
+      "why": "Empty `in-progress/` means no card to animate against. This ticket is a placeholder \u2014 close or delete once the in-progress animation work lands.",
+      "done_when": [
+        "Card appears on the board in the In Progress column.",
+        "User has chosen and shipped the in-progress animation, OR explicitly rejects all proposals."
+      ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "Pure visual placeholder \u2014 not real work. Delete (move to not-doing) when the animation decision lands.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "done",
@@ -1095,7 +1124,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-24T19:38:32.313891+00:00"
+  "generated": "2026-04-25T19:55:17.899573+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
