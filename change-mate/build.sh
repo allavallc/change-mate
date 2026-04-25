@@ -299,12 +299,26 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-@keyframes cm-active-pulse {
-  0%   { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
-  50%  { border-color: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
-  100% { border-color: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
+.card.status-inprogress { position: relative; }
+.cm-robot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 0 3px rgba(34,197,94,0.7));
+  animation: cm-robot-walk 12s linear infinite;
 }
-.card.status-inprogress { animation: cm-active-pulse 2s ease-in-out infinite; }
+@keyframes cm-robot-walk {
+  0%   { top: -9px;                left: 4px; }
+  25%  { top: -9px;                left: calc(100% - 22px); }
+  50%  { top: calc(100% - 9px);    left: calc(100% - 22px); }
+  75%  { top: calc(100% - 9px);    left: 4px; }
+  100% { top: -9px;                left: 4px; }
+}
 .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; overflow-wrap: anywhere; }
 .card-assignee { font-size: 11px; color: var(--muted); }
 .card-fs {
@@ -654,7 +668,9 @@ function cardHTML(t, isRejected) {
     : '';
 
   var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var robot = (t.status === 'in-progress') ? '<div class="cm-robot" aria-hidden="true">\\u{1F916}</div>' : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
+    + robot
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
     + '<div class="badges">' + crabBadge(t.assigned_to) + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'

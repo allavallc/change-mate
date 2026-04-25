@@ -346,3 +346,28 @@ def test_build_inverse_blocked_by_inferred_is_rendered(tmp_path):
     assert '"blocked_by_inferred"' in html
     # And the upstream's explicit blocks list should be there too
     assert '"blocks"' in html
+
+
+def test_in_progress_card_renders_cm_robot(tmp_path):
+    """In-progress tickets should have the .cm-robot perimeter-walking element. Backlog tickets should not."""
+    _stage_repo(tmp_path)
+    _write_min_ticket(
+        tmp_path / "change-mate/in-progress/CM-001-1000.md",
+        "CM-001", "Active work",
+        "- **Status**: in-progress\n",
+    )
+    _write_min_ticket(
+        tmp_path / "change-mate/backlog/CM-002-1001.md",
+        "CM-002", "Just sitting",
+    )
+
+    result = subprocess.run(["bash", "change-mate/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    html = (tmp_path / "change-mate" / "board.html").read_text(encoding="utf-8")
+    # Robot CSS class and keyframes are always present in the stylesheet
+    assert ".cm-robot" in html
+    assert "@keyframes cm-robot-walk" in html
+    # The renderer JS conditionally injects the robot only for in-progress tickets
+    assert "t.status === 'in-progress'" in html and "cm-robot" in html
+    # And the legacy pulse keyframes should be gone
+    assert "cm-active-pulse" not in html
