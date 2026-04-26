@@ -1205,7 +1205,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-26T14:22:50.030692+00:00"
+  "generated": "2026-04-26T14:29:03.965975+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
@@ -1230,6 +1230,10 @@ function crabBadge(name) {
 function robotDelay(seed) {
   var h = 0;
   for (var i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  // Avalanche: ensure 1-char input diffs produce well-distributed output diffs
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b) | 0;
+  h ^= h >>> 13;
   return -(Math.abs(h) % 1200) / 100;
 }
 
