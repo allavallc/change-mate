@@ -579,19 +579,9 @@ function crabBadge(name) {
   return '<span class="card-crab" style="border-color:' + c + ';color:' + c + '">\\u{1F980} ' + esc(name) + '</span>';
 }
 
-function robotDelay(seed) {
-  var h = 0;
-  for (var i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
-  // Avalanche: ensure 1-char input diffs produce well-distributed output diffs
-  h ^= h >>> 16;
-  h = Math.imul(h, 0x85ebca6b) | 0;
-  h ^= h >>> 13;
-  return -(Math.abs(h) % 1200) / 100;
-}
-
-function robotSvg(name, seed) {
+function robotSvg(name) {
   var c = name ? crabColor(name) : '#22c55e';
-  var d = robotDelay(seed || name || 'cm-default');
+  var d = -Math.random() * 12;
   var style = 'color:' + c + ';filter:drop-shadow(0 0 3px ' + c + '99);animation-delay:' + d + 's';
   return '<svg class="cm-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
     + '<circle cx="9" cy="1" r="1" fill="currentColor"/>'
@@ -689,7 +679,7 @@ function cardHTML(t, isRejected) {
     : '';
 
   var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
-  var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to, t.id) : '';
+  var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
     + robot
     + '<div class="card-top">'
