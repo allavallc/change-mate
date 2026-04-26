@@ -582,6 +582,10 @@ function crabBadge(name) {
 function robotDelay(seed) {
   var h = 0;
   for (var i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  // Avalanche: ensure 1-char input diffs produce well-distributed output diffs
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b) | 0;
+  h ^= h >>> 13;
   return -(Math.abs(h) % 1200) / 100;
 }
 
