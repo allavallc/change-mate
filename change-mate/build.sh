@@ -299,7 +299,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.card.status-inprogress { position: relative; }
+.card.status-inprogress { position: relative; border-style: dashed; }
 .cm-robot {
   position: absolute;
   width: 18px;
