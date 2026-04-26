@@ -304,12 +304,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
   position: absolute;
   width: 18px;
   height: 18px;
-  font-size: 14px;
-  line-height: 18px;
-  text-align: center;
   pointer-events: none;
   z-index: 1;
-  filter: drop-shadow(0 0 3px rgba(34,197,94,0.7));
   animation: cm-robot-walk 12s linear infinite;
 }
 @keyframes cm-robot-walk {
@@ -583,6 +579,20 @@ function crabBadge(name) {
   return '<span class="card-crab" style="border-color:' + c + ';color:' + c + '">\\u{1F980} ' + esc(name) + '</span>';
 }
 
+function robotSvg(name) {
+  var c = name ? crabColor(name) : '#22c55e';
+  var style = 'color:' + c + ';filter:drop-shadow(0 0 3px ' + c + '99)';
+  return '<svg class="cm-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
+    + '<circle cx="9" cy="1" r="1" fill="currentColor"/>'
+    + '<line x1="9" y1="1.5" x2="9" y2="3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
+    + '<rect x="3" y="3.5" width="12" height="10.5" rx="2" fill="currentColor"/>'
+    + '<circle cx="6.5" cy="8" r="1.3" fill="var(--bg)"/>'
+    + '<circle cx="11.5" cy="8" r="1.3" fill="var(--bg)"/>'
+    + '<rect x="5" y="14" width="2" height="3" fill="currentColor"/>'
+    + '<rect x="11" y="14" width="2" height="3" fill="currentColor"/>'
+    + '</svg>';
+}
+
 function priorityBadge(p) {
   var cls = {critical:'b-critical',high:'b-high',medium:'b-medium',low:'b-low'}[(p||'').toLowerCase()];
   return p ? '<span class="badge ' + (cls||'') + '">' + esc(p) + '</span>' : '';
@@ -668,7 +678,7 @@ function cardHTML(t, isRejected) {
     : '';
 
   var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
-  var robot = (t.status === 'in-progress') ? '<div class="cm-robot" aria-hidden="true">\\u{1F916}</div>' : '';
+  var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
     + robot
     + '<div class="card-top">'
