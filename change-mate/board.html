@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0a;
@@ -519,9 +518,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 <header>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="logo">change<span>-mate</span></span>
-    <span id="cm-live-indicator" style="display:none; align-items:center; gap:5px; font-size:12px; color:#666;">
-      <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
-      live
+    <span id="cm-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
+      <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+      <span class="cm-live-label">polling</span>
     </span>
   </div>
   <div class="header-right">
@@ -566,47 +565,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 <script>
 var D = {
   "tickets": [
-    {
-      "id": "CM-058",
-      "title": "Add Story \u2192 direct GitHub Contents API (drop cm-write)",
-      "status": "open",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-005-kill-supabase",
-      "related": [
-        "CM-057",
-        "CM-059"
-      ],
-      "blocks": [
-        "CM-059"
-      ],
-      "blocked_by": [
-        "CM-057"
-      ],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Replace the Supabase Edge Function `cm-write` with browser-direct calls to the GitHub Contents API. The Add Story button should write a markdown file to `change-mate/backlog/` using the user's PAT \u2014 no server in between.",
-      "why": "The Edge Function adds a deploy step, three Postgres migrations, a sequence + RPC, an SDK install, and a function to maintain. Its actual job is: validate a payload, claim an ID, render markdown, PUT to GitHub. Steps 1\u20133 happen fine in the browser. Step 4 happens fine in the browser. The middleman is unnecessary.",
-      "done_when": [
-        "Add Story modal calls `GET /repos/{owner}/{repo}/contents/change-mate/backlog` to list existing tickets. (Or queries the in-memory ticket list the board already has \u2014 preferred for simplicity.)",
-        "Browser parses the highest existing CM-ID across backlog/in-progress/done/blocked/not-doing \u2192 next ID = max + 1.",
-        "Browser renders ticket markdown locally using the same template cm-write uses today (port `ticket.ts` rendering logic to in-board JS).",
-        "Browser PUTs to `https://api.github.com/repos/{owner}/{repo}/contents/change-mate/backlog/CM-NNN-<timestamp>.md` with the user's PAT.",
-        "On 422/409 (path conflict \u2014 race with another Add Story click), browser increments CM-ID and retries once.",
-        "On 401/403, browser clears the cached PAT and prompts the setup modal.",
-        "The `cm-write` URL and anon key placeholders in `build.sh` are removed."
-      ],
-      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (CM-057) detects the change and re-renders. No Supabase function was contacted.",
-      "success_signals": "- Add Story works for adopters who never deployed an Edge Function.\n- Latency from click to \"ticket appears in backlog\" is comparable to current cm-write flow (PAT-direct GitHub call vs. cm-write \u2192 Postgres \u2192 GitHub call).\n- No more 401/403/network errors stemming from a paused Supabase project.",
-      "failure_signals": "- Two simultaneous clicks race for the same CM-ID and one fails after retry. Mitigation: retry-on-conflict with a fresh ID scan.\n- PAT scope insufficient \u2014 caller has only Read, can't PUT. UI must surface the GitHub error clearly.\n- A push from another agent during the form-fill window means the ID we computed is now stale by the time we PUT. Same mitigation: retry once on 422.",
-      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in CM-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `change-mate/backlog/`. Verify board updates within 30s (via CM-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
-      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (CM-059), polling code (CM-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at CM-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
     {
       "id": "CM-059",
       "title": "Delete Supabase footprint and simplify setup",
@@ -823,39 +781,41 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-057",
-      "title": "Replace Supabase Realtime with GitHub commit polling",
+      "id": "CM-058",
+      "title": "Add Story \u2192 direct GitHub Contents API (drop cm-write)",
       "status": "in-progress",
       "priority": "High",
       "effort": "M",
       "feature_set": "feature-set-005-kill-supabase",
       "related": [
-        "CM-058",
+        "CM-057",
         "CM-059"
       ],
       "blocks": [
-        "CM-058",
         "CM-059"
       ],
-      "blocked_by": [],
-      "assigned_to": "claude",
-      "started": "2026-04-27 17:00",
-      "completed": "",
-      "goal": "Make the board update from GitHub directly \u2014 no Supabase Realtime, no WebSocket, no DB. Browser polls the GitHub commits API every N seconds; if HEAD changed, refetch tickets and re-render.",
-      "why": "Supabase adds setup, an Edge Function, three migrations, a CLI install, and a project that pauses after a week of inactivity. The board's actual job is \"show me the markdown files in this repo\" \u2014 git is the source of truth. Polling GitHub directly removes the entire backend dependency and keeps the watching experience close-to-live (30-second freshness).",
-      "done_when": [
-        "The `supabase-js` script tag and `client.channel(...)` subscription block are removed from the generated board HTML.",
-        "The board polls `GET /repos/{owner}/{repo}/commits?sha=main&per_page=1` (or equivalent) every 30 seconds. If the HEAD commit SHA differs from the cached one, refetch tickets.",
-        "Polling interval is configurable via `change-mate/config.json` field `poll_seconds` (default 30, minimum 10).",
-        "Tickets are re-fetched by reading individual ticket files via the Contents API, OR by parsing a single tickets-index file the build step writes. Pick the simpler path (likely: re-rendering the embedded JSON the board already ships with, but refreshed via a server-rendered JSON endpoint baked into a small static file in the repo).",
-        "Auth: anonymous polling for public repos. For private repos, browser sends the user's existing PAT (already in localStorage from Add Story setup).",
-        "The \"live\" indicator in the header changes meaning: shows \"polling\" with a green dot when active, \"offline\" if rate-limited or auth fails."
+      "blocked_by": [
+        "CM-057"
       ],
-      "desired_output": "A human opens the board on GitHub Pages. Within 30 seconds of any push to `main` (a ticket move, a new ticket, etc.), the board reflects the new state without a manual refresh. No backend was ever contacted.",
-      "success_signals": "- Adopters with public repos see the board work without setting up anything beyond the initial `setup.sh`.\n- Adopters with private repos see it work with just their PAT.\n- Push-to-board latency stays under ~35 seconds at default interval.\n- GitHub API rate limit headroom \u2014 anonymous public-repo polling at 30s = 120 calls/hour, well under the 60/hour anonymous limit per IP for unauth'd... wait, that's tight. Authenticated polling at 30s = 120 calls/hour, well under the 5000/hour PAT limit.",
-      "failure_signals": "- Anonymous polling exhausts the 60/hour rate limit for adopters viewing public repos without a token.\n- A burst of pushes triggers thrashing refetches.\n- Browser tab left open overnight runs unbounded fetches; needs document.hidden check to pause polling when tab is backgrounded.\n- Pages cache makes the polled response stale even when GitHub returns fresh data.",
-      "tests": "- Unit (new): `tests/test_build.py` asserts the generated `board.html` no longer contains `supabase` / `supabase-js` / `realtime`.\n- Unit (new): asserts the generated `board.html` contains the polling code (e.g. `setInterval` and `commits?sha=main`).\n- Manual: open board, push a new ticket via git, wait \u226430s, confirm board updates without manual refresh.\n- Manual: throttle network in devtools, confirm polling fails gracefully (header indicator shows \"offline\").\n- Manual: switch tab away for 2 minutes, switch back \u2014 confirm polling resumes and refetches once.",
-      "notes": "- **Alternative considered**: WebSocket via Cloudflare Workers/Durable Objects. Rejected \u2014 still requires deploying something. Polling at 30s is good enough for a kanban board people glance at.\n- **Alternative considered**: GitHub webhooks \u2192 small Cloudflare Worker \u2192 SSE to browser. Cleaner UX, requires deploying a Worker. Out of scope for \"kill all backends\".\n- **Alternative considered**: Drop polling entirely, rely on manual refresh. Rejected \u2014 too far from \"live\" feel.\n- **Out of scope**: replacing cm-write (CM-058), removing the Supabase folder + docs (CM-059), live lock pulse (drop entirely as part of CM-059).\n- **Risk**: anonymous public-repo polling rate limit. Mitigation: detect rate-limit response, back off + warn in the header indicator.\n- **Confidence**: 80%. Main unknown is whether the board can re-render cleanly mid-session without a full page reload \u2014 the JSON is currently baked into the HTML at build time. May need a small static `tickets.json` that the build step writes separately so the polling code can refetch JSON only.",
+      "assigned_to": "claude",
+      "started": "2026-04-27 17:15",
+      "completed": "",
+      "goal": "Replace the Supabase Edge Function `cm-write` with browser-direct calls to the GitHub Contents API. The Add Story button should write a markdown file to `change-mate/backlog/` using the user's PAT \u2014 no server in between.",
+      "why": "The Edge Function adds a deploy step, three Postgres migrations, a sequence + RPC, an SDK install, and a function to maintain. Its actual job is: validate a payload, claim an ID, render markdown, PUT to GitHub. Steps 1\u20133 happen fine in the browser. Step 4 happens fine in the browser. The middleman is unnecessary.",
+      "done_when": [
+        "Add Story modal calls `GET /repos/{owner}/{repo}/contents/change-mate/backlog` to list existing tickets. (Or queries the in-memory ticket list the board already has \u2014 preferred for simplicity.)",
+        "Browser parses the highest existing CM-ID across backlog/in-progress/done/blocked/not-doing \u2192 next ID = max + 1.",
+        "Browser renders ticket markdown locally using the same template cm-write uses today (port `ticket.ts` rendering logic to in-board JS).",
+        "Browser PUTs to `https://api.github.com/repos/{owner}/{repo}/contents/change-mate/backlog/CM-NNN-<timestamp>.md` with the user's PAT.",
+        "On 422/409 (path conflict \u2014 race with another Add Story click), browser increments CM-ID and retries once.",
+        "On 401/403, browser clears the cached PAT and prompts the setup modal.",
+        "The `cm-write` URL and anon key placeholders in `build.sh` are removed."
+      ],
+      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (CM-057) detects the change and re-renders. No Supabase function was contacted.",
+      "success_signals": "- Add Story works for adopters who never deployed an Edge Function.\n- Latency from click to \"ticket appears in backlog\" is comparable to current cm-write flow (PAT-direct GitHub call vs. cm-write \u2192 Postgres \u2192 GitHub call).\n- No more 401/403/network errors stemming from a paused Supabase project.",
+      "failure_signals": "- Two simultaneous clicks race for the same CM-ID and one fails after retry. Mitigation: retry-on-conflict with a fresh ID scan.\n- PAT scope insufficient \u2014 caller has only Read, can't PUT. UI must surface the GitHub error clearly.\n- A push from another agent during the form-fill window means the ID we computed is now stale by the time we PUT. Same mitigation: retry once on 422.",
+      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in CM-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `change-mate/backlog/`. Verify board updates within 30s (via CM-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
+      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (CM-059), polling code (CM-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at CM-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1386,6 +1346,45 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-057",
+      "title": "Replace Supabase Realtime with GitHub commit polling",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-005-kill-supabase",
+      "related": [
+        "CM-058",
+        "CM-059"
+      ],
+      "blocks": [
+        "CM-058",
+        "CM-059"
+      ],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-27 17:00",
+      "completed": "2026-04-27",
+      "goal": "Make the board update from GitHub directly \u2014 no Supabase Realtime, no WebSocket, no DB. Browser polls the GitHub commits API every N seconds; if HEAD changed, refetch tickets and re-render.",
+      "why": "Supabase adds setup, an Edge Function, three migrations, a CLI install, and a project that pauses after a week of inactivity. The board's actual job is \"show me the markdown files in this repo\" \u2014 git is the source of truth. Polling GitHub directly removes the entire backend dependency and keeps the watching experience close-to-live (30-second freshness).",
+      "done_when": [
+        "The `supabase-js` script tag and `client.channel(...)` subscription block are removed from the generated board HTML.",
+        "The board polls `GET /repos/{owner}/{repo}/commits?sha=main&per_page=1` (or equivalent) every 30 seconds. If the HEAD commit SHA differs from the cached one, refetch tickets.",
+        "Polling interval is configurable via `change-mate/config.json` field `poll_seconds` (default 30, minimum 10).",
+        "Tickets are re-fetched by reading individual ticket files via the Contents API, OR by parsing a single tickets-index file the build step writes. Pick the simpler path (likely: re-rendering the embedded JSON the board already ships with, but refreshed via a server-rendered JSON endpoint baked into a small static file in the repo).",
+        "Auth: anonymous polling for public repos. For private repos, browser sends the user's existing PAT (already in localStorage from Add Story setup).",
+        "The \"live\" indicator in the header changes meaning: shows \"polling\" with a green dot when active, \"offline\" if rate-limited or auth fails."
+      ],
+      "desired_output": "A human opens the board on GitHub Pages. Within 30 seconds of any push to `main` (a ticket move, a new ticket, etc.), the board reflects the new state without a manual refresh. No backend was ever contacted.",
+      "success_signals": "- Adopters with public repos see the board work without setting up anything beyond the initial `setup.sh`.\n- Adopters with private repos see it work with just their PAT.\n- Push-to-board latency stays under ~35 seconds at default interval.\n- GitHub API rate limit headroom \u2014 anonymous public-repo polling at 30s = 120 calls/hour, well under the 60/hour anonymous limit per IP for unauth'd... wait, that's tight. Authenticated polling at 30s = 120 calls/hour, well under the 5000/hour PAT limit.",
+      "failure_signals": "- Anonymous polling exhausts the 60/hour rate limit for adopters viewing public repos without a token.\n- A burst of pushes triggers thrashing refetches.\n- Browser tab left open overnight runs unbounded fetches; needs document.hidden check to pause polling when tab is backgrounded.\n- Pages cache makes the polled response stale even when GitHub returns fresh data.",
+      "tests": "- Unit (new): `tests/test_build.py` asserts the generated `board.html` no longer contains `supabase` / `supabase-js` / `realtime`.\n- Unit (new): asserts the generated `board.html` contains the polling code (e.g. `setInterval` and `commits?sha=main`).\n- Manual: open board, push a new ticket via git, wait \u226430s, confirm board updates without manual refresh.\n- Manual: throttle network in devtools, confirm polling fails gracefully (header indicator shows \"offline\").\n- Manual: switch tab away for 2 minutes, switch back \u2014 confirm polling resumes and refetches once.",
+      "notes": "- **Alternative considered**: WebSocket via Cloudflare Workers/Durable Objects. Rejected \u2014 still requires deploying something. Polling at 30s is good enough for a kanban board people glance at.\n- **Alternative considered**: GitHub webhooks \u2192 small Cloudflare Worker \u2192 SSE to browser. Cleaner UX, requires deploying a Worker. Out of scope for \"kill all backends\".\n- **Alternative considered**: Drop polling entirely, rely on manual refresh. Rejected \u2014 too far from \"live\" feel.\n- **Out of scope**: replacing cm-write (CM-058), removing the Supabase folder + docs (CM-059), live lock pulse (drop entirely as part of CM-059).\n- **Risk**: anonymous public-repo polling rate limit. Mitigation: detect rate-limit response, back off + warn in the header indicator.\n- **Confidence**: 80%. Main unknown is whether the board can re-render cleanly mid-session without a full page reload \u2014 the JSON is currently baked into the HTML at build time. May need a small static `tickets.json` that the build step writes separately so the polling code can refetch JSON only.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1612,7 +1611,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-27T21:10:47.269422+00:00"
+  "generated": "2026-04-27T21:13:47.015455+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
@@ -1959,94 +1958,74 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-config" type="application/json">{
-  "supabase_url": "https://asxkalerueoenltawxmg.supabase.co",
-  "supabase_publishable_key": "sb_publishable_AahlzUKVHc3CacNbmk20-A_VpAACweo",
-  "project_name": "my project"
-}</script>
+<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "9d262cb1c690a8f95c225cbe49b78d75cfcd9c27"}</script>
 <script>
 (function() {
-  var cfg = JSON.parse(document.getElementById('cm-config').textContent);
-  if (!cfg.supabase_url || !cfg.supabase_publishable_key) return;
+  // Poll the GitHub commits API; if HEAD on main changed, reload the page.
+  // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
+  var cfg = JSON.parse(document.getElementById('cm-poll-config').textContent);
+  if (!cfg.repo) {
+    console.warn('[cm-poll] no repo detected, polling disabled');
+    return;
+  }
 
-  var client = supabase.createClient(cfg.supabase_url, cfg.supabase_publishable_key);
-  var channel = client.channel('change-mate');
+  var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
+  var indicator = document.getElementById('cm-live-indicator');
+  if (indicator) {
+    indicator.style.display = 'flex';
+    var label = indicator.querySelector('.cm-live-label');
+    if (label) label.textContent = 'polling';
+  }
 
-  channel.on('broadcast', { event: 'ticket_updated' }, function(e) {
-    handleTicketUpdate(e.payload);
-  });
+  var lastSha = cfg.head_sha || null;
+  var consecutiveFailures = 0;
 
-  channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locks' }, function(e) {
-    var row = e.new;
-    if (row && row.ticket_id) setCardActive(row.ticket_id, true);
-  });
-  channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'locks' }, function(e) {
-    var row = e.old;
-    if (row && row.ticket_id) setCardActive(row.ticket_id, false);
-  });
+  function getToken() { return localStorage.getItem('cm_github_token') || ''; }
 
-  channel.subscribe(function(status) {
-    if (status === 'SUBSCRIBED') {
-      document.getElementById('cm-live-indicator').style.display = 'flex';
-      client.from('locks').select('ticket_id, agent').then(function(res) {
-        if (res.data) res.data.forEach(function(lock) { setCardActive(lock.ticket_id, true); });
-      });
+  async function pollOnce() {
+    if (document.hidden) return;
+    try {
+      var headers = { 'Accept': 'application/vnd.github+json' };
+      var token = getToken();
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      var res = await fetch('https://api.github.com/repos/' + cfg.repo + '/commits/main', { headers: headers });
+      if (res.status === 403) {
+        console.warn('[cm-poll] rate limited, backing off');
+        consecutiveFailures++;
+        return;
+      }
+      if (!res.ok) {
+        console.warn('[cm-poll] HTTP', res.status);
+        consecutiveFailures++;
+        return;
+      }
+      consecutiveFailures = 0;
+      var body = await res.json();
+      var sha = body && body.sha;
+      if (!sha) return;
+      if (lastSha && sha !== lastSha) {
+        console.log('[cm-poll] HEAD changed', lastSha, '->', sha, '— reloading');
+        location.reload();
+        return;
+      }
+      lastSha = sha;
+    } catch (e) {
+      console.warn('[cm-poll] error', e);
+      consecutiveFailures++;
     }
+  }
+
+  // Initial poll + interval
+  pollOnce();
+  setInterval(function() {
+    if (consecutiveFailures > 5) return; // give up after sustained failures; user can refresh manually
+    pollOnce();
+  }, intervalSec * 1000);
+
+  // Fast-path on tab visibility return
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) pollOnce();
   });
-
-  function findCard(ticketId) {
-    var found = null;
-    document.querySelectorAll('#view-board .card').forEach(function(card) {
-      var el = card.querySelector('.card-id');
-      if (el && el.textContent.trim() === ticketId) found = card;
-    });
-    return found;
-  }
-
-  function setCardActive(ticketId, active) {
-    var card = findCard(ticketId);
-    if (!card) return;
-    if (active) card.classList.add('cm-active');
-    else card.classList.remove('cm-active');
-  }
-
-  function handleTicketUpdate(data) {
-    var colMap = {
-      'backlog': 'c-backlog', 'open': 'c-backlog',
-      'in-progress': 'c-inprogress', 'done': 'c-done',
-      'blocked': 'c-blocked', 'not-doing': 'c-notdoing'
-    };
-    var targetColId = colMap[data.to_status];
-    if (!targetColId) return;
-    var targetCol = document.getElementById(targetColId);
-    if (!targetCol) return;
-
-    var existing = null;
-    document.querySelectorAll('#view-board .card').forEach(function(card) {
-      var el = card.querySelector('.card-id');
-      if (el && el.textContent.trim() === data.ticket_id) existing = card;
-    });
-
-    if (existing) {
-      existing.classList.add('cm-moving');
-      existing.parentNode.removeChild(existing);
-      targetCol.insertBefore(existing, targetCol.firstChild);
-      setTimeout(function() { existing.classList.remove('cm-moving'); }, 600);
-    } else {
-      var card = document.createElement('div');
-      card.className = 'card cm-new';
-      card.onclick = function() { toggleCard(this); };
-      card.innerHTML = '<div class="card-top"><span class="card-id">' + esc(data.ticket_id) + '</span></div>'
-        + '<div class="card-title">' + esc(data.title || data.ticket_id) + '</div>';
-      targetCol.insertBefore(card, targetCol.firstChild);
-    }
-
-    ['c-backlog','c-inprogress','c-done','c-blocked','c-notdoing'].forEach(function(id) {
-      var col = document.getElementById(id);
-      var cnt = document.getElementById(id.replace('c-', 'n-'));
-      if (col && cnt) cnt.textContent = col.querySelectorAll('.card').length;
-    });
-  }
 })();
 </script>
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
