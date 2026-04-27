@@ -1640,6 +1640,45 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-068",
+      "title": "MANIFEST.json \u2014 versioned upgrade path for managed files",
+      "status": "done",
+      "priority": "High",
+      "effort": "S",
+      "feature_set": "feature-set-007-installer-hardening",
+      "related": [
+        "CM-061",
+        "CM-065",
+        "CM-066",
+        "CM-067"
+      ],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-27 19:30",
+      "completed": "2026-04-27",
+      "goal": "Give bots and humans a deterministic way to answer \"is my local copy of change-mate up to date?\" \u2014 without relying on file mtimes, hashes, or \"delete and re-run.\" A single `change-mate/MANIFEST.json` lists every managed file and its upstream version stamp. Local copy includes the manifest as of last install. Upgrade = fetch upstream manifest, diff, fetch the files that changed.",
+      "why": "After CM-067 added the no-secrets rule, existing adopters had no path to the new CHANGEMATE.md / INSTALL-FAQ.md other than `delete + re-run` or manual curl. That same gap exists for every future doc/script update. A manifest closes the gap once: bots fetch one tiny JSON file, diff against their local copy, know exactly what's stale, and can update only what changed.",
+      "done_when": [
+        "`change-mate/MANIFEST.json` exists at repo root with `schema_version`, `updated` (ISO 8601 timestamp), and `files` (path \u2192 version date) for every managed file: CHANGEMATE.md, INSTALL-FAQ.md, build.sh, build_lib.py, config.json, the workflow YAML, and the PM skill.",
+        "`setup.sh` installs MANIFEST.json on fresh install (idempotent \u2014 skipped if present).",
+        "`CHANGEMATE_CHECK_UPDATES=yes bash setup.sh` (or `--check`) fetches the upstream manifest, diffs against local, prints one stale file per line, exits non-zero if anything is stale (CI-friendly).",
+        "`CHANGEMATE_UPGRADE_DOCS=yes bash setup.sh` fetches the upstream manifest and re-fetches every file whose version differs from local. After successful fetches, the local manifest is updated to match upstream.",
+        "When no local manifest exists (existing adopters' first run after this lands), upgrade mode treats every tracked file as stale and fetches all of them \u2014 bootstraps cleanly.",
+        "INSTALL-FAQ.md gets a \"How do I know if I need to update?\" section pointing at the manifest + the two env vars.",
+        "Manifest entries use simple ISO date strings (`2026-04-27`) \u2014 string comparison = chronological. Skill stays on semver since it already has `version: 1.0.0`."
+      ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1881,7 +1920,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-27T23:03:15.286142+00:00"
+  "generated": "2026-04-27T23:13:57.284207+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
@@ -2307,7 +2346,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "e3871249f15cf214613f54d3d425816357b1f507"}</script>
+<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "c353e34514fba4bd8514e1fa6f1775e2b40d0f28"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
