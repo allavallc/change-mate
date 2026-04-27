@@ -29,7 +29,9 @@ git push
 - **On your computer:** double-click `change-mate/board.html`. It opens in your browser.
 - **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/change-mate/board.html`.
 
-**Board visibility follows repo visibility.** Public repo = public board. Private repo = private board (requires GitHub Pro for private Pages).
+**Board visibility follows repo visibility.** Public repo = public board, world-readable at the URL above. Private repo = private board (requires GitHub Pro for private Pages).
+
+If you want to keep the board off Pages output (but still in the repo), set Pages source to `/docs` instead of root — the board still exists at `change-mate/board.html` but isn't published. See [INSTALL-FAQ.md](change-mate/INSTALL-FAQ.md) for more.
 
 ## Step 3 — Add or move tickets
 

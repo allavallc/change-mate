@@ -15,4 +15,7 @@ A user reviewing the install before running it found a real install-blocker (bui
 - CM-066 — `change-mate/INSTALL-FAQ.md` covering the questions setup.sh can't answer in code
 
 ## Status
-In progress
+Done — 2026-04-27
+
+## Outcome
+Shipped. setup.sh now installs the runtime files (build.sh, build_lib.py, workflow YAML, config, INSTALL-FAQ.md) — no more "build.sh not found" after install. Non-interactive installs work via `CHANGEMATE_AUTO_MIGRATE=yes` and `CHANGEMATE_UPGRADE_SKILL=yes` env vars + TTY detection. The CLAUDE.md import is now wrapped in `<!-- change-mate import block -->` markers and idempotently re-applied. README + SETUP no longer claim "zero deps" (Python 3 stated up front) and warn about public-board exposure on Pages. The PM skill has a `version: 1.0.0` line; setup.sh diffs local vs upstream and prompts for upgrade. New `change-mate/INSTALL-FAQ.md` answers the 10 install-time questions adopters keep asking and is downloaded automatically. 35 tests pass.

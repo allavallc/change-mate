@@ -5,30 +5,71 @@ set -e
 REPO_URL="https://raw.githubusercontent.com/allavallc/change-mate/main"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
+
+# --- helpers --------------------------------------------------------------
+
+is_tty() { [ -t 0 ]; }
+
+prompt_yn() {
+  # $1 = prompt text, $2 = env var override name, $3 = default (yes|no)
+  local prompt="$1" env_var="$2" default="$3"
+  local override="${!env_var:-}"
+  if [ -n "$override" ]; then
+    case "$override" in
+      yes|y|YES|Y|true|TRUE|1) return 0 ;;
+      no|n|NO|N|false|FALSE|0) return 1 ;;
+    esac
+  fi
+  if ! is_tty; then
+    if [ "$default" = "yes" ]; then return 0; else return 1; fi
+  fi
+  local reply
+  read -r -p "$prompt " reply
+  case "$reply" in
+    y|Y|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+download() {
+  # $1 = remote path under REPO_URL, $2 = local path. Skips if local exists.
+  local remote="$1" local_path="$2"
+  if [ -f "$local_path" ]; then
+    echo -e "${YELLOW}~${NC} $local_path already present, skipping"
+    return 0
+  fi
+  mkdir -p "$(dirname "$local_path")"
+  if curl -fsSL "$REPO_URL/$remote" -o "$local_path"; then
+    echo -e "${GREEN}✓${NC} downloaded $local_path"
+  else
+    echo -e "${RED}✗${NC} failed to download $remote — check your network"
+    return 1
+  fi
+}
+
+skill_version() {
+  # extract `version: X.Y.Z` from frontmatter of a SKILL.md, or empty if missing
+  [ -f "$1" ] && grep -E '^version:' "$1" | head -1 | sed 's/^version:[[:space:]]*//' | tr -d '\r' || true
+}
 
 echo ""
 echo "setting up change-mate..."
 echo ""
 
-# Create folder structure first so we can drop files into it
-mkdir -p change-mate/backlog
-mkdir -p change-mate/in-progress
-mkdir -p change-mate/done
-mkdir -p change-mate/blocked
-mkdir -p change-mate/not-doing
+# --- folder structure -----------------------------------------------------
 
-# Add .gitkeep files so empty folders are tracked by git
-touch change-mate/backlog/.gitkeep
-touch change-mate/in-progress/.gitkeep
-touch change-mate/done/.gitkeep
-touch change-mate/blocked/.gitkeep
-touch change-mate/not-doing/.gitkeep
+mkdir -p change-mate/backlog change-mate/in-progress change-mate/done change-mate/blocked change-mate/not-doing change-mate/feature-sets
+
+for d in backlog in-progress done blocked not-doing feature-sets; do
+  touch "change-mate/$d/.gitkeep"
+done
 
 echo -e "${GREEN}✓${NC} created change-mate/ folder structure"
 
-# Migrate legacy layout (root-level files) into change-mate/ if detected.
-# Idempotent — only runs when legacy files are actually present.
+# --- legacy migration -----------------------------------------------------
+
 LEGACY=0
 for f in CHANGEMATE.md build.sh build_lib.py change-mate-board.html change-mate-config.json; do
   [ -f "$f" ] && LEGACY=1 && break
@@ -41,8 +82,7 @@ if [ $LEGACY -eq 1 ]; then
     [ -f "$f" ] && echo "  • $f"
   done
   echo ""
-  read -r -p "migrate now? [y/N] " REPLY
-  if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; then
+  if prompt_yn "migrate now? [y/N]" CHANGEMATE_AUTO_MIGRATE no; then
     [ -f CHANGEMATE.md ]            && mv CHANGEMATE.md change-mate/CHANGEMATE.md            && echo -e "${GREEN}✓${NC} moved CHANGEMATE.md → change-mate/CHANGEMATE.md"
     [ -f build.sh ]                 && mv build.sh change-mate/build.sh                      && echo -e "${GREEN}✓${NC} moved build.sh → change-mate/build.sh"
     [ -f build_lib.py ]             && mv build_lib.py change-mate/build_lib.py              && echo -e "${GREEN}✓${NC} moved build_lib.py → change-mate/build_lib.py"
@@ -54,62 +94,114 @@ if [ $LEGACY -eq 1 ]; then
     fi
     echo -e "${GREEN}migration complete.${NC} commit the moves with git."
   else
-    echo "skipped migration — nothing changed."
+    if is_tty; then
+      echo "skipped migration — nothing changed."
+    else
+      echo "skipped migration — stdin is not a TTY. set CHANGEMATE_AUTO_MIGRATE=yes to auto-migrate, or re-run interactively."
+    fi
   fi
   echo ""
 fi
 
-# Download CHANGEMATE.md into change-mate/ if we don't have one yet
-if [ ! -f "change-mate/CHANGEMATE.md" ]; then
-  curl -fsSL "$REPO_URL/change-mate/CHANGEMATE.md" -o change-mate/CHANGEMATE.md
-  echo -e "${GREEN}✓${NC} downloaded change-mate/CHANGEMATE.md"
-else
-  echo -e "${YELLOW}~${NC} change-mate/CHANGEMATE.md already present, skipping download"
-fi
+# --- runtime files --------------------------------------------------------
 
-# Install product-manager skill into ~/.claude/skills/
+# Files installed once per repo (skipped if present).
+download "change-mate/CHANGEMATE.md"          change-mate/CHANGEMATE.md
+download "change-mate/INSTALL-FAQ.md"         change-mate/INSTALL-FAQ.md
+download "change-mate/build.sh"               change-mate/build.sh
+download "change-mate/build_lib.py"           change-mate/build_lib.py
+download "change-mate/config.json"            change-mate/config.json
+download ".github/workflows/change-mate-rebuild-board.yml" .github/workflows/change-mate-rebuild-board.yml
+
+chmod +x change-mate/build.sh 2>/dev/null || true
+
+# --- product-manager skill (global, ~/.claude/skills/) --------------------
+
 SKILL_DIR="$HOME/.claude/skills/product-manager"
 SKILL_FILE="$SKILL_DIR/SKILL.md"
+TMP_SKILL=$(mktemp 2>/dev/null || echo "/tmp/cm-skill-$$")
 
 mkdir -p "$SKILL_DIR"
 
-if [ -f "$SKILL_FILE" ]; then
-  echo -e "${YELLOW}~${NC} product-manager skill already installed at $SKILL_FILE"
-  echo "   delete it and re-run setup if you want the latest version"
+# Always fetch the upstream copy to compare versions.
+if curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$TMP_SKILL" 2>/dev/null; then
+  UPSTREAM_VERSION=$(skill_version "$TMP_SKILL")
+  if [ -f "$SKILL_FILE" ]; then
+    LOCAL_VERSION=$(skill_version "$SKILL_FILE")
+    if [ "$LOCAL_VERSION" = "$UPSTREAM_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
+      echo -e "${YELLOW}~${NC} product-manager skill v$LOCAL_VERSION already installed"
+    else
+      LOCAL_LABEL="${LOCAL_VERSION:-untagged}"
+      UPSTREAM_LABEL="${UPSTREAM_VERSION:-untagged}"
+      echo ""
+      echo -e "${YELLOW}skill upgrade available:${NC} local v$LOCAL_LABEL → upstream v$UPSTREAM_LABEL"
+      if prompt_yn "upgrade now? [y/N]" CHANGEMATE_UPGRADE_SKILL no; then
+        cp "$TMP_SKILL" "$SKILL_FILE"
+        echo -e "${GREEN}✓${NC} upgraded product-manager skill to v$UPSTREAM_LABEL"
+      else
+        echo "kept v$LOCAL_LABEL — re-run setup.sh or set CHANGEMATE_UPGRADE_SKILL=yes to upgrade"
+      fi
+    fi
+  else
+    cp "$TMP_SKILL" "$SKILL_FILE"
+    echo -e "${GREEN}✓${NC} installed product-manager skill v${UPSTREAM_VERSION:-untagged} to $SKILL_FILE"
+  fi
+  rm -f "$TMP_SKILL"
 else
-  curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$SKILL_FILE"
-  echo -e "${GREEN}✓${NC} installed product-manager skill to $SKILL_FILE"
+  echo -e "${YELLOW}~${NC} could not fetch product-manager skill (offline?), skipping"
 fi
 
-# Append import to CLAUDE.md if not already there
+# --- CLAUDE.md import (wrapped in markers) --------------------------------
+
+CM_MARKER_OPEN="<!-- change-mate import block — managed by setup.sh; remove the block to disable change-mate -->"
+CM_MARKER_CLOSE="<!-- /change-mate import block -->"
 IMPORT_LINE="@change-mate/CHANGEMATE.md"
 
+write_cm_block() {
+  printf '%s\n# change-mate\n%s\n%s\n' "$CM_MARKER_OPEN" "$IMPORT_LINE" "$CM_MARKER_CLOSE"
+}
+
 if [ -f "CLAUDE.md" ]; then
-  if grep -qF "$IMPORT_LINE" CLAUDE.md; then
-    echo -e "${YELLOW}~${NC} CLAUDE.md already imports change-mate/CHANGEMATE.md, skipping"
+  if grep -qF "$CM_MARKER_OPEN" CLAUDE.md; then
+    echo -e "${YELLOW}~${NC} CLAUDE.md already has change-mate import block, skipping"
+  elif grep -qF "$IMPORT_LINE" CLAUDE.md; then
+    # Existing un-wrapped import — wrap it idempotently using a temp file.
+    awk -v open="$CM_MARKER_OPEN" -v close="$CM_MARKER_CLOSE" -v line="$IMPORT_LINE" '
+      $0 ~ "^# change-mate$" && getline next_line && next_line == line {
+        print open
+        print $0
+        print next_line
+        print close
+        next
+      }
+      { print }
+    ' CLAUDE.md > CLAUDE.md.cmtmp && mv CLAUDE.md.cmtmp CLAUDE.md
+    if grep -qF "$CM_MARKER_OPEN" CLAUDE.md; then
+      echo -e "${GREEN}✓${NC} wrapped existing change-mate import in CLAUDE.md with managed markers"
+    else
+      # awk pattern didn't match (different layout); append a fresh wrapped block.
+      printf '\n' >> CLAUDE.md
+      write_cm_block >> CLAUDE.md
+      echo -e "${GREEN}✓${NC} appended managed change-mate import block to CLAUDE.md"
+    fi
   else
-    echo "" >> CLAUDE.md
-    echo "# change-mate" >> CLAUDE.md
-    echo "$IMPORT_LINE" >> CLAUDE.md
-    echo -e "${GREEN}✓${NC} added change-mate import to existing CLAUDE.md"
+    printf '\n' >> CLAUDE.md
+    write_cm_block >> CLAUDE.md
+    echo -e "${GREEN}✓${NC} added change-mate import block to existing CLAUDE.md"
   fi
 else
-  cat > CLAUDE.md << EOF
-# change-mate
-$IMPORT_LINE
-EOF
+  write_cm_block > CLAUDE.md
   echo -e "${GREEN}✓${NC} created CLAUDE.md"
 fi
 
-# Add change-mate/ to existing deploy-ignore files so dev tooling never ships to prod.
-# Only touch files that already exist — don't surprise adopters by creating new tooling files.
+# --- deploy-ignore defaults ----------------------------------------------
+
 CM_IGNORE_LINE="change-mate/"
 for ignore_file in .dockerignore .gcloudignore .vercelignore; do
   if [ -f "$ignore_file" ]; then
     if grep -qxF "$CM_IGNORE_LINE" "$ignore_file"; then
       echo -e "${YELLOW}~${NC} $ignore_file already excludes change-mate/, skipping"
     else
-      # Ensure trailing newline before appending to avoid joining lines
       [ -s "$ignore_file" ] && [ "$(tail -c1 "$ignore_file" 2>/dev/null | wc -l)" = "0" ] && echo "" >> "$ignore_file"
       echo "$CM_IGNORE_LINE" >> "$ignore_file"
       echo -e "${GREEN}✓${NC} added change-mate/ to $ignore_file"
@@ -117,7 +209,8 @@ for ignore_file in .dockerignore .gcloudignore .vercelignore; do
   fi
 done
 
-# Check .gitignore — change-mate/ must not be ignored, and leave a dev-only-tooling marker.
+# --- .gitignore guidance --------------------------------------------------
+
 if [ -f ".gitignore" ]; then
   if grep -qE "^change-mate" .gitignore; then
     echo ""
@@ -134,11 +227,27 @@ if [ -f ".gitignore" ]; then
   fi
 fi
 
+# --- starter board.html (best-effort) ------------------------------------
+
+if [ ! -f change-mate/board.html ]; then
+  if command -v py >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
+    if bash change-mate/build.sh >/dev/null 2>&1; then
+      echo -e "${GREEN}✓${NC} generated initial change-mate/board.html"
+    else
+      echo -e "${YELLOW}~${NC} build.sh failed locally — your first push will trigger CI to build the board"
+    fi
+  else
+    echo -e "${YELLOW}~${NC} Python 3 not found — your first push will trigger CI to build the board"
+  fi
+fi
+
+# --- final message --------------------------------------------------------
+
 echo ""
 echo -e "${GREEN}change-mate is ready.${NC}"
 echo ""
 echo "next steps:"
-echo "  1. commit and push the change-mate/ folder to your repo"
-echo "  2. have your team pull"
+echo "  1. read change-mate/INSTALL-FAQ.md if you have questions"
+echo "  2. commit and push the change-mate/ folder + .github/workflows/ to your repo"
 echo "  3. start an agent session and ask: 'what are we working on?'"
 echo ""

@@ -20,6 +20,10 @@ No backend, no database, no vendor lock-in. Tickets are plain markdown files in 
 
 ~2 minutes. → [SETUP.md](SETUP.md)
 
+**Requires:** git, Python 3 (for the local board build; CI handles it otherwise).
+
+**Heads-up:** tickets are committed to your repo. If your repo is public, your tickets are public — see [INSTALL-FAQ.md](change-mate/INSTALL-FAQ.md) for workarounds.
+
 ---
 
 ## How it works
@@ -188,7 +192,7 @@ Any agent or bot that can read/write files and run `git` commands can drive chan
 
 ## Contributing
 
-PRs welcome. Keep it simple — this should work in any project, any stack, with zero dependencies beyond git.
+PRs welcome. Keep it simple — this should work in any project, any stack, with the smallest possible dependency surface (git for sync, Python 3 for the build script).
 
 ---
 
