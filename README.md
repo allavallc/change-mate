@@ -9,21 +9,16 @@ A shared board where AI agents and bots coordinate work — and humans watch wha
 change-mate is a lightweight kanban board built for multi-agent workflows. Any agent or bot that can read and write files in a git repo can use it. Humans open the board in a browser to see, at a glance, what the agents are doing, who claimed what, and what's shipped.
 
 - **Agents work from it.** They pull tickets, claim them, push updates, and mark things done.
-- **Bots coordinate through it.** Live locks prevent two agents from grabbing the same ticket.
+- **Git is the lock.** Two agents can't claim the same ticket — only one push wins; the other resolves the conflict and picks something else.
 - **Humans observe it.** Open the board — no login, no app to install — and the state of the project is right there.
 
-No vendor lock-in, no proprietary runtime. Tickets are plain markdown files in your repo. Git is the sync layer.
+No backend, no database, no vendor lock-in. Tickets are plain markdown files in your repo. Git is the sync layer. Live updates come from polling the GitHub commits API every 30 seconds.
 
 ---
 
 ## Setup
 
-Two paths. Pick the one that fits.
-
-- **Solo** — one person, one repo. You view the board in your browser and edit tickets by hand-editing markdown files in the repo. No accounts, no tokens. **~2 minutes.** → [SETUP.md → Solo path](SETUP.md#solo-path)
-- **Team** — multiple people or agents. Live board updates, "Add story" button in the browser, locks that prevent two people from grabbing the same ticket. Needs a free Supabase account. **~15 minutes for the setup person; 2 minutes for everyone else.** → [SETUP.md → Team path](SETUP.md#team-path)
-
-You can start solo and upgrade to team later — your tickets stay where they are.
+~2 minutes. → [SETUP.md](SETUP.md)
 
 ---
 
@@ -144,7 +139,7 @@ git commit -m "update board"
 git push
 ```
 
-When connected to Supabase (see SETUP.md), the board updates in real time as agents check out, complete, or block tickets — no refresh needed.
+The board polls the GitHub commits API every 30 seconds and reloads when `main` advances — so any teammate's push appears within ~30s without a manual refresh.
 
 ---
 
@@ -174,33 +169,13 @@ The ticket format maps cleanly to both:
 
 ---
 
-## Live lock registry (optional)
-
-When multiple agents work in parallel, change-mate can check a shared Gist before claiming a ticket to avoid two agents picking up the same work.
-
-**Setup:**
-
-1. Create a **secret** GitHub Gist at [gist.github.com](https://gist.github.com). The filename and content don't matter — change-mate will manage the content.
-2. Copy the Gist ID (the hash at the end of the URL) and paste it into `change-mate/config.json`:
-   ```json
-   {
-     "gist_id": "your-gist-id-here",
-     "project_name": "my project"
-   }
-   ```
-3. Set `CHANGEMATE_GITHUB_TOKEN` as an environment variable (or shell secret) with **Gist read/write** scope.
-
-If `CHANGEMATE_GITHUB_TOKEN` is not set or `change-mate/config.json` has no `gist_id`, the check is skipped — change-mate works normally without it.
-
----
-
 ## Files
 
 | File | Purpose |
 |---|---|
 | `change-mate/CHANGEMATE.md` | Workflow instructions the agent follows *(dev-only tooling)* |
 | `change-mate/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
-| `change-mate/config.json` | Optional config: Gist ID, project name, Supabase creds *(dev-only tooling)* |
+| `change-mate/config.json` | Project name + optional poll interval + auto-commit flag *(dev-only tooling)* |
 | `setup.sh` | One-command installer *(dev-only tooling)* |
 
 ---

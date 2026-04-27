@@ -2,22 +2,14 @@
 
 ## Setup checklist
 
-- [ ] Clone the repo — the Gist ID is already in `change-mate/config.json`
-- [ ] Request the shared `CHANGEMATE_GITHUB_TOKEN` from whoever holds it
-- [ ] Add the token to your shell:
-  ```bash
-  echo 'export CHANGEMATE_GITHUB_TOKEN=<token>' >> ~/.bashrc
-  source ~/.bashrc
-  ```
-- [ ] Verify it's set: `echo $CHANGEMATE_GITHUB_TOKEN`
+- [ ] Clone the repo
+- [ ] Open `change-mate/board.html` in your browser (or visit the GitHub Pages URL)
+- [ ] To use **+ Add story**, create a fine-grained GitHub PAT for this repo with **Contents: Read and write** ([github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta))
+- [ ] Click **+ Add story**, enter your name and the token once. Stored in your browser.
 
-## How the live lock registry works
+## How locking works
 
-When you claim a ticket, change-mate writes a lock entry to a shared GitHub Gist. This prevents two agents from picking up the same ticket at the same time. The lock is released automatically when the ticket is marked done.
-
-The registry is **best-effort** — if the Gist is unreachable, work proceeds without locking and a warning is logged.
-
-Requirements: `change-mate/config.json` must have a `gist_id` and `CHANGEMATE_GITHUB_TOKEN` must be set.
+There is no separate lock registry. Git is the lock — when you move a ticket file to `change-mate/in-progress/` and push, the push wins or fails. If two agents race for the same ticket, the second push hits a non-fast-forward conflict and that agent re-pulls and picks a different one.
 
 ---
 

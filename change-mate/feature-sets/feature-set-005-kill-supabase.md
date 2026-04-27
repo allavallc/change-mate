@@ -12,4 +12,7 @@ Supabase was added in feature-set-001 to give the board live updates and a serve
 - CM-059 — Delete Supabase footprint and simplify setup
 
 ## Status
-In progress
+Done — 2026-04-27
+
+## Outcome
+Shipped. The board now runs entirely on git + GitHub Pages + the user's existing fine-grained PAT. No backend, no database, no migrations, no deploy CLI, no project that pauses. Live updates come from polling `GET /repos/{owner}/{repo}/commits/main` every 30s (configurable via `change-mate/config.json` `poll_seconds`, min 10s); on HEAD SHA change the page reloads. Add Story PUTs directly to the GitHub Contents API with the user's PAT (retries up to 5x on 422 conflicts). Locks are implicit — git push is the lock; conflicting pushes resolve at the git layer. SETUP.md fits on one screen.

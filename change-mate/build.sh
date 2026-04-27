@@ -25,11 +25,9 @@ CM = ROOT / "change-mate"
 sys.path.insert(0, str(CM))
 from build_lib import parse_ticket, parse_feature_set
 
-# Read Supabase config — env vars (set by GitHub Actions secrets) take priority
+# Read change-mate config (project_name, poll_seconds, auto_commit_board, etc.)
 _cfg_path = CM / "config.json"
 _cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
-SUPABASE_URL = os.environ.get('SUPABASE_URL') or _cfg.get('supabase_url', '')
-SUPABASE_PUBLISHABLE_KEY = os.environ.get('SUPABASE_PUBLISHABLE_KEY') or _cfg.get('supabase_publishable_key', '')
 PROJECT_NAME = _cfg.get('project_name', '')
 
 
@@ -128,13 +126,6 @@ data_json = json.dumps(
     {"tickets": tickets, "feature_sets": feature_sets, "generated": datetime.now(UTC).isoformat()},
     indent=2
 )
-
-cm_config_json = json.dumps({
-    "supabase_url": SUPABASE_URL,
-    "supabase_publishable_key": SUPABASE_PUBLISHABLE_KEY,
-    "project_name": PROJECT_NAME,
-}, indent=2)
-
 
 def detect_head_sha():
     try:
@@ -722,8 +713,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 <script>
 var D = PLACEHOLDER_JSON;
 var DEFAULT_REPO = PLACEHOLDER_REPO;
-var CM_WRITE_URL = PLACEHOLDER_CM_WRITE_URL;
-var CM_ANON_KEY = PLACEHOLDER_CM_ANON_KEY;
 
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -990,6 +979,56 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
+function nextTicketIdNumber() {
+  var max = 0;
+  D.tickets.forEach(function(t) {
+    var m = (t.id || '').match(/^CM-(\\d+)$/);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return max + 1;
+}
+function formatTicketId(n) {
+  var s = String(n);
+  while (s.length < 3) s = '0' + s;
+  return 'CM-' + s;
+}
+function utf8ToBase64(str) {
+  var bytes = new TextEncoder().encode(str);
+  var binary = '';
+  for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+function renderTicketMarkdown(ticketId, payload) {
+  var lines = [];
+  lines.push('# [' + ticketId + '] ' + payload.title);
+  lines.push('');
+  lines.push('- **Status**: open');
+  lines.push('- **Priority**: ' + payload.priority);
+  lines.push('- **Effort**: ' + payload.effort);
+  if (payload.feature_set) lines.push('- **Feature set**: ' + payload.feature_set);
+  lines.push('- **Assigned to**: ' + (payload.assigned_to || ''));
+  lines.push('- **Started**: ');
+  lines.push('- **Completed**: ');
+  lines.push('');
+  lines.push('## Goal');
+  lines.push((payload.goal || 'TBD').trim());
+  lines.push('');
+  if (payload.why) {
+    lines.push('## Why');
+    lines.push(payload.why.trim());
+    lines.push('');
+  }
+  lines.push('## Done when');
+  lines.push((payload.done_when || 'TBD').trim());
+  lines.push('');
+  if (payload.notes) {
+    lines.push('## Notes');
+    lines.push(payload.notes.trim());
+    lines.push('');
+  }
+  return lines.join('\\n');
+}
+
 async function createStory() {
   var title = document.getElementById('f-title').value.trim();
   if (!title) { document.getElementById('f-title').focus(); return; }
@@ -1000,18 +1039,22 @@ async function createStory() {
   var token = getGithubToken();
   if (!token) { promptSetup(function() { createStory(); }); return; }
 
+  if (!DEFAULT_REPO) { showToast('No GitHub repo detected.'); return; }
+
   var goal    = document.getElementById('f-goal').value.trim();
   var why     = document.getElementById('f-why').value.trim();
   var doneRaw = document.getElementById('f-done').value.trim();
   var notes   = document.getElementById('f-notes').value.trim();
   var fsId    = document.getElementById('f-featureset').value;
+  var assignedTo = document.getElementById('f-assigned') ? document.getElementById('f-assigned').value.trim() : '';
 
   var payload = { title: title, goal: goal || 'TBD', done_when: doneRaw || 'TBD', priority: priority, effort: effort };
   if (why) payload.why = why;
   if (notes) payload.notes = notes;
+  if (assignedTo) payload.assigned_to = assignedTo;
   if (fsId) {
     var matchedFs = D.feature_sets.filter(function(fs) { return fs.id === fsId; })[0];
-    if (matchedFs) payload.feature_set = matchedFs.name;
+    if (matchedFs) payload.feature_set = matchedFs.id;
   }
 
   var btn = document.querySelector('#modal .btn-primary');
@@ -1020,32 +1063,59 @@ async function createStory() {
   btn.disabled = true;
 
   try {
-    console.log('[cm-write] POST', CM_WRITE_URL, 'payload:', payload);
-    var res = await fetch(CM_WRITE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CM_ANON_KEY },
-      body: JSON.stringify({ github_token: token, actor_name: getAgentName(), payload: payload })
-    });
-    var data = await res.json().catch(function() { return {}; });
-    console.log('[cm-write] response', res.status, data);
+    var idNum = nextTicketIdNumber();
+    var attempt = 0;
+    while (attempt < 5) {
+      var ticketId = formatTicketId(idNum);
+      var ts = Math.floor(Date.now() / 1000);
+      var filePath = 'change-mate/backlog/' + ticketId + '-' + ts + '.md';
+      var markdown = renderTicketMarkdown(ticketId, payload);
+      var commitMsg = ticketId + ': ' + payload.title;
 
-    if (res.status === 403) {
-      clearGithubToken();
-      closeModal();
-      promptSetup(function() { openModal(); }, data.error || 'Access denied. Check your GitHub token.');
+      var url = 'https://api.github.com/repos/' + DEFAULT_REPO + '/contents/' + filePath;
+      console.log('[create-story] PUT', url, 'attempt', attempt + 1);
+      var res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: commitMsg,
+          content: utf8ToBase64(markdown),
+          branch: 'main'
+        })
+      });
+      var data = await res.json().catch(function() { return {}; });
+      console.log('[create-story] response', res.status, data);
+
+      if (res.status === 201) {
+        closeModal();
+        showToast(ticketId + ' created in backlog.');
+        return;
+      }
+      if (res.status === 401 || res.status === 403) {
+        clearGithubToken();
+        closeModal();
+        promptSetup(function() { openModal(); }, (data.message || 'Access denied. Check your GitHub token.'));
+        return;
+      }
+      if (res.status === 422) {
+        // Path conflict (someone else just created CM-NNN). Bump and retry.
+        console.warn('[create-story] 422 conflict, bumping ID');
+        idNum++;
+        attempt++;
+        continue;
+      }
+      // Other error — surface and stop.
+      console.error('[create-story] failed:', res.status, data);
+      showToast('Error: HTTP ' + res.status + (data.message ? ' — ' + data.message : ''));
       return;
     }
-    if (!res.ok) {
-      var msg = (data.error || 'HTTP ' + res.status) + (data.detail ? ' — ' + data.detail : '');
-      console.error('[cm-write] failed:', msg, data);
-      showToast('Error: ' + msg);
-      return;
-    }
-
-    closeModal();
-    showToast(data.ticket_id + ' created in backlog.');
+    showToast('Could not claim a ticket ID after 5 attempts. Refresh and try again.');
   } catch(e) {
-    console.error('[cm-write] network error:', e);
+    console.error('[create-story] network error:', e);
     showToast('Network error: ' + e.message);
   } finally {
     btn.textContent = origText;
@@ -1221,13 +1291,9 @@ document.addEventListener('keydown', function(e) {
 </body>
 </html>"""
 
-_cm_write_url = (SUPABASE_URL.rstrip('/') + '/functions/v1/cm-write') if SUPABASE_URL else ''
 output = (HTML
     .replace("PLACEHOLDER_JSON", data_json)
     .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
-    .replace("PLACEHOLDER_CM_WRITE_URL", json.dumps(_cm_write_url))
-    .replace("PLACEHOLDER_CM_ANON_KEY", json.dumps(SUPABASE_PUBLISHABLE_KEY))
-    .replace("PLACEHOLDER_CONFIG", cm_config_json)
     .replace("PLACEHOLDER_POLL_CONFIG", poll_config_json))
 Path("change-mate/board.html").write_text(output, encoding="utf-8")
 print("change-mate/board.html updated")

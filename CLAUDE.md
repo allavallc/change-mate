@@ -15,16 +15,15 @@ Authoritative workflow spec: `change-mate/CHANGEMATE.md`. Read it before touchin
 
 ## Config
 
-- `change-mate/config.json` holds `gist_id`, `project_name`, `supabase_url`, `supabase_publishable_key`
-- GitHub Actions secrets: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
-- Auth is GitHub — users authenticate with their own GitHub token (fine-grained PAT with `contents:write` on the repo). The cm-write Edge Function verifies push access via GitHub API. No separate key/password system.
-- Supabase secrets for cm-write: `GITHUB_PAT`, `GITHUB_OWNER`, `GITHUB_REPO` (set once via `supabase secrets set`)
+- `change-mate/config.json` holds `project_name`, optional `poll_seconds` (default 30), optional `auto_commit_board` (default true)
+- Auth is GitHub — users authenticate with their own fine-grained PAT (`Contents: Read and write` on the repo). PAT lives in browser localStorage; never sent to any server other than `api.github.com`.
+- No backend. Add Story PUTs directly to GitHub Contents API. Live updates come from polling `GET /repos/{owner}/{repo}/commits/main`.
 
 ## Code layout
 
 - `change-mate/CHANGEMATE.md` — workflow spec (single source of truth)
 - `skills/product-manager/SKILL.md` — PM skill (source; `setup.sh` installs to `~/.claude/skills/product-manager/`)
-- `change-mate/build.sh` — generates `change-mate/board.html` (embeds Supabase creds, detects GitHub repo, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles)
+- `change-mate/build.sh` — generates `change-mate/board.html` (detects GitHub repo, embeds head SHA + poll config, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles)
 - `change-mate/build_lib.py` — `parse_ticket` + `parse_feature_set`
 - `change-mate/backlog/|in-progress/|done/|blocked/|not-doing/` — ticket files (markdown, `CM-XXX-<timestamp>.md`)
 - `change-mate/feature-sets/` — feature set files (`feature-set-XXX-<slug>.md`)

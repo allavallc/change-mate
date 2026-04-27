@@ -17,7 +17,7 @@
 
 **Git sync (default).** Tickets live in the repo. `git pull` before reading the backlog, `git push` after moving a ticket. All agents and developers see the same board.
 
-**Local-only.** Add `change-mate/` to `.gitignore`. The live lock registry and Supabase Realtime still work for a single machine, but collaboration is disabled — each developer's tickets are private to their own working tree. Use only if developers manage their own work independently.
+**Local-only.** Add `change-mate/` to `.gitignore`. The board still renders for a single machine, but collaboration is disabled — each developer's tickets are private to their own working tree. Use only if developers manage their own work independently.
 
 ---
 
@@ -113,42 +113,12 @@ Once the user says yes:
 1. Create the ticket file in `change-mate/backlog/CM-XXX-<timestamp>.md` using the ticket format below
 2. If a new feature set was proposed, create `change-mate/feature-sets/feature-set-XXX-<slug>.md`
 3. Say "On it." and start the work
-4. Broadcast the `ticket_updated` event (see Real-time sync section)
 
 ---
 
-## Live lock registry
+## Locking via git
 
-Before claiming any ticket, check the live lock registry if it is configured:
-
-1. Look for `change-mate/config.json`. If it does not exist, skip to step 6.
-2. Check that `CHANGEMATE_GITHUB_TOKEN` is set in the environment. If it is not set, skip to step 6.
-3. Read the Gist at the `gist_id` value in `change-mate/config.json` using the GitHub API:
-   ```
-   GET https://api.github.com/gists/{gist_id}
-   Authorization: Bearer {CHANGEMATE_GITHUB_TOKEN}
-   ```
-4. Parse the Gist content as a JSON array of lock entries. Each entry has the shape:
-   ```json
-   { "ticket": "CM-XXX", "agent": "hostname", "started": "ISO-8601 timestamp" }
-   ```
-5. If an entry exists for the ticket the user wants to claim, do not proceed. Instead say:
-
-   ```
-   ⚠️  CM-XXX is already claimed by {agent} (started {started}).
-
-   Remaining backlog:
-     CM-005 — Fix pagination bug
-     CM-007 — Add export feature
-
-   Want to pick one of these instead?
-   ```
-
-6. If the ticket is free (or the registry is not configured), write a claim entry to the Gist by patching it with the updated array, then proceed with checkout.
-
-On completion, remove the entry for the ticket from the Gist by patching it with the entry removed.
-
-If the Gist read or write fails for any reason, log a warning and proceed without locking — the registry is best-effort.
+There is no separate lock registry. The git push *is* the lock: the agent that successfully moves a ticket file to `change-mate/in-progress/` and pushes wins. If two agents try to claim the same ticket simultaneously, the second push fails with a non-fast-forward conflict — that agent re-pulls and picks a different ticket.
 
 ---
 
@@ -156,8 +126,7 @@ If the Gist read or write fails for any reason, log a warning and proceed withou
 
 When the user picks a ticket from the backlog:
 
-1. Run the live lock registry check above before doing anything else.
-2. Move the file from `change-mate/backlog/` to `change-mate/in-progress/` (keep the full filename including timestamp)
+1. Move the file from `change-mate/backlog/` to `change-mate/in-progress/` (keep the full filename including timestamp)
 3. Add `assigned_to` and `started` fields at the top of the file
 4. Run:
    ```
@@ -200,7 +169,6 @@ When a ticket cannot proceed, move it to `change-mate/blocked/` and set the `**B
    git commit -m "CM-XXX: blocked"
    git push
    ```
-4. Broadcast the `ticket_updated` Realtime event
 
 When the blocker is resolved, move the ticket back to `in-progress/` (or `backlog/` if work has not started), clear the `Blocked by` field, and commit.
 
@@ -244,7 +212,6 @@ Works from any folder: `backlog/`, `in-progress/`, or `blocked/`.
    git commit -m "CM-XXX: done"
    git push
    ```
-5. Remove the lock entry for this ticket from the Gist (if the live lock registry is configured).
 
 ---
 
@@ -386,52 +353,9 @@ In progress | Complete | Paused
 
 ---
 
-## Real-time sync
+## Sync model
 
-change-mate uses Supabase Realtime to broadcast ticket events so that
-other agents and the human board see changes instantly.
-
-### When to broadcast
-
-Broadcast a Supabase Realtime event in these situations:
-
-1. When claiming a ticket (moving to in-progress)
-2. When completing a ticket (moving to done)
-3. When blocking a ticket (moving to blocked)
-4. When creating a new ticket
-
-### How to broadcast
-
-Read supabase_url and supabase_publishable_key from change-mate/config.json.
-Then send a POST request to the Supabase Realtime broadcast endpoint:
-
-  POST {supabase_url}/realtime/v1/api/broadcast
-  Headers:
-    Content-Type: application/json
-    apikey: {supabase_publishable_key}
-    Authorization: Bearer {supabase_publishable_key}
-  Body:
-    {
-      "messages": [{
-        "topic": "change-mate",
-        "event": "ticket_updated",
-        "payload": {
-          "ticket_id": "CM-004",
-          "title": "Add user authentication",
-          "from_status": "backlog",
-          "to_status": "in-progress",
-          "assigned_to": "alex",
-          "timestamp": "<ISO timestamp>"
-        }
-      }]
-    }
-
-If supabase_url or supabase_publishable_key are missing from change-mate/config.json,
-skip the broadcast silently and continue as normal.
-
-### Do not wait for a response
-
-Fire the broadcast and move on. Do not block work on a failed broadcast.
+The board updates from git, full stop. Whenever an agent pushes a ticket move, the GitHub Actions workflow rebuilds `change-mate/board.html`. Browsers viewing the board poll the GitHub commits API every ~30 seconds; if the commit SHA on `main` changes, the page reloads. There is no broadcast layer, no WebSocket, no database. Push-to-board latency is bounded by the polling interval.
 
 ---
 
@@ -447,8 +371,5 @@ Fire the broadcast and move on. Do not block work on a failed broadcast.
 
 The board-rebuild workflow always **builds** the board on every push (to surface build failures in CI) but only **commits** the result when configured to. The behavior is controlled by the `auto_commit_board` field in `change-mate/config.json`:
 
-- `"auto_commit_board": true` — workflow commits `change-mate/board.html` back to `main`. Use for teams hosting the board on GitHub Pages so the public view stays fresh.
-- `"auto_commit_board": false` — workflow builds but does not commit. Use for solo setups where the noise of `chore: rebuild board` commits in `git log` is worse than the stale static HTML (rebuild locally when you care).
-- **Field omitted** — mode-aware default: if `supabase_url` is present and non-empty in `config.json`, treat as `true` (team mode); otherwise treat as `false` (solo mode).
-
-Explicit values always win over the mode-aware default.
+- `"auto_commit_board": true` (default) — workflow commits `change-mate/board.html` back to `main` so GitHub Pages stays fresh.
+- `"auto_commit_board": false` — workflow builds but does not commit. Use when noise commits matter more than auto-fresh Pages (rebuild locally when you care).
