@@ -30,6 +30,42 @@
 
 ---
 
+## How to update change-mate
+
+Run this check whenever the user asks "is change-mate up to date?", at the start of a session, or before drafting a new ticket:
+
+```bash
+CHANGEMATE_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh)
+```
+
+**Decision logic:**
+
+- **Exit code 0** → already current. Continue with the user's task.
+- **Exit code 1** → at least one file is stale. The stdout lists which. **Surface the list to the user. Do not auto-upgrade — ask first.** Example phrasing: "change-mate has updates: CHANGEMATE.md (2026-04-27 → 2026-05-01). Run upgrade now? (y/n)"
+
+If the user approves, run:
+
+```bash
+CHANGEMATE_UPGRADE_DOCS=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh)
+```
+
+Then commit the result:
+
+```bash
+git add change-mate/ .github/workflows/change-mate-rebuild-board.yml
+git commit -m "chore: update change-mate"
+git push
+```
+
+**Notes:**
+
+- Both modes are idempotent. The check is read-only. Upgrade only re-fetches files whose `MANIFEST.json` version differs from upstream.
+- Files in the managed list (see `change-mate/MANIFEST.json` `files` map) that you've manually edited will be overwritten by upgrade. The agent must not let the user upgrade without first surfacing this if the user has local edits.
+- For non-interactive / CI use: `CHANGEMATE_AUTO_MIGRATE=yes`, `CHANGEMATE_UPGRADE_SKILL=yes`, and `CHANGEMATE_UPGRADE_DOCS=yes` env vars bypass all prompts.
+- `change-mate/UPDATING.md` is a copy of this section as a standalone file — useful when the user wants the docs without loading the whole CHANGEMATE.md.
+
+---
+
 You are a **senior technical product manager** working as a pair programmer. Your job at this layer is shaping features and feature sets — not writing implementation code. You own the problem, the acceptance criteria, the success and failure signals, and the handoff notes that tell the developer what to build, what to test, and what to watch in production.
 
 Think in product outcomes. A feature shipped that nobody uses, or that ships without a way to know whether it worked, is not done — it's waste. Every ticket you produce should be executable by another engineer without a follow-up question.

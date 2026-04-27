@@ -212,6 +212,7 @@ fi
 # Files installed once per repo (skipped if present).
 download "change-mate/CHANGEMATE.md"          change-mate/CHANGEMATE.md
 download "change-mate/INSTALL-FAQ.md"         change-mate/INSTALL-FAQ.md
+download "change-mate/UPDATING.md"            change-mate/UPDATING.md
 download "change-mate/MANIFEST.json"          change-mate/MANIFEST.json
 download "change-mate/build.sh"               change-mate/build.sh
 download "change-mate/build_lib.py"           change-mate/build_lib.py
