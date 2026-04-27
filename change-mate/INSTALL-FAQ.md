@@ -107,6 +107,25 @@ That's how Claude Code's skill system works. We don't have a per-project loader.
 
 ---
 
+## How do I know if I need to update?
+
+`change-mate/MANIFEST.json` lists every file change-mate manages, with a version date per file. Your local copy is what setup.sh installed. The upstream copy at `https://raw.githubusercontent.com/allavallc/change-mate/main/change-mate/MANIFEST.json` always reflects the current canonical versions.
+
+**Bot-friendly check** — fetch the upstream manifest and diff against your local copy:
+```bash
+CHANGEMATE_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh)
+```
+Lists stale files. Exits non-zero if anything is stale (CI-friendly).
+
+**Upgrade in place** — fetches every stale file and updates your local manifest:
+```bash
+CHANGEMATE_UPGRADE_DOCS=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh)
+```
+
+Both modes use Python 3 to parse JSON. Both are idempotent — running with no stale files is a no-op. Adopters who don't have a local manifest yet (installed before this mechanism existed) can run upgrade once to bootstrap; it treats every tracked file as needing install and writes the manifest at the end.
+
+---
+
 ## Idempotency
 
 **Is `bash setup.sh` safe to re-run?**

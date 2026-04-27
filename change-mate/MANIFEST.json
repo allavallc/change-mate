@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "updated": "2026-04-27T19:30:00Z",
+  "files": {
+    "change-mate/CHANGEMATE.md": "2026-04-27",
+    "change-mate/INSTALL-FAQ.md": "2026-04-27",
+    "change-mate/MANIFEST.json": "2026-04-27",
+    "change-mate/build.sh": "2026-04-27",
+    "change-mate/build_lib.py": "2026-04-27",
+    "change-mate/config.json": "2026-04-27",
+    ".github/workflows/change-mate-rebuild-board.yml": "2026-04-27",
+    "skills/product-manager/SKILL.md": "1.0.0"
+  }
+}

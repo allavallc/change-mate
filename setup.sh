@@ -54,6 +54,110 @@ skill_version() {
   [ -f "$1" ] && grep -E '^version:' "$1" | head -1 | sed 's/^version:[[:space:]]*//' | tr -d '\r' || true
 }
 
+py_cmd() {
+  for cmd in py python3 python; do
+    if command -v "$cmd" >/dev/null 2>&1 && "$cmd" -c "import sys; assert sys.version_info[0] >= 3" 2>/dev/null; then
+      echo "$cmd"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Diff upstream manifest against local. Outputs tab-separated `path<TAB>upstream<TAB>local` per stale file.
+manifest_diff() {
+  local upstream="$1" local_m="$2"
+  local pyc
+  pyc=$(py_cmd) || { echo "[manifest] need Python 3 to parse manifest" >&2; return 1; }
+  "$pyc" - "$upstream" "$local_m" <<'PYEOF'
+import json, os, sys
+up_path, loc_path = sys.argv[1], sys.argv[2]
+up = json.load(open(up_path))
+loc = {}
+if os.path.exists(loc_path):
+    try:
+        loc = json.load(open(loc_path)).get("files", {})
+    except Exception:
+        loc = {}
+for path, ver in up.get("files", {}).items():
+    local_ver = loc.get(path, "")
+    if ver != local_ver:
+        print(f"{path}\t{ver}\t{local_ver}")
+PYEOF
+}
+
+run_check_mode() {
+  local tmp_manifest
+  tmp_manifest=$(mktemp 2>/dev/null || echo "/tmp/cm-manifest-$$")
+  if ! curl -fsSL "$REPO_URL/change-mate/MANIFEST.json" -o "$tmp_manifest"; then
+    echo -e "${RED}✗${NC} could not fetch upstream MANIFEST.json"
+    rm -f "$tmp_manifest"
+    return 2
+  fi
+  local stale
+  stale=$(manifest_diff "$tmp_manifest" "change-mate/MANIFEST.json")
+  rm -f "$tmp_manifest"
+  if [ -z "$stale" ]; then
+    echo -e "${GREEN}✓${NC} all change-mate files are up to date"
+    return 0
+  fi
+  echo "stale files:"
+  echo "$stale" | while IFS=$'\t' read -r path up loc; do
+    echo "  • $path: local=${loc:-MISSING} → upstream=$up"
+  done
+  echo ""
+  echo "to upgrade: CHANGEMATE_UPGRADE_DOCS=yes bash setup.sh"
+  return 1
+}
+
+run_upgrade_mode() {
+  local tmp_manifest
+  tmp_manifest=$(mktemp 2>/dev/null || echo "/tmp/cm-manifest-$$")
+  if ! curl -fsSL "$REPO_URL/change-mate/MANIFEST.json" -o "$tmp_manifest"; then
+    echo -e "${RED}✗${NC} could not fetch upstream MANIFEST.json"
+    rm -f "$tmp_manifest"
+    return 2
+  fi
+  local stale
+  stale=$(manifest_diff "$tmp_manifest" "change-mate/MANIFEST.json")
+  if [ -z "$stale" ]; then
+    echo -e "${GREEN}✓${NC} already up to date — nothing to do"
+    rm -f "$tmp_manifest"
+    return 0
+  fi
+  local failed=0
+  while IFS=$'\t' read -r path up loc; do
+    [ -z "$path" ] && continue
+    mkdir -p "$(dirname "$path")"
+    if curl -fsSL "$REPO_URL/$path" -o "$path"; then
+      echo -e "${GREEN}✓${NC} updated $path (${loc:-installed} → $up)"
+    else
+      echo -e "${RED}✗${NC} failed to fetch $path"
+      failed=1
+    fi
+  done <<< "$stale"
+  if [ $failed -eq 0 ]; then
+    mv "$tmp_manifest" change-mate/MANIFEST.json
+    echo -e "${GREEN}✓${NC} updated change-mate/MANIFEST.json"
+  else
+    rm -f "$tmp_manifest"
+    echo -e "${YELLOW}~${NC} some fetches failed; local MANIFEST.json left unchanged"
+    return 1
+  fi
+}
+
+# --- early dispatch: check / upgrade modes --------------------------------
+
+if [ "${CHANGEMATE_CHECK_UPDATES:-}" = "yes" ]; then
+  run_check_mode
+  exit $?
+fi
+
+if [ "${CHANGEMATE_UPGRADE_DOCS:-}" = "yes" ]; then
+  run_upgrade_mode
+  exit $?
+fi
+
 echo ""
 echo "setting up change-mate..."
 echo ""
@@ -108,6 +212,7 @@ fi
 # Files installed once per repo (skipped if present).
 download "change-mate/CHANGEMATE.md"          change-mate/CHANGEMATE.md
 download "change-mate/INSTALL-FAQ.md"         change-mate/INSTALL-FAQ.md
+download "change-mate/MANIFEST.json"          change-mate/MANIFEST.json
 download "change-mate/build.sh"               change-mate/build.sh
 download "change-mate/build_lib.py"           change-mate/build_lib.py
 download "change-mate/config.json"            change-mate/config.json
