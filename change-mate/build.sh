@@ -135,6 +135,26 @@ cm_config_json = json.dumps({
     "project_name": PROJECT_NAME,
 }, indent=2)
 
+
+def detect_head_sha():
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5
+        )
+        return res.stdout.strip()
+    except Exception:
+        return ""
+
+
+POLL_SECONDS = _cfg.get("poll_seconds", 30)
+HEAD_SHA = detect_head_sha()
+poll_config_json = json.dumps({
+    "repo": GITHUB_REPO,
+    "poll_seconds": POLL_SECONDS,
+    "head_sha": HEAD_SHA,
+})
+
 HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,7 +164,6 @@ HTML = """<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0a;
@@ -656,9 +675,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 <header>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="logo">change<span>-mate</span></span>
-    <span id="cm-live-indicator" style="display:none; align-items:center; gap:5px; font-size:12px; color:#666;">
-      <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
-      live
+    <span id="cm-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
+      <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+      <span class="cm-live-label">polling</span>
     </span>
   </div>
   <div class="header-right">
@@ -1047,90 +1066,74 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-config" type="application/json">PLACEHOLDER_CONFIG</script>
+<script id="cm-poll-config" type="application/json">PLACEHOLDER_POLL_CONFIG</script>
 <script>
 (function() {
-  var cfg = JSON.parse(document.getElementById('cm-config').textContent);
-  if (!cfg.supabase_url || !cfg.supabase_publishable_key) return;
+  // Poll the GitHub commits API; if HEAD on main changed, reload the page.
+  // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
+  var cfg = JSON.parse(document.getElementById('cm-poll-config').textContent);
+  if (!cfg.repo) {
+    console.warn('[cm-poll] no repo detected, polling disabled');
+    return;
+  }
 
-  var client = supabase.createClient(cfg.supabase_url, cfg.supabase_publishable_key);
-  var channel = client.channel('change-mate');
+  var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
+  var indicator = document.getElementById('cm-live-indicator');
+  if (indicator) {
+    indicator.style.display = 'flex';
+    var label = indicator.querySelector('.cm-live-label');
+    if (label) label.textContent = 'polling';
+  }
 
-  channel.on('broadcast', { event: 'ticket_updated' }, function(e) {
-    handleTicketUpdate(e.payload);
-  });
+  var lastSha = cfg.head_sha || null;
+  var consecutiveFailures = 0;
 
-  channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locks' }, function(e) {
-    var row = e.new;
-    if (row && row.ticket_id) setCardActive(row.ticket_id, true);
-  });
-  channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'locks' }, function(e) {
-    var row = e.old;
-    if (row && row.ticket_id) setCardActive(row.ticket_id, false);
-  });
+  function getToken() { return localStorage.getItem('cm_github_token') || ''; }
 
-  channel.subscribe(function(status) {
-    if (status === 'SUBSCRIBED') {
-      document.getElementById('cm-live-indicator').style.display = 'flex';
-      client.from('locks').select('ticket_id, agent').then(function(res) {
-        if (res.data) res.data.forEach(function(lock) { setCardActive(lock.ticket_id, true); });
-      });
+  async function pollOnce() {
+    if (document.hidden) return;
+    try {
+      var headers = { 'Accept': 'application/vnd.github+json' };
+      var token = getToken();
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      var res = await fetch('https://api.github.com/repos/' + cfg.repo + '/commits/main', { headers: headers });
+      if (res.status === 403) {
+        console.warn('[cm-poll] rate limited, backing off');
+        consecutiveFailures++;
+        return;
+      }
+      if (!res.ok) {
+        console.warn('[cm-poll] HTTP', res.status);
+        consecutiveFailures++;
+        return;
+      }
+      consecutiveFailures = 0;
+      var body = await res.json();
+      var sha = body && body.sha;
+      if (!sha) return;
+      if (lastSha && sha !== lastSha) {
+        console.log('[cm-poll] HEAD changed', lastSha, '->', sha, '— reloading');
+        location.reload();
+        return;
+      }
+      lastSha = sha;
+    } catch (e) {
+      console.warn('[cm-poll] error', e);
+      consecutiveFailures++;
     }
+  }
+
+  // Initial poll + interval
+  pollOnce();
+  setInterval(function() {
+    if (consecutiveFailures > 5) return; // give up after sustained failures; user can refresh manually
+    pollOnce();
+  }, intervalSec * 1000);
+
+  // Fast-path on tab visibility return
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) pollOnce();
   });
-
-  function findCard(ticketId) {
-    var found = null;
-    document.querySelectorAll('#view-board .card').forEach(function(card) {
-      var el = card.querySelector('.card-id');
-      if (el && el.textContent.trim() === ticketId) found = card;
-    });
-    return found;
-  }
-
-  function setCardActive(ticketId, active) {
-    var card = findCard(ticketId);
-    if (!card) return;
-    if (active) card.classList.add('cm-active');
-    else card.classList.remove('cm-active');
-  }
-
-  function handleTicketUpdate(data) {
-    var colMap = {
-      'backlog': 'c-backlog', 'open': 'c-backlog',
-      'in-progress': 'c-inprogress', 'done': 'c-done',
-      'blocked': 'c-blocked', 'not-doing': 'c-notdoing'
-    };
-    var targetColId = colMap[data.to_status];
-    if (!targetColId) return;
-    var targetCol = document.getElementById(targetColId);
-    if (!targetCol) return;
-
-    var existing = null;
-    document.querySelectorAll('#view-board .card').forEach(function(card) {
-      var el = card.querySelector('.card-id');
-      if (el && el.textContent.trim() === data.ticket_id) existing = card;
-    });
-
-    if (existing) {
-      existing.classList.add('cm-moving');
-      existing.parentNode.removeChild(existing);
-      targetCol.insertBefore(existing, targetCol.firstChild);
-      setTimeout(function() { existing.classList.remove('cm-moving'); }, 600);
-    } else {
-      var card = document.createElement('div');
-      card.className = 'card cm-new';
-      card.onclick = function() { toggleCard(this); };
-      card.innerHTML = '<div class="card-top"><span class="card-id">' + esc(data.ticket_id) + '</span></div>'
-        + '<div class="card-title">' + esc(data.title || data.ticket_id) + '</div>';
-      targetCol.insertBefore(card, targetCol.firstChild);
-    }
-
-    ['c-backlog','c-inprogress','c-done','c-blocked','c-notdoing'].forEach(function(id) {
-      var col = document.getElementById(id);
-      var cnt = document.getElementById(id.replace('c-', 'n-'));
-      if (col && cnt) cnt.textContent = col.querySelectorAll('.card').length;
-    });
-  }
 })();
 </script>
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
@@ -1224,7 +1227,8 @@ output = (HTML
     .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
     .replace("PLACEHOLDER_CM_WRITE_URL", json.dumps(_cm_write_url))
     .replace("PLACEHOLDER_CM_ANON_KEY", json.dumps(SUPABASE_PUBLISHABLE_KEY))
-    .replace("PLACEHOLDER_CONFIG", cm_config_json))
+    .replace("PLACEHOLDER_CONFIG", cm_config_json)
+    .replace("PLACEHOLDER_POLL_CONFIG", poll_config_json))
 Path("change-mate/board.html").write_text(output, encoding="utf-8")
 print("change-mate/board.html updated")
 PYEOF
