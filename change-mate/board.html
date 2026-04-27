@@ -1612,7 +1612,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-27T21:06:29.664994+00:00"
+  "generated": "2026-04-27T21:08:12.598475+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
@@ -1913,12 +1913,14 @@ async function createStory() {
   btn.disabled = true;
 
   try {
+    console.log('[cm-write] POST', CM_WRITE_URL, 'payload:', payload);
     var res = await fetch(CM_WRITE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CM_ANON_KEY },
       body: JSON.stringify({ github_token: token, actor_name: getAgentName(), payload: payload })
     });
     var data = await res.json().catch(function() { return {}; });
+    console.log('[cm-write] response', res.status, data);
 
     if (res.status === 403) {
       clearGithubToken();
@@ -1926,11 +1928,17 @@ async function createStory() {
       promptSetup(function() { openModal(); }, data.error || 'Access denied. Check your GitHub token.');
       return;
     }
-    if (!res.ok) { showToast('Error: ' + (data.error || 'HTTP ' + res.status)); return; }
+    if (!res.ok) {
+      var msg = (data.error || 'HTTP ' + res.status) + (data.detail ? ' — ' + data.detail : '');
+      console.error('[cm-write] failed:', msg, data);
+      showToast('Error: ' + msg);
+      return;
+    }
 
     closeModal();
     showToast(data.ticket_id + ' created in backlog.');
   } catch(e) {
+    console.error('[cm-write] network error:', e);
     showToast('Network error: ' + e.message);
   } finally {
     btn.textContent = origText;
