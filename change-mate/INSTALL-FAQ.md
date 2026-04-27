@@ -33,6 +33,8 @@ If your repo is public, yes — `change-mate/*.md` files are world-readable on G
 
 We don't support a hybrid (public repo + private tickets in the same repo). If you need that, use a separate repo for tickets.
 
+**Even on private repos, treat tickets as untrusted storage.** Never put credentials, API keys, passwords, tokens, PII, or internal connection strings in a ticket body. Git history persists, repos can flip from private to public, contributors can be added later, and the agent doesn't redact anything before committing. Reference secrets abstractly — "the production DB password (vault path: `<abstract>`)" — not the value itself. CHANGEMATE.md → Rules has the same rule for the agent.
+
 ---
 
 ## GitHub Pages

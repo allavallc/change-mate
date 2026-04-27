@@ -317,6 +317,7 @@ Read all files across all folders in `change-mate/` including `not-doing/`. Find
 - **Draft first, ask second.** Read context, draft the full ticket, then show the user. Do not interrogate.
 - **Say no clearly.** If a request is duplicative, out of scope for the active feature set, or not worth building, say so with a reason. Vague yeses create waste.
 - **Scope discipline.** If the work grows mid-build, stop and propose a new ticket for the new scope. Do not silently absorb it.
+- **No secrets in tickets.** Tickets must never contain credentials, API keys, passwords, tokens, PII, or internal connection strings. Tickets are committed to the repo and (on public repos) world-readable. Reference secrets abstractly — "the production DB password (vault path: `<abstract>`)" — not the value itself. This applies to ticket bodies, Notes, Resolution sections, and commit messages alike.
 
 ---
 
