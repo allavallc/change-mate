@@ -1609,6 +1609,37 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-067",
+      "title": "No-secrets rule for tickets",
+      "status": "done",
+      "priority": "High",
+      "effort": "XS",
+      "feature_set": "feature-set-002-workflow-hygiene",
+      "related": [
+        "CM-066"
+      ],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-27 19:00",
+      "completed": "2026-04-27",
+      "goal": "Make it explicit that change-mate tickets must not contain secrets. The agent should refuse to put credentials, keys, passwords, tokens, PII, or internal connection strings into a ticket \u2014 and adopters should know the same rule applies on their end.",
+      "why": "Tickets are committed to git, world-readable on public repos, and the agent doesn't redact anything before committing. The reviewer's feedback flagged that internal infrastructure detail (env var names, internal URLs, ports) might end up in tickets. A single rule line in CHANGEMATE.md (so the agent reads it every session) plus a reinforcing paragraph in INSTALL-FAQ.md (so adopters see it on first install) closes that gap.",
+      "done_when": [
+        "CHANGEMATE.md \u2192 Rules section has a `**No secrets in tickets.**` bullet describing what is forbidden, where it applies (body, Notes, Resolution, commit messages), and how to reference secrets abstractly.",
+        "INSTALL-FAQ.md \u2192 Public-repo ticket exposure section has a paragraph reinforcing: even on private repos, treat tickets as untrusted storage; git history persists, repos flip public, contributors get added."
+      ],
+      "desired_output": "",
+      "success_signals": "",
+      "failure_signals": "",
+      "tests": "",
+      "notes": "",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1850,7 +1881,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-27T21:47:32.343632+00:00"
+  "generated": "2026-04-27T23:03:15.286142+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
@@ -2276,7 +2307,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "45871e1feb3c552066f5a303c4938e49366023a7"}</script>
+<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "e3871249f15cf214613f54d3d425816357b1f507"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
