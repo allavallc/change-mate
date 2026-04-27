@@ -904,7 +904,7 @@ function render() {
       + (featureSet.goal ? '<div class="feature-set-goal">' + esc(featureSet.goal) + '</div>' : '')
       + '</div>' + statusBadge + '</div>'
       + progRow
-      + '<div class="feature-set-cards">' + (list.length ? list.map(cardHTML).join('') : '<div class="empty">No tickets</div>') + '</div>'
+      + '<div class="feature-set-cards">' + (list.length ? list.map(function(t) { return cardHTML(t); }).join('') : '<div class="empty">No tickets</div>') + '</div>'
       + '</div>';
   }).join('');
 }
