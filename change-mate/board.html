@@ -1611,7 +1611,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-27T20:44:17.462336+00:00"
+  "generated": "2026-04-27T21:02:06.330553+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
@@ -1816,7 +1816,7 @@ function render() {
       + (featureSet.goal ? '<div class="feature-set-goal">' + esc(featureSet.goal) + '</div>' : '')
       + '</div>' + statusBadge + '</div>'
       + progRow
-      + '<div class="feature-set-cards">' + (list.length ? list.map(cardHTML).join('') : '<div class="empty">No tickets</div>') + '</div>'
+      + '<div class="feature-set-cards">' + (list.length ? list.map(function(t) { return cardHTML(t); }).join('') : '<div class="empty">No tickets</div>') + '</div>'
       + '</div>';
   }).join('');
 }
