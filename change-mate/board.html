@@ -566,51 +566,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "CM-059",
-      "title": "Delete Supabase footprint and simplify setup",
-      "status": "open",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-005-kill-supabase",
-      "related": [
-        "CM-057",
-        "CM-058"
-      ],
-      "blocks": [],
-      "blocked_by": [
-        "CM-057",
-        "CM-058"
-      ],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Once polling (CM-057) and direct Add Story (CM-058) are live, remove every trace of Supabase from the codebase: the `supabase/` folder, the config fields, the verify scripts, the Team-path setup docs, the live lock pulse UI, and any tests covering Supabase pieces.",
-      "why": "Leftover Supabase code is a drag on the project \u2014 bigger surface area for adopters to read, more ways setup can fail, more tests to maintain, more docs to keep in sync. The whole point of feature-set-005 is to be done with that backend. This ticket finishes the job.",
-      "done_when": [
-        "`supabase/` folder is deleted (migrations, function, scripts, README).",
-        "`change-mate/config.json` no longer requires `supabase_url` or `supabase_publishable_key`. Existing values are ignored.",
-        "`tests/test_verify_supabase.py` deleted (or archived under historical notes).",
-        "`scripts/verify_supabase.py` deleted.",
-        "The board no longer has the \"live\" header indicator (or it's repurposed to show polling status \u2014 see CM-057).",
-        "The board no longer has the lock-pulse `cm-active` class, the postgres_changes subscription, or any Realtime channel code.",
-        "`SETUP.md` is rewritten \u2014 no more Solo / Team paths split. Single path: install \u2192 push \u2192 use. No CLI, no Edge Function, no migrations.",
-        "`README.md` updated \u2014 drop the Supabase-related \"Files\" rows and the Live lock registry section (Gist version was already retired).",
-        "`setup.sh` no longer references Supabase config keys. `auto_commit_board` mode-aware default rewires: no longer keyed off `supabase_url`. Suggested replacement: default `true` always, since the board needs to be committed to ship to Pages now that Realtime is gone.",
-        "`change-mate/CHANGEMATE.md` Real-time sync section deleted, lock registry section deleted (or updated to explain the markdown-as-lock convention already implicit in the workflow).",
-        "`.github/workflows/change-mate-rebuild-board.yml` no longer reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` env vars.",
-        "All tests pass. No dead imports, no stale references in docs."
-      ],
-      "desired_output": "An adopter pulls down the change-mate repo, runs `bash setup.sh`, commits the resulting `change-mate/` folder, and the board works on GitHub Pages within minutes \u2014 no second account, no CLI, no migrations. SETUP.md fits on one screen.",
-      "success_signals": "- New adopter can go from zero to working board in under 5 minutes.\n- Code repo size shrinks (Supabase folder + tests removed).\n- No more \"is Supabase paused?\" support questions.",
-      "failure_signals": "- A stale reference in docs sends an adopter chasing a Supabase setup that no longer applies.\n- An existing adopter's config breaks because we removed required keys. Mitigation: ignore the old keys silently, don't fail on their presence.\n- The `auto_commit_board` mode-aware default no longer makes sense without `supabase_url` as a signal \u2014 needs a different default rule (always-on is the simplest).",
-      "tests": "- Existing pytest suite passes after deletions (clearly some test files will be deleted with the deletion of source files \u2014 that's expected).\n- Manual: fresh clone \u2192 `bash setup.sh` \u2192 push \u2192 open Pages \u2192 confirm board works without ever opening Supabase.\n- Manual: grep -r \"supabase\" . \u2014 only hits should be in done/historical tickets, never in live code.",
-      "notes": "- **Alternative considered**: leave the Supabase code in place behind a config flag. Rejected \u2014 leftover dead code rots and confuses adopters.\n- **Alternative considered**: keep the locks table for the live agent indicator. Rejected \u2014 drop the indicator entirely. The dashed-border + walking-robot already says \"in progress\" loud enough.\n- **Out of scope**: redesigning the board look (separate ticket if pursued).\n- **Migration risk**: existing adopters have Supabase secrets, RLS policies, and Edge Function deployed. We don't touch their Supabase project \u2014 they can leave it alone or delete it on their own. The change-mate code stops calling it; that's all.\n- **Confidence**: 80%. Mostly mechanical deletions. The only design call is what to do with `auto_commit_board` mode-awareness; my recommendation is to default `true`.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "CM-060",
       "title": "Apply SimplifyOps brutalist style to the board",
       "status": "in-progress",
@@ -775,47 +730,6 @@ var D = {
       "failure_signals": "",
       "tests": "",
       "notes": "**Do not move out of `in-progress/` until the user approves the animation.** Visual fixture only.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "CM-058",
-      "title": "Add Story \u2192 direct GitHub Contents API (drop cm-write)",
-      "status": "in-progress",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-005-kill-supabase",
-      "related": [
-        "CM-057",
-        "CM-059"
-      ],
-      "blocks": [
-        "CM-059"
-      ],
-      "blocked_by": [
-        "CM-057"
-      ],
-      "assigned_to": "claude",
-      "started": "2026-04-27 17:15",
-      "completed": "",
-      "goal": "Replace the Supabase Edge Function `cm-write` with browser-direct calls to the GitHub Contents API. The Add Story button should write a markdown file to `change-mate/backlog/` using the user's PAT \u2014 no server in between.",
-      "why": "The Edge Function adds a deploy step, three Postgres migrations, a sequence + RPC, an SDK install, and a function to maintain. Its actual job is: validate a payload, claim an ID, render markdown, PUT to GitHub. Steps 1\u20133 happen fine in the browser. Step 4 happens fine in the browser. The middleman is unnecessary.",
-      "done_when": [
-        "Add Story modal calls `GET /repos/{owner}/{repo}/contents/change-mate/backlog` to list existing tickets. (Or queries the in-memory ticket list the board already has \u2014 preferred for simplicity.)",
-        "Browser parses the highest existing CM-ID across backlog/in-progress/done/blocked/not-doing \u2192 next ID = max + 1.",
-        "Browser renders ticket markdown locally using the same template cm-write uses today (port `ticket.ts` rendering logic to in-board JS).",
-        "Browser PUTs to `https://api.github.com/repos/{owner}/{repo}/contents/change-mate/backlog/CM-NNN-<timestamp>.md` with the user's PAT.",
-        "On 422/409 (path conflict \u2014 race with another Add Story click), browser increments CM-ID and retries once.",
-        "On 401/403, browser clears the cached PAT and prompts the setup modal.",
-        "The `cm-write` URL and anon key placeholders in `build.sh` are removed."
-      ],
-      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (CM-057) detects the change and re-renders. No Supabase function was contacted.",
-      "success_signals": "- Add Story works for adopters who never deployed an Edge Function.\n- Latency from click to \"ticket appears in backlog\" is comparable to current cm-write flow (PAT-direct GitHub call vs. cm-write \u2192 Postgres \u2192 GitHub call).\n- No more 401/403/network errors stemming from a paused Supabase project.",
-      "failure_signals": "- Two simultaneous clicks race for the same CM-ID and one fails after retry. Mitigation: retry-on-conflict with a fresh ID scan.\n- PAT scope insufficient \u2014 caller has only Read, can't PUT. UI must surface the GitHub error clearly.\n- A push from another agent during the form-fill window means the ID we computed is now stale by the time we PUT. Same mitigation: retry once on 422.",
-      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in CM-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `change-mate/backlog/`. Verify board updates within 30s (via CM-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
-      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (CM-059), polling code (CM-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at CM-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1385,6 +1299,92 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-058",
+      "title": "Add Story \u2192 direct GitHub Contents API (drop cm-write)",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-005-kill-supabase",
+      "related": [
+        "CM-057",
+        "CM-059"
+      ],
+      "blocks": [
+        "CM-059"
+      ],
+      "blocked_by": [
+        "CM-057"
+      ],
+      "assigned_to": "claude",
+      "started": "2026-04-27 17:15",
+      "completed": "2026-04-27",
+      "goal": "Replace the Supabase Edge Function `cm-write` with browser-direct calls to the GitHub Contents API. The Add Story button should write a markdown file to `change-mate/backlog/` using the user's PAT \u2014 no server in between.",
+      "why": "The Edge Function adds a deploy step, three Postgres migrations, a sequence + RPC, an SDK install, and a function to maintain. Its actual job is: validate a payload, claim an ID, render markdown, PUT to GitHub. Steps 1\u20133 happen fine in the browser. Step 4 happens fine in the browser. The middleman is unnecessary.",
+      "done_when": [
+        "Add Story modal calls `GET /repos/{owner}/{repo}/contents/change-mate/backlog` to list existing tickets. (Or queries the in-memory ticket list the board already has \u2014 preferred for simplicity.)",
+        "Browser parses the highest existing CM-ID across backlog/in-progress/done/blocked/not-doing \u2192 next ID = max + 1.",
+        "Browser renders ticket markdown locally using the same template cm-write uses today (port `ticket.ts` rendering logic to in-board JS).",
+        "Browser PUTs to `https://api.github.com/repos/{owner}/{repo}/contents/change-mate/backlog/CM-NNN-<timestamp>.md` with the user's PAT.",
+        "On 422/409 (path conflict \u2014 race with another Add Story click), browser increments CM-ID and retries once.",
+        "On 401/403, browser clears the cached PAT and prompts the setup modal.",
+        "The `cm-write` URL and anon key placeholders in `build.sh` are removed."
+      ],
+      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (CM-057) detects the change and re-renders. No Supabase function was contacted.",
+      "success_signals": "- Add Story works for adopters who never deployed an Edge Function.\n- Latency from click to \"ticket appears in backlog\" is comparable to current cm-write flow (PAT-direct GitHub call vs. cm-write \u2192 Postgres \u2192 GitHub call).\n- No more 401/403/network errors stemming from a paused Supabase project.",
+      "failure_signals": "- Two simultaneous clicks race for the same CM-ID and one fails after retry. Mitigation: retry-on-conflict with a fresh ID scan.\n- PAT scope insufficient \u2014 caller has only Read, can't PUT. UI must surface the GitHub error clearly.\n- A push from another agent during the form-fill window means the ID we computed is now stale by the time we PUT. Same mitigation: retry once on 422.",
+      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in CM-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `change-mate/backlog/`. Verify board updates within 30s (via CM-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
+      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (CM-059), polling code (CM-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at CM-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-059",
+      "title": "Delete Supabase footprint and simplify setup",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-005-kill-supabase",
+      "related": [
+        "CM-057",
+        "CM-058"
+      ],
+      "blocks": [],
+      "blocked_by": [
+        "CM-057",
+        "CM-058"
+      ],
+      "assigned_to": "claude",
+      "started": "2026-04-27 17:30",
+      "completed": "2026-04-27",
+      "goal": "Once polling (CM-057) and direct Add Story (CM-058) are live, remove every trace of Supabase from the codebase: the `supabase/` folder, the config fields, the verify scripts, the Team-path setup docs, the live lock pulse UI, and any tests covering Supabase pieces.",
+      "why": "Leftover Supabase code is a drag on the project \u2014 bigger surface area for adopters to read, more ways setup can fail, more tests to maintain, more docs to keep in sync. The whole point of feature-set-005 is to be done with that backend. This ticket finishes the job.",
+      "done_when": [
+        "`supabase/` folder is deleted (migrations, function, scripts, README).",
+        "`change-mate/config.json` no longer requires `supabase_url` or `supabase_publishable_key`. Existing values are ignored.",
+        "`tests/test_verify_supabase.py` deleted (or archived under historical notes).",
+        "`scripts/verify_supabase.py` deleted.",
+        "The board no longer has the \"live\" header indicator (or it's repurposed to show polling status \u2014 see CM-057).",
+        "The board no longer has the lock-pulse `cm-active` class, the postgres_changes subscription, or any Realtime channel code.",
+        "`SETUP.md` is rewritten \u2014 no more Solo / Team paths split. Single path: install \u2192 push \u2192 use. No CLI, no Edge Function, no migrations.",
+        "`README.md` updated \u2014 drop the Supabase-related \"Files\" rows and the Live lock registry section (Gist version was already retired).",
+        "`setup.sh` no longer references Supabase config keys. `auto_commit_board` mode-aware default rewires: no longer keyed off `supabase_url`. Suggested replacement: default `true` always, since the board needs to be committed to ship to Pages now that Realtime is gone.",
+        "`change-mate/CHANGEMATE.md` Real-time sync section deleted, lock registry section deleted (or updated to explain the markdown-as-lock convention already implicit in the workflow).",
+        "`.github/workflows/change-mate-rebuild-board.yml` no longer reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` env vars.",
+        "All tests pass. No dead imports, no stale references in docs."
+      ],
+      "desired_output": "An adopter pulls down the change-mate repo, runs `bash setup.sh`, commits the resulting `change-mate/` folder, and the board works on GitHub Pages within minutes \u2014 no second account, no CLI, no migrations. SETUP.md fits on one screen.",
+      "success_signals": "- New adopter can go from zero to working board in under 5 minutes.\n- Code repo size shrinks (Supabase folder + tests removed).\n- No more \"is Supabase paused?\" support questions.",
+      "failure_signals": "- A stale reference in docs sends an adopter chasing a Supabase setup that no longer applies.\n- An existing adopter's config breaks because we removed required keys. Mitigation: ignore the old keys silently, don't fail on their presence.\n- The `auto_commit_board` mode-aware default no longer makes sense without `supabase_url` as a signal \u2014 needs a different default rule (always-on is the simplest).",
+      "tests": "- Existing pytest suite passes after deletions (clearly some test files will be deleted with the deletion of source files \u2014 that's expected).\n- Manual: fresh clone \u2192 `bash setup.sh` \u2192 push \u2192 open Pages \u2192 confirm board works without ever opening Supabase.\n- Manual: grep -r \"supabase\" . \u2014 only hits should be in done/historical tickets, never in live code.",
+      "notes": "- **Alternative considered**: leave the Supabase code in place behind a config flag. Rejected \u2014 leftover dead code rots and confuses adopters.\n- **Alternative considered**: keep the locks table for the live agent indicator. Rejected \u2014 drop the indicator entirely. The dashed-border + walking-robot already says \"in progress\" loud enough.\n- **Out of scope**: redesigning the board look (separate ticket if pursued).\n- **Migration risk**: existing adopters have Supabase secrets, RLS policies, and Edge Function deployed. We don't touch their Supabase project \u2014 they can leave it alone or delete it on their own. The change-mate code stops calling it; that's all.\n- **Confidence**: 80%. Mostly mechanical deletions. The only design call is what to do with `auto_commit_board` mode-awareness; my recommendation is to default `true`.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not doing",
@@ -1593,7 +1593,7 @@ var D = {
       "name": "[feature-set-005] Kill Supabase",
       "goal": "Eliminate Supabase as a dependency. Replace Realtime with GitHub commit polling, replace cm-write with browser-direct Contents API calls, then delete the entire Supabase folder + docs + tests.",
       "rationale": "Supabase was added in feature-set-001 to give the board live updates and a server-side ticket-ID claim. In practice the project pauses after a week of inactivity, the migrations are fragile across pause-restore cycles, and the cost (Edge Function deploy, CLI install, three SQL migrations, two API keys) far outweighs the benefit (30-second freshness vs. live updates). Git is already the source of truth; the browser already has the user's GitHub PAT. Removing the backend simplifies setup from ~15 minutes to ~30 seconds and eliminates the project-paused failure mode entirely.",
-      "status": "In progress",
+      "status": "Done \u2014 2026-04-27",
       "tickets": [
         "CM-057",
         "CM-058",
@@ -1611,11 +1611,9 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-27T21:13:47.015455+00:00"
+  "generated": "2026-04-27T21:21:17.549823+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
-var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
-var CM_ANON_KEY = "sb_publishable_AahlzUKVHc3CacNbmk20-A_VpAACweo";
 
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1882,6 +1880,56 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
+function nextTicketIdNumber() {
+  var max = 0;
+  D.tickets.forEach(function(t) {
+    var m = (t.id || '').match(/^CM-(\d+)$/);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return max + 1;
+}
+function formatTicketId(n) {
+  var s = String(n);
+  while (s.length < 3) s = '0' + s;
+  return 'CM-' + s;
+}
+function utf8ToBase64(str) {
+  var bytes = new TextEncoder().encode(str);
+  var binary = '';
+  for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+function renderTicketMarkdown(ticketId, payload) {
+  var lines = [];
+  lines.push('# [' + ticketId + '] ' + payload.title);
+  lines.push('');
+  lines.push('- **Status**: open');
+  lines.push('- **Priority**: ' + payload.priority);
+  lines.push('- **Effort**: ' + payload.effort);
+  if (payload.feature_set) lines.push('- **Feature set**: ' + payload.feature_set);
+  lines.push('- **Assigned to**: ' + (payload.assigned_to || ''));
+  lines.push('- **Started**: ');
+  lines.push('- **Completed**: ');
+  lines.push('');
+  lines.push('## Goal');
+  lines.push((payload.goal || 'TBD').trim());
+  lines.push('');
+  if (payload.why) {
+    lines.push('## Why');
+    lines.push(payload.why.trim());
+    lines.push('');
+  }
+  lines.push('## Done when');
+  lines.push((payload.done_when || 'TBD').trim());
+  lines.push('');
+  if (payload.notes) {
+    lines.push('## Notes');
+    lines.push(payload.notes.trim());
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
 async function createStory() {
   var title = document.getElementById('f-title').value.trim();
   if (!title) { document.getElementById('f-title').focus(); return; }
@@ -1892,18 +1940,22 @@ async function createStory() {
   var token = getGithubToken();
   if (!token) { promptSetup(function() { createStory(); }); return; }
 
+  if (!DEFAULT_REPO) { showToast('No GitHub repo detected.'); return; }
+
   var goal    = document.getElementById('f-goal').value.trim();
   var why     = document.getElementById('f-why').value.trim();
   var doneRaw = document.getElementById('f-done').value.trim();
   var notes   = document.getElementById('f-notes').value.trim();
   var fsId    = document.getElementById('f-featureset').value;
+  var assignedTo = document.getElementById('f-assigned') ? document.getElementById('f-assigned').value.trim() : '';
 
   var payload = { title: title, goal: goal || 'TBD', done_when: doneRaw || 'TBD', priority: priority, effort: effort };
   if (why) payload.why = why;
   if (notes) payload.notes = notes;
+  if (assignedTo) payload.assigned_to = assignedTo;
   if (fsId) {
     var matchedFs = D.feature_sets.filter(function(fs) { return fs.id === fsId; })[0];
-    if (matchedFs) payload.feature_set = matchedFs.name;
+    if (matchedFs) payload.feature_set = matchedFs.id;
   }
 
   var btn = document.querySelector('#modal .btn-primary');
@@ -1912,32 +1964,59 @@ async function createStory() {
   btn.disabled = true;
 
   try {
-    console.log('[cm-write] POST', CM_WRITE_URL, 'payload:', payload);
-    var res = await fetch(CM_WRITE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CM_ANON_KEY },
-      body: JSON.stringify({ github_token: token, actor_name: getAgentName(), payload: payload })
-    });
-    var data = await res.json().catch(function() { return {}; });
-    console.log('[cm-write] response', res.status, data);
+    var idNum = nextTicketIdNumber();
+    var attempt = 0;
+    while (attempt < 5) {
+      var ticketId = formatTicketId(idNum);
+      var ts = Math.floor(Date.now() / 1000);
+      var filePath = 'change-mate/backlog/' + ticketId + '-' + ts + '.md';
+      var markdown = renderTicketMarkdown(ticketId, payload);
+      var commitMsg = ticketId + ': ' + payload.title;
 
-    if (res.status === 403) {
-      clearGithubToken();
-      closeModal();
-      promptSetup(function() { openModal(); }, data.error || 'Access denied. Check your GitHub token.');
+      var url = 'https://api.github.com/repos/' + DEFAULT_REPO + '/contents/' + filePath;
+      console.log('[create-story] PUT', url, 'attempt', attempt + 1);
+      var res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: commitMsg,
+          content: utf8ToBase64(markdown),
+          branch: 'main'
+        })
+      });
+      var data = await res.json().catch(function() { return {}; });
+      console.log('[create-story] response', res.status, data);
+
+      if (res.status === 201) {
+        closeModal();
+        showToast(ticketId + ' created in backlog.');
+        return;
+      }
+      if (res.status === 401 || res.status === 403) {
+        clearGithubToken();
+        closeModal();
+        promptSetup(function() { openModal(); }, (data.message || 'Access denied. Check your GitHub token.'));
+        return;
+      }
+      if (res.status === 422) {
+        // Path conflict (someone else just created CM-NNN). Bump and retry.
+        console.warn('[create-story] 422 conflict, bumping ID');
+        idNum++;
+        attempt++;
+        continue;
+      }
+      // Other error — surface and stop.
+      console.error('[create-story] failed:', res.status, data);
+      showToast('Error: HTTP ' + res.status + (data.message ? ' — ' + data.message : ''));
       return;
     }
-    if (!res.ok) {
-      var msg = (data.error || 'HTTP ' + res.status) + (data.detail ? ' — ' + data.detail : '');
-      console.error('[cm-write] failed:', msg, data);
-      showToast('Error: ' + msg);
-      return;
-    }
-
-    closeModal();
-    showToast(data.ticket_id + ' created in backlog.');
+    showToast('Could not claim a ticket ID after 5 attempts. Refresh and try again.');
   } catch(e) {
-    console.error('[cm-write] network error:', e);
+    console.error('[create-story] network error:', e);
     showToast('Network error: ' + e.message);
   } finally {
     btn.textContent = origText;
@@ -1958,7 +2037,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "9d262cb1c690a8f95c225cbe49b78d75cfcd9c27"}</script>
+<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "8964d79015cb0b4ada66fa7900205ecc6d058b23"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
