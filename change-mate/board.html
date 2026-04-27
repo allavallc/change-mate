@@ -424,6 +424,131 @@ main { max-width: 1280px; margin: 0 auto; padding: 24px; }
 var D = {
   "tickets": [
     {
+      "id": "CM-057",
+      "title": "Replace Supabase Realtime with GitHub commit polling",
+      "status": "open",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-005-kill-supabase",
+      "related": [
+        "CM-058",
+        "CM-059"
+      ],
+      "blocks": [
+        "CM-058",
+        "CM-059"
+      ],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Make the board update from GitHub directly \u2014 no Supabase Realtime, no WebSocket, no DB. Browser polls the GitHub commits API every N seconds; if HEAD changed, refetch tickets and re-render.",
+      "why": "Supabase adds setup, an Edge Function, three migrations, a CLI install, and a project that pauses after a week of inactivity. The board's actual job is \"show me the markdown files in this repo\" \u2014 git is the source of truth. Polling GitHub directly removes the entire backend dependency and keeps the watching experience close-to-live (30-second freshness).",
+      "done_when": [
+        "The `supabase-js` script tag and `client.channel(...)` subscription block are removed from the generated board HTML.",
+        "The board polls `GET /repos/{owner}/{repo}/commits?sha=main&per_page=1` (or equivalent) every 30 seconds. If the HEAD commit SHA differs from the cached one, refetch tickets.",
+        "Polling interval is configurable via `change-mate/config.json` field `poll_seconds` (default 30, minimum 10).",
+        "Tickets are re-fetched by reading individual ticket files via the Contents API, OR by parsing a single tickets-index file the build step writes. Pick the simpler path (likely: re-rendering the embedded JSON the board already ships with, but refreshed via a server-rendered JSON endpoint baked into a small static file in the repo).",
+        "Auth: anonymous polling for public repos. For private repos, browser sends the user's existing PAT (already in localStorage from Add Story setup).",
+        "The \"live\" indicator in the header changes meaning: shows \"polling\" with a green dot when active, \"offline\" if rate-limited or auth fails."
+      ],
+      "desired_output": "A human opens the board on GitHub Pages. Within 30 seconds of any push to `main` (a ticket move, a new ticket, etc.), the board reflects the new state without a manual refresh. No backend was ever contacted.",
+      "success_signals": "- Adopters with public repos see the board work without setting up anything beyond the initial `setup.sh`.\n- Adopters with private repos see it work with just their PAT.\n- Push-to-board latency stays under ~35 seconds at default interval.\n- GitHub API rate limit headroom \u2014 anonymous public-repo polling at 30s = 120 calls/hour, well under the 60/hour anonymous limit per IP for unauth'd... wait, that's tight. Authenticated polling at 30s = 120 calls/hour, well under the 5000/hour PAT limit.",
+      "failure_signals": "- Anonymous polling exhausts the 60/hour rate limit for adopters viewing public repos without a token.\n- A burst of pushes triggers thrashing refetches.\n- Browser tab left open overnight runs unbounded fetches; needs document.hidden check to pause polling when tab is backgrounded.\n- Pages cache makes the polled response stale even when GitHub returns fresh data.",
+      "tests": "- Unit (new): `tests/test_build.py` asserts the generated `board.html` no longer contains `supabase` / `supabase-js` / `realtime`.\n- Unit (new): asserts the generated `board.html` contains the polling code (e.g. `setInterval` and `commits?sha=main`).\n- Manual: open board, push a new ticket via git, wait \u226430s, confirm board updates without manual refresh.\n- Manual: throttle network in devtools, confirm polling fails gracefully (header indicator shows \"offline\").\n- Manual: switch tab away for 2 minutes, switch back \u2014 confirm polling resumes and refetches once.",
+      "notes": "- **Alternative considered**: WebSocket via Cloudflare Workers/Durable Objects. Rejected \u2014 still requires deploying something. Polling at 30s is good enough for a kanban board people glance at.\n- **Alternative considered**: GitHub webhooks \u2192 small Cloudflare Worker \u2192 SSE to browser. Cleaner UX, requires deploying a Worker. Out of scope for \"kill all backends\".\n- **Alternative considered**: Drop polling entirely, rely on manual refresh. Rejected \u2014 too far from \"live\" feel.\n- **Out of scope**: replacing cm-write (CM-058), removing the Supabase folder + docs (CM-059), live lock pulse (drop entirely as part of CM-059).\n- **Risk**: anonymous public-repo polling rate limit. Mitigation: detect rate-limit response, back off + warn in the header indicator.\n- **Confidence**: 80%. Main unknown is whether the board can re-render cleanly mid-session without a full page reload \u2014 the JSON is currently baked into the HTML at build time. May need a small static `tickets.json` that the build step writes separately so the polling code can refetch JSON only.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-058",
+      "title": "Add Story \u2192 direct GitHub Contents API (drop cm-write)",
+      "status": "open",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-005-kill-supabase",
+      "related": [
+        "CM-057",
+        "CM-059"
+      ],
+      "blocks": [
+        "CM-059"
+      ],
+      "blocked_by": [
+        "CM-057"
+      ],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Replace the Supabase Edge Function `cm-write` with browser-direct calls to the GitHub Contents API. The Add Story button should write a markdown file to `change-mate/backlog/` using the user's PAT \u2014 no server in between.",
+      "why": "The Edge Function adds a deploy step, three Postgres migrations, a sequence + RPC, an SDK install, and a function to maintain. Its actual job is: validate a payload, claim an ID, render markdown, PUT to GitHub. Steps 1\u20133 happen fine in the browser. Step 4 happens fine in the browser. The middleman is unnecessary.",
+      "done_when": [
+        "Add Story modal calls `GET /repos/{owner}/{repo}/contents/change-mate/backlog` to list existing tickets. (Or queries the in-memory ticket list the board already has \u2014 preferred for simplicity.)",
+        "Browser parses the highest existing CM-ID across backlog/in-progress/done/blocked/not-doing \u2192 next ID = max + 1.",
+        "Browser renders ticket markdown locally using the same template cm-write uses today (port `ticket.ts` rendering logic to in-board JS).",
+        "Browser PUTs to `https://api.github.com/repos/{owner}/{repo}/contents/change-mate/backlog/CM-NNN-<timestamp>.md` with the user's PAT.",
+        "On 422/409 (path conflict \u2014 race with another Add Story click), browser increments CM-ID and retries once.",
+        "On 401/403, browser clears the cached PAT and prompts the setup modal.",
+        "The `cm-write` URL and anon key placeholders in `build.sh` are removed."
+      ],
+      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (CM-057) detects the change and re-renders. No Supabase function was contacted.",
+      "success_signals": "- Add Story works for adopters who never deployed an Edge Function.\n- Latency from click to \"ticket appears in backlog\" is comparable to current cm-write flow (PAT-direct GitHub call vs. cm-write \u2192 Postgres \u2192 GitHub call).\n- No more 401/403/network errors stemming from a paused Supabase project.",
+      "failure_signals": "- Two simultaneous clicks race for the same CM-ID and one fails after retry. Mitigation: retry-on-conflict with a fresh ID scan.\n- PAT scope insufficient \u2014 caller has only Read, can't PUT. UI must surface the GitHub error clearly.\n- A push from another agent during the form-fill window means the ID we computed is now stale by the time we PUT. Same mitigation: retry once on 422.",
+      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in CM-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `change-mate/backlog/`. Verify board updates within 30s (via CM-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
+      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (CM-059), polling code (CM-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at CM-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "CM-059",
+      "title": "Delete Supabase footprint and simplify setup",
+      "status": "open",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-005-kill-supabase",
+      "related": [
+        "CM-057",
+        "CM-058"
+      ],
+      "blocks": [],
+      "blocked_by": [
+        "CM-057",
+        "CM-058"
+      ],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Once polling (CM-057) and direct Add Story (CM-058) are live, remove every trace of Supabase from the codebase: the `supabase/` folder, the config fields, the verify scripts, the Team-path setup docs, the live lock pulse UI, and any tests covering Supabase pieces.",
+      "why": "Leftover Supabase code is a drag on the project \u2014 bigger surface area for adopters to read, more ways setup can fail, more tests to maintain, more docs to keep in sync. The whole point of feature-set-005 is to be done with that backend. This ticket finishes the job.",
+      "done_when": [
+        "`supabase/` folder is deleted (migrations, function, scripts, README).",
+        "`change-mate/config.json` no longer requires `supabase_url` or `supabase_publishable_key`. Existing values are ignored.",
+        "`tests/test_verify_supabase.py` deleted (or archived under historical notes).",
+        "`scripts/verify_supabase.py` deleted.",
+        "The board no longer has the \"live\" header indicator (or it's repurposed to show polling status \u2014 see CM-057).",
+        "The board no longer has the lock-pulse `cm-active` class, the postgres_changes subscription, or any Realtime channel code.",
+        "`SETUP.md` is rewritten \u2014 no more Solo / Team paths split. Single path: install \u2192 push \u2192 use. No CLI, no Edge Function, no migrations.",
+        "`README.md` updated \u2014 drop the Supabase-related \"Files\" rows and the Live lock registry section (Gist version was already retired).",
+        "`setup.sh` no longer references Supabase config keys. `auto_commit_board` mode-aware default rewires: no longer keyed off `supabase_url`. Suggested replacement: default `true` always, since the board needs to be committed to ship to Pages now that Realtime is gone.",
+        "`change-mate/CHANGEMATE.md` Real-time sync section deleted, lock registry section deleted (or updated to explain the markdown-as-lock convention already implicit in the workflow).",
+        "`.github/workflows/change-mate-rebuild-board.yml` no longer reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` env vars.",
+        "All tests pass. No dead imports, no stale references in docs."
+      ],
+      "desired_output": "An adopter pulls down the change-mate repo, runs `bash setup.sh`, commits the resulting `change-mate/` folder, and the board works on GitHub Pages within minutes \u2014 no second account, no CLI, no migrations. SETUP.md fits on one screen.",
+      "success_signals": "- New adopter can go from zero to working board in under 5 minutes.\n- Code repo size shrinks (Supabase folder + tests removed).\n- No more \"is Supabase paused?\" support questions.",
+      "failure_signals": "- A stale reference in docs sends an adopter chasing a Supabase setup that no longer applies.\n- An existing adopter's config breaks because we removed required keys. Mitigation: ignore the old keys silently, don't fail on their presence.\n- The `auto_commit_board` mode-aware default no longer makes sense without `supabase_url` as a signal \u2014 needs a different default rule (always-on is the simplest).",
+      "tests": "- Existing pytest suite passes after deletions (clearly some test files will be deleted with the deletion of source files \u2014 that's expected).\n- Manual: fresh clone \u2192 `bash setup.sh` \u2192 push \u2192 open Pages \u2192 confirm board works without ever opening Supabase.\n- Manual: grep -r \"supabase\" . \u2014 only hits should be in done/historical tickets, never in live code.",
+      "notes": "- **Alternative considered**: leave the Supabase code in place behind a config flag. Rejected \u2014 leftover dead code rots and confuses adopters.\n- **Alternative considered**: keep the locks table for the live agent indicator. Rejected \u2014 drop the indicator entirely. The dashed-border + walking-robot already says \"in progress\" loud enough.\n- **Out of scope**: redesigning the board look (separate ticket if pursued).\n- **Migration risk**: existing adopters have Supabase secrets, RLS policies, and Edge Function deployed. We don't touch their Supabase project \u2014 they can leave it alone or delete it on their own. The change-mate code stops calling it; that's all.\n- **Confidence**: 80%. Mostly mechanical deletions. The only design call is what to do with `auto_commit_board` mode-awareness; my recommendation is to default `true`.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-053",
       "title": "Animation demo \u2014 visual test card (do not move)",
       "status": "in-progress",
@@ -1264,9 +1389,21 @@ var D = {
       "tickets": [
         "CM-052"
       ]
+    },
+    {
+      "id": "feature-set-005-kill-supabase",
+      "name": "[feature-set-005] Kill Supabase",
+      "goal": "Eliminate Supabase as a dependency. Replace Realtime with GitHub commit polling, replace cm-write with browser-direct Contents API calls, then delete the entire Supabase folder + docs + tests.",
+      "rationale": "Supabase was added in feature-set-001 to give the board live updates and a server-side ticket-ID claim. In practice the project pauses after a week of inactivity, the migrations are fragile across pause-restore cycles, and the cost (Edge Function deploy, CLI install, three SQL migrations, two API keys) far outweighs the benefit (30-second freshness vs. live updates). Git is already the source of truth; the browser already has the user's GitHub PAT. Removing the backend simplifies setup from ~15 minutes to ~30 seconds and eliminates the project-paused failure mode entirely.",
+      "status": "In progress",
+      "tickets": [
+        "CM-057",
+        "CM-058",
+        "CM-059"
+      ]
     }
   ],
-  "generated": "2026-04-26T14:43:27.057404+00:00"
+  "generated": "2026-04-27T20:23:07.316621+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 var CM_WRITE_URL = "https://asxkalerueoenltawxmg.supabase.co/functions/v1/cm-write";
