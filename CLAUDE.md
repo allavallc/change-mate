@@ -8,7 +8,7 @@ Authoritative workflow spec: `change-mate/CHANGEMATE.md`. Read it before touchin
 
 ## Board
 
-- `change-mate/board.html` is auto-rebuilt by GitHub Actions (`.github/workflows/change-mate-rebuild-board.yml`) on every push to `main`; whether the rebuild is committed depends on `auto_commit_board` in `change-mate/config.json` (mode-aware default: team mode on, solo mode off) — **never** run `bash change-mate/build.sh` manually and commit its output
+- `change-mate/board.html` is auto-rebuilt by GitHub Actions (`.github/workflows/change-mate-rebuild-board.yml`) on every push to `main`; rebuild commit is gated by `auto_commit_board` in `change-mate/config.json` (default `true`) — **never** run `bash change-mate/build.sh` manually and commit its output
 - `change-mate/build.sh` requires Python 3 (`py` / `python3` / `python`)
 - Local builds for verification are fine as long as you `git checkout -- change-mate/board.html` before committing
 - Tests run in GitHub Actions (`.github/workflows/test.yml`) on push + PR
@@ -22,12 +22,15 @@ Authoritative workflow spec: `change-mate/CHANGEMATE.md`. Read it before touchin
 ## Code layout
 
 - `change-mate/CHANGEMATE.md` — workflow spec (single source of truth)
-- `skills/product-manager/SKILL.md` — PM skill (source; `setup.sh` installs to `~/.claude/skills/product-manager/`)
-- `change-mate/build.sh` — generates `change-mate/board.html` (detects GitHub repo, embeds head SHA + poll config, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles)
+- `change-mate/INSTALL-FAQ.md` — install-time questions (CLAUDE.md import semantics, public-repo exposure, Pages caveats, PAT scope, polling, idempotency)
+- `change-mate/UPDATING.md` — bot-readable update procedure (also embedded as a section in CHANGEMATE.md)
+- `change-mate/MANIFEST.json` — version map of every managed file. Drives `CHANGEMATE_CHECK_UPDATES=yes` and `CHANGEMATE_UPGRADE_DOCS=yes` in setup.sh. Bump file's entry whenever you touch it.
+- `skills/product-manager/SKILL.md` — PM skill (source; `setup.sh` installs to `~/.claude/skills/product-manager/`). Has a `version:` line in frontmatter; bump on behavior change.
+- `change-mate/build.sh` — generates `change-mate/board.html` (detects GitHub repo, embeds head SHA + poll config, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles). Includes the `cm-poll` script that polls GitHub commits API for live board updates and the per-agent walking-robot animation.
 - `change-mate/build_lib.py` — `parse_ticket` + `parse_feature_set`
 - `change-mate/backlog/|in-progress/|done/|blocked/|not-doing/` — ticket files (markdown, `CM-XXX-<timestamp>.md`)
 - `change-mate/feature-sets/` — feature set files (`feature-set-XXX-<slug>.md`)
-- `tests/` — pytest suite (`test_parser.py` unit + `test_build.py` subprocess integration)
+- `tests/` — pytest suite (`test_parser.py` unit + `test_build.py` subprocess integration). No Supabase tests — that whole layer is gone.
 
 ## Ticket format — quick reference
 
@@ -48,3 +51,6 @@ Relationships: **write only one side of each edge.** The renderer infers the inv
 - Windows CRLF: `.gitattributes` enforces LF on `*.sh` / `*.py` / `*.yml`. If `test_build.py` fails locally with `$'\r'` errors, `sed -i 's/\r$//' change-mate/build.sh` fixes it. CI is unaffected.
 - `change-mate/build.sh` embedded JS uses `\\` escape convention (double-backslash in source → single-backslash in generated JS). Preserve this when editing regex patterns inside the JS block.
 - Feature set IDs must be unique — two files both starting `feature-set-001-` will collide.
+- When you edit any file in `MANIFEST.json`'s `files` map, bump that file's value (ISO 8601 timestamp like `2026-04-27T19:35:00Z`) and update the top-level `updated`. Otherwise existing adopters won't detect the change.
+- `change-mate/CHANGEMATE.md` is loaded by every Claude Code session via `@-import` — keep it lean. New verbose docs go in `INSTALL-FAQ.md` or `UPDATING.md` and get referenced from CHANGEMATE.md.
+- The board is brutalist-styled per `plan/style-guide.md` (SimplifyOps system). Single rust accent (`#c4724a`); status uses dash patterns, not colors. Per-agent crab + robot colors are an intentional styleguide deviation documented in CM-060.
