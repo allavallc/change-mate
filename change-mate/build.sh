@@ -309,6 +309,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 .card:hover { border-color: var(--ink-dim); background: var(--bg-2); }
+.card.status-open       { border: 1px solid var(--ink-dimmer); }
 .card.status-done       { border: 2px solid var(--accent); }
 .card.status-inprogress { position: relative; border: 1px dashed var(--accent); }
 .card.status-blocked    { border: 1px dotted var(--accent); }
@@ -797,6 +798,8 @@ function cardHTML(t, isRejected) {
   var statusClass = '';
   if (t.status === 'done') statusClass = ' status-done';
   else if (t.status === 'in-progress') statusClass = ' status-inprogress';
+  else if (t.status === 'blocked') statusClass = ' status-blocked';
+  else if (t.status === 'open') statusClass = ' status-open';
   var fsChip = t.feature_set ? '<div class="card-fs">' + esc(t.feature_set) + '</div>' : '';
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
