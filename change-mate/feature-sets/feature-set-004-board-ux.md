@@ -14,4 +14,7 @@ The board is the primary "humans watch what bots are doing" surface. Static card
 - CM-056 — Animation demo, agent #4 (do not move)
 
 ## Status
-Active — CM-052 done 2026-04-25
+Done — 2026-04-27
+
+## Outcome
+Robot animation shipped (CM-052). User approved the direction 2026-04-27 — per-agent SVG robot walks the card perimeter clockwise on a 12s loop, color hashed from `assigned_to`, random `animation-delay` per page load so multiple cards stagger naturally. Demo placeholders CM-053-056 served their visual-evaluation purpose and moved to `not-doing/`.
