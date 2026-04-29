@@ -131,6 +131,8 @@ change-mate generates a single-file HTML board from your tickets and feature set
 
 **View the board** — open `change-mate/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
 
+**Filter and sort.** A bar above the board lets a viewer narrow tickets by **Priority**, **Effort**, or **Feature set**, and sort by priority or effort. Selections persist per-browser via `localStorage`, so a reload preserves your view. Click **Clear** to reset.
+
 **Regenerate manually:**
 ```bash
 bash change-mate/build.sh
@@ -143,7 +145,7 @@ git commit -m "update board"
 git push
 ```
 
-The board polls the GitHub commits API every 30 seconds and reloads when `main` advances — so any teammate's push appears within ~30s without a manual refresh.
+When served via GitHub Pages (or any HTTP host), the board polls the GitHub commits API every 30 seconds and reloads when `main` advances — so any teammate's push appears within ~30s without a manual refresh. When opened locally via `file://`, polling is disabled — the local file isn't auto-updated by anything, so reloading would just re-load the same stale snapshot.
 
 ---
 
