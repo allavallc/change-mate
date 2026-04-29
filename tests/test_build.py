@@ -272,8 +272,8 @@ def test_build_hides_rejected_button_when_no_not_doing_tickets(tmp_path):
 
 # ---------- relationship fields: orphan + cycle warnings ----------
 
-def _write_min_ticket(path, cm_id, title, extra_bullets=""):
-    body = f"""# [{cm_id}] {title}
+def _write_min_ticket(path, hb_id, title, extra_bullets=""):
+    body = f"""# [{hb_id}] {title}
 
 - **Status**: open
 {extra_bullets}
@@ -348,8 +348,8 @@ def test_build_inverse_blocked_by_inferred_is_rendered(tmp_path):
     assert '"blocks"' in html
 
 
-def test_in_progress_card_renders_cm_robot(tmp_path):
-    """In-progress tickets should have the .cm-robot perimeter-walking element. Backlog tickets should not."""
+def test_in_progress_card_renders_hb_robot(tmp_path):
+    """In-progress tickets should have the .hb-robot perimeter-walking element. Backlog tickets should not."""
     _stage_repo(tmp_path)
     _write_min_ticket(
         tmp_path / "horde-of-bots/in-progress/CM-001-1000.md",
@@ -365,9 +365,9 @@ def test_in_progress_card_renders_cm_robot(tmp_path):
     assert result.returncode == 0, result.stderr
     html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
     # Robot CSS class and keyframes are always present in the stylesheet
-    assert ".cm-robot" in html
-    assert "@keyframes cm-robot-walk" in html
+    assert ".hb-robot" in html
+    assert "@keyframes hb-robot-walk" in html
     # The renderer JS conditionally injects the robot only for in-progress tickets
-    assert "t.status === 'in-progress'" in html and "cm-robot" in html
+    assert "t.status === 'in-progress'" in html and "hb-robot" in html
     # And the legacy pulse keyframes should be gone
     assert "cm-active-pulse" not in html

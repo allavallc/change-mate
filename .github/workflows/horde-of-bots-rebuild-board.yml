@@ -28,7 +28,7 @@ jobs:
 
       - name: Build demo board
         if: steps.detect.outputs.present == 'true' && hashFiles('demo/data.json') != ''
-        run: CHANGEMATE_DEMO=1 bash horde-of-bots/build.sh
+        run: HORDEOFBOTS_DEMO=1 bash horde-of-bots/build.sh
 
       - name: Resolve auto_commit_board
         id: resolve

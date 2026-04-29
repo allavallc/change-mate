@@ -1,16 +1,16 @@
-# change-mate
+# Horde of Bots
 
 A shared board where AI agents and bots coordinate work — and humans watch what's happening.
 
-[![change-mate board](docs/images/demo-board.png)](https://allavallc.github.io/change-mate/demo/)
+[![Horde of Bots board](docs/images/demo-board.png)](https://allavallc.github.io/horde-of-bots/demo/)
 
-→ **[Live demo](https://allavallc.github.io/change-mate/demo/)** — click in, click around, no install.
+→ **[Live demo](https://allavallc.github.io/horde-of-bots/demo/)** — click in, click around, no install.
 
 ---
 
 ## What it is
 
-change-mate is a lightweight kanban board built for multi-agent workflows. Any agent or bot that can read and write files in a git repo can use it. Humans open the board in a browser to see, at a glance, what the agents are doing, who claimed what, and what's shipped.
+Horde of Bots is a lightweight kanban board built for multi-agent workflows. Any agent or bot that can read and write files in a git repo can use it. Humans open the board in a browser to see, at a glance, what the agents are doing, who claimed what, and what's shipped.
 
 - **Agents work from it.** They pull tickets, claim them, push updates, and mark things done.
 - **Git is the lock.** Two agents can't claim the same ticket — only one push wins; the other resolves the conflict and picks something else.
@@ -26,7 +26,7 @@ No backend, no database, no vendor lock-in. Tickets are plain markdown files in 
 
 **Requires:** git, Python 3 (for the local board build; CI handles it otherwise).
 
-**Heads-up:** tickets are committed to your repo. If your repo is public, your tickets are public — see [INSTALL-FAQ.md](change-mate/INSTALL-FAQ.md) for workarounds.
+**Heads-up:** tickets are committed to your repo. If your repo is public, your tickets are public — see [INSTALL-FAQ.md](horde-of-bots/INSTALL-FAQ.md) for workarounds.
 
 ---
 
@@ -35,7 +35,7 @@ No backend, no database, no vendor lock-in. Tickets are plain markdown files in 
 Tickets are individual markdown files that live in your repo. An agent moves a file to check out a ticket. Git is the sync layer. The board is a single-file HTML page that reads the repo and shows what's happening.
 
 ```
-change-mate/
+horde-of-bots/
   backlog/        ← tickets waiting to be picked up
   in-progress/    ← tickets currently being worked on
   done/           ← completed tickets
@@ -52,16 +52,16 @@ change-mate/
 What are we working on?
 
 Backlog:
-  CM-003 — Add user authentication
-  CM-005 — Fix pagination bug
+  HB-003 — Add user authentication
+  HB-005 — Fix pagination bug
 
 In Progress (by others):
-  CM-002 — Refactor data layer [agent: sarah-bot, 2h ago]
+  HB-002 — Refactor data layer [agent: sarah-bot, 2h ago]
 ```
 
 **The agent drafts a ticket before starting work**
 ```
-[CM-003] Add user authentication
+[HB-003] Add user authentication
 ───────────────────────────────
 Goal:      Add login with email and password
 Why:       Users can't save anything without an account
@@ -76,21 +76,21 @@ Draft looks good? (yes / edit N / reject)
 
 **Checkout — the agent moves the file and pushes**
 ```
-[CM-003 checked out by agent: alex-bot]
+[HB-003 checked out by agent: alex-bot]
 ```
 
 **If two agents grab the same ticket simultaneously**
 ```
-⚠️  CM-003 was just picked up by someone else.
+⚠️  HB-003 was just picked up by someone else.
 
 Remaining backlog:
-  CM-005 — Fix pagination bug
-  CM-007 — Add export feature
+  HB-005 — Fix pagination bug
+  HB-007 — Add export feature
 ```
 
 **When done — the agent updates the ticket and pushes**
 ```
-CM-003 is complete and logged.
+HB-003 is complete and logged.
 ```
 
 Humans watching the board see every move in near real-time.
@@ -102,7 +102,7 @@ Humans watching the board see every move in near real-time.
 Each ticket is a plain markdown file:
 
 ```markdown
-# [CM-003] Add user authentication
+# [HB-003] Add user authentication
 
 - **Status**: done
 - **Priority**: High
@@ -124,27 +124,27 @@ Users can't save anything without an account.
 
 ## Notes
 Went with JWT over sessions for stateless API compatibility.
-Decided against OAuth for now — adding in CM-008.
+Decided against OAuth for now — adding in HB-008.
 ```
 
 ---
 
 ## Visual board
 
-change-mate generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
+Horde of Bots generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
 
-**View the board** — open `change-mate/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
+**View the board** — open `horde-of-bots/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
 
 **Filter and sort.** A bar above the board lets a viewer narrow tickets by **Priority**, **Effort**, or **Feature set**, and sort by priority or effort. Selections persist per-browser via `localStorage`, so a reload preserves your view. Click **Clear** to reset.
 
 **Regenerate manually:**
 ```bash
-bash change-mate/build.sh
+bash horde-of-bots/build.sh
 ```
 
 **Commit the board** so teammates always have the latest version without running anything:
 ```bash
-git add change-mate/board.html
+git add horde-of-bots/board.html
 git commit -m "update board"
 git push
 ```
@@ -157,7 +157,7 @@ When served via GitHub Pages (or any HTTP host), the board polls the GitHub comm
 
 A feature set is a collection of stories grouped under a common goal or milestone. It is not a time box — it's done when all its stories are done.
 
-Feature set files live in `change-mate/feature-sets/`. Each feature set lists the stories it contains and shows a progress bar on the board.
+Feature set files live in `horde-of-bots/feature-sets/`. Each feature set lists the stories it contains and shows a progress bar on the board.
 
 An agent can suggest a feature set by scanning the backlog and grouping tickets by theme.
 
@@ -167,7 +167,7 @@ An agent can suggest a feature set by scanning the backlog and grouping tickets 
 
 The ticket format maps cleanly to both:
 
-| change-mate | Jira | Trello |
+| Horde of Bots | Jira | Trello |
 |---|---|---|
 | CM-XXX | Issue key | Card |
 | Goal | Summary | Card title |
@@ -183,16 +183,16 @@ The ticket format maps cleanly to both:
 
 | File | Purpose |
 |---|---|
-| `change-mate/CHANGEMATE.md` | Workflow instructions the agent follows *(dev-only tooling)* |
-| `change-mate/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
-| `change-mate/config.json` | Project name + optional poll interval + auto-commit flag *(dev-only tooling)* |
+| `horde-of-bots/HORDEOFBOTS.md` | Workflow instructions the agent follows *(dev-only tooling)* |
+| `horde-of-bots/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
+| `horde-of-bots/config.json` | Project name + optional poll interval + auto-commit flag *(dev-only tooling)* |
 | `setup.sh` | One-command installer *(dev-only tooling)* |
 
 ---
 
 ## Which agents can use it?
 
-Any agent or bot that can read/write files and run `git` commands can drive change-mate. The workflow is encoded in `change-mate/CHANGEMATE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
+Any agent or bot that can read/write files and run `git` commands can drive horde-of-bots. The workflow is encoded in `horde-of-bots/HORDEOFBOTS.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
 
 ---
 

@@ -114,7 +114,7 @@ run_check_mode() {
     echo "  • $path: local=${loc:-MISSING} → upstream=$up"
   done
   echo ""
-  echo "to upgrade: CHANGEMATE_UPGRADE_DOCS=yes bash setup.sh"
+  echo "to upgrade: HORDEOFBOTS_UPGRADE_DOCS=yes bash setup.sh"
   return 1
 }
 
@@ -164,12 +164,12 @@ run_upgrade_mode() {
 
 # --- early dispatch: check / upgrade modes --------------------------------
 
-if [ "${CHANGEMATE_CHECK_UPDATES:-}" = "yes" ]; then
+if [ "${HORDEOFBOTS_CHECK_UPDATES:-}" = "yes" ]; then
   run_check_mode
   exit $?
 fi
 
-if [ "${CHANGEMATE_UPGRADE_DOCS:-}" = "yes" ]; then
+if [ "${HORDEOFBOTS_UPGRADE_DOCS:-}" = "yes" ]; then
   run_upgrade_mode
   exit $?
 fi
@@ -187,41 +187,6 @@ for d in backlog in-progress done blocked not-doing feature-sets; do
 done
 
 echo -e "${GREEN}✓${NC} created horde-of-bots/ folder structure"
-
-# --- legacy migration -----------------------------------------------------
-
-LEGACY=0
-for f in HORDEOFBOTS.md build.sh build_lib.py horde-of-bots-board.html horde-of-bots-config.json; do
-  [ -f "$f" ] && LEGACY=1 && break
-done
-
-if [ $LEGACY -eq 1 ]; then
-  echo ""
-  echo -e "${YELLOW}legacy layout detected${NC} — these files live at repo root and should move into horde-of-bots/:"
-  for f in HORDEOFBOTS.md build.sh build_lib.py horde-of-bots-board.html horde-of-bots-config.json; do
-    [ -f "$f" ] && echo "  • $f"
-  done
-  echo ""
-  if prompt_yn "migrate now? [y/N]" CHANGEMATE_AUTO_MIGRATE no; then
-    [ -f HORDEOFBOTS.md ]            && mv HORDEOFBOTS.md horde-of-bots/HORDEOFBOTS.md            && echo -e "${GREEN}✓${NC} moved HORDEOFBOTS.md → horde-of-bots/HORDEOFBOTS.md"
-    [ -f build.sh ]                 && mv build.sh horde-of-bots/build.sh                      && echo -e "${GREEN}✓${NC} moved build.sh → horde-of-bots/build.sh"
-    [ -f build_lib.py ]             && mv build_lib.py horde-of-bots/build_lib.py              && echo -e "${GREEN}✓${NC} moved build_lib.py → horde-of-bots/build_lib.py"
-    [ -f horde-of-bots-board.html ]   && mv horde-of-bots-board.html horde-of-bots/board.html      && echo -e "${GREEN}✓${NC} moved horde-of-bots-board.html → horde-of-bots/board.html"
-    [ -f horde-of-bots-config.json ]  && mv horde-of-bots-config.json horde-of-bots/config.json    && echo -e "${GREEN}✓${NC} moved horde-of-bots-config.json → horde-of-bots/config.json"
-    if [ -f CLAUDE.md ] && grep -qF "@HORDEOFBOTS.md" CLAUDE.md && ! grep -qF "@horde-of-bots/HORDEOFBOTS.md" CLAUDE.md; then
-      sed -i.bak 's|@CHANGEMATE\.md|@horde-of-bots/HORDEOFBOTS.md|g' CLAUDE.md && rm -f CLAUDE.md.bak
-      echo -e "${GREEN}✓${NC} updated CLAUDE.md import to @horde-of-bots/HORDEOFBOTS.md"
-    fi
-    echo -e "${GREEN}migration complete.${NC} commit the moves with git."
-  else
-    if is_tty; then
-      echo "skipped migration — nothing changed."
-    else
-      echo "skipped migration — stdin is not a TTY. set CHANGEMATE_AUTO_MIGRATE=yes to auto-migrate, or re-run interactively."
-    fi
-  fi
-  echo ""
-fi
 
 # --- runtime files --------------------------------------------------------
 
@@ -243,7 +208,7 @@ if is_local_only_mode; then
     echo ""
     echo -e "${YELLOW}!${NC} an existing $WORKFLOW_PATH was found"
     echo "  in local-only mode it will fail on every push (build.sh isn't tracked)."
-    if prompt_yn "remove it now? [y/N]" CHANGEMATE_REMOVE_WORKFLOW no; then
+    if prompt_yn "remove it now? [y/N]" HORDEOFBOTS_REMOVE_WORKFLOW no; then
       rm -f "$WORKFLOW_PATH"
       echo -e "${GREEN}✓${NC} removed $WORKFLOW_PATH"
     else
@@ -277,11 +242,11 @@ if curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$TMP_SKILL" 2>/dev
       UPSTREAM_LABEL="${UPSTREAM_VERSION:-untagged}"
       echo ""
       echo -e "${YELLOW}skill upgrade available:${NC} local v$LOCAL_LABEL → upstream v$UPSTREAM_LABEL"
-      if prompt_yn "upgrade now? [y/N]" CHANGEMATE_UPGRADE_SKILL no; then
+      if prompt_yn "upgrade now? [y/N]" HORDEOFBOTS_UPGRADE_SKILL no; then
         cp "$TMP_SKILL" "$SKILL_FILE"
         echo -e "${GREEN}✓${NC} upgraded product-manager skill to v$UPSTREAM_LABEL"
       else
-        echo "kept v$LOCAL_LABEL — re-run setup.sh or set CHANGEMATE_UPGRADE_SKILL=yes to upgrade"
+        echo "kept v$LOCAL_LABEL — re-run setup.sh or set HORDEOFBOTS_UPGRADE_SKILL=yes to upgrade"
       fi
     fi
   else

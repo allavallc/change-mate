@@ -20,10 +20,10 @@ from pathlib import Path
 from datetime import datetime, timezone
 UTC = timezone.utc
 
-# CHANGEMATE_DEMO=1 builds a static showcase board (see CM-070). Demo content
+# HORDEOFBOTS_DEMO=1 builds a static showcase board (see CM-070). Demo content
 # lives in a single JSON data file at demo/data.json (no parallel ticket tree).
 # Output goes to demo/index.html so GitHub Pages serves it cleanly at /demo/.
-DEMO_BUILD = os.environ.get("CHANGEMATE_DEMO", "").lower() in ("1", "true", "yes")
+DEMO_BUILD = os.environ.get("HORDEOFBOTS_DEMO", "").lower() in ("1", "true", "yes")
 
 ROOT = Path.cwd()
 CM = ROOT / "horde-of-bots"
@@ -172,7 +172,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>change-mate board</title>
+<title>Horde of Bots board</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='3' r='2' fill='%23c4724a'/><rect x='15' y='4' width='2' height='5' fill='%23c4724a'/><rect x='4' y='9' width='24' height='20' rx='4' fill='%23c4724a'/><circle cx='12' cy='19' r='3' fill='%230a0a0a'/><circle cx='20' cy='19' r='3' fill='%230a0a0a'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -445,15 +445,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cm-robot {
+.hb-robot {
   position: absolute;
   width: 18px;
   height: 18px;
   pointer-events: none;
   z-index: 1;
-  animation: cm-robot-walk 12s linear infinite;
+  animation: hb-robot-walk 12s linear infinite;
 }
-@keyframes cm-robot-walk {
+@keyframes hb-robot-walk {
   0%   { top: -10px;             left: -10px; }
   25%  { top: -10px;             left: calc(100% - 8px); }
   50%  { top: calc(100% - 8px);  left: calc(100% - 8px); }
@@ -721,31 +721,31 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   z-index: 100;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-@keyframes cm-pulse {
+@keyframes hb-pulse {
   0%   { background: transparent; }
   30%  { background: rgba(196, 114, 74, 0.18); }
   100% { background: transparent; }
 }
-@keyframes cm-fadein {
+@keyframes hb-fadein {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.cm-moving { animation: cm-pulse 600ms ease; }
-.cm-new { animation: cm-fadein 300ms ease; }
+.hb-moving { animation: hb-pulse 600ms ease; }
+.hb-new { animation: hb-fadein 300ms ease; }
 #setup-modal .modal { max-width: 420px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-  .cm-robot { display: none; }
+  .hb-robot { display: none; }
 }
 </style>
 </head>
 <body>
 <header>
   <div style="display:flex;align-items:center;gap:10px;">
-    <span class="logo">change<span>-mate</span></span>
-    <span id="cm-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
+    <span class="logo">horde of <span>bots</span></span>
+    <span id="hb-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
       <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
-      <span class="cm-live-label">polling</span>
+      <span class="hb-live-label">polling</span>
     </span>
   </div>
   <div class="header-right">
@@ -851,7 +851,7 @@ function robotSvg(name) {
   var c = name ? crabColor(name) : '#22c55e';
   var d = -Math.random() * 12;
   var style = 'color:' + c + ';filter:drop-shadow(0 0 3px ' + c + '99);animation-delay:' + d + 's';
-  return '<svg class="cm-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
+  return '<svg class="hb-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
     + '<circle cx="9" cy="1" r="1" fill="currentColor"/>'
     + '<line x1="9" y1="1.5" x2="9" y2="3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
     + '<rect x="3" y="3.5" width="12" height="10.5" rx="2" fill="currentColor"/>'
@@ -1039,7 +1039,7 @@ function render() {
 }
 
 // --- filter/sort (CM-069) ---
-var FILTER_KEY = 'cm_board_filters_v1';
+var FILTER_KEY = 'hb_board_filters_v1';
 var FILTER_DEFAULT = { priority: '', effort: '', featureset: '', sort: 'default' };
 var FILTER_STATE = Object.assign({}, FILTER_DEFAULT);
 var PRIO_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -1160,11 +1160,11 @@ function closeModal() {
   document.getElementById('f-featureset').value = '';
 }
 
-function getGithubToken() { return localStorage.getItem('cm_github_token') || ''; }
-function setGithubToken(t) { localStorage.setItem('cm_github_token', t); }
-function clearGithubToken() { localStorage.removeItem('cm_github_token'); }
-function getAgentName() { return localStorage.getItem('cm_agent_name') || ''; }
-function setAgentName(n) { localStorage.setItem('cm_agent_name', n); }
+function getGithubToken() { return localStorage.getItem('hb_github_token') || ''; }
+function setGithubToken(t) { localStorage.setItem('hb_github_token', t); }
+function clearGithubToken() { localStorage.removeItem('hb_github_token'); }
+function getAgentName() { return localStorage.getItem('hb_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('hb_agent_name', n); }
 
 function promptSetup(onSuccess, errorMsg) {
   var modal = document.getElementById('setup-modal');
@@ -1358,35 +1358,35 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">PLACEHOLDER_POLL_CONFIG</script>
+<script id="hb-poll-config" type="application/json">PLACEHOLDER_POLL_CONFIG</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
   // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
-  var cfg = JSON.parse(document.getElementById('cm-poll-config').textContent);
+  var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
   if (!cfg.repo) {
-    console.warn('[cm-poll] no repo detected, polling disabled');
+    console.warn('[hb-poll] no repo detected, polling disabled');
     return;
   }
   // file:// views are local snapshots — reloading just re-loads the same stale
   // file. Only useful when served over http(s) (GitHub Pages / a live server).
   if (location.protocol === 'file:') {
-    console.info('[cm-poll] file:// detected — polling disabled (open via http(s) for live updates)');
+    console.info('[hb-poll] file:// detected — polling disabled (open via http(s) for live updates)');
     return;
   }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
-  var indicator = document.getElementById('cm-live-indicator');
+  var indicator = document.getElementById('hb-live-indicator');
   if (indicator) {
     indicator.style.display = 'flex';
-    var label = indicator.querySelector('.cm-live-label');
+    var label = indicator.querySelector('.hb-live-label');
     if (label) label.textContent = 'polling';
   }
 
   var lastSha = cfg.head_sha || null;
   var consecutiveFailures = 0;
 
-  function getToken() { return localStorage.getItem('cm_github_token') || ''; }
+  function getToken() { return localStorage.getItem('hb_github_token') || ''; }
 
   async function pollOnce() {
     if (document.hidden) return;
@@ -1396,12 +1396,12 @@ document.addEventListener('keydown', function(e) {
       if (token) headers['Authorization'] = 'Bearer ' + token;
       var res = await fetch('https://api.github.com/repos/' + cfg.repo + '/commits/main', { headers: headers });
       if (res.status === 403) {
-        console.warn('[cm-poll] rate limited, backing off');
+        console.warn('[hb-poll] rate limited, backing off');
         consecutiveFailures++;
         return;
       }
       if (!res.ok) {
-        console.warn('[cm-poll] HTTP', res.status);
+        console.warn('[hb-poll] HTTP', res.status);
         consecutiveFailures++;
         return;
       }
@@ -1410,13 +1410,13 @@ document.addEventListener('keydown', function(e) {
       var sha = body && body.sha;
       if (!sha) return;
       if (lastSha && sha !== lastSha) {
-        console.log('[cm-poll] HEAD changed', lastSha, '->', sha, '— reloading');
+        console.log('[hb-poll] HEAD changed', lastSha, '->', sha, '— reloading');
         location.reload();
         return;
       }
       lastSha = sha;
     } catch (e) {
-      console.warn('[cm-poll] error', e);
+      console.warn('[hb-poll] error', e);
       consecutiveFailures++;
     }
   }

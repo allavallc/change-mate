@@ -19,7 +19,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).parent.parent
 
-MANAGED_CM_FILES = (
+MANAGED_HB_FILES = (
     "HORDEOFBOTS.md",
     "INSTALL-FAQ.md",
     "UPDATING.md",
@@ -33,10 +33,10 @@ WORKFLOW_REL = ".github/workflows/horde-of-bots-rebuild-board.yml"
 
 
 def _stage_repo(tmp_path: Path, gitignore_contents: str, with_workflow: bool = False) -> None:
-    cm_dir = tmp_path / "horde-of-bots"
-    cm_dir.mkdir()
-    for name in MANAGED_CM_FILES:
-        (cm_dir / name).write_text("placeholder", encoding="utf-8")
+    hb_dir = tmp_path / "horde-of-bots"
+    hb_dir.mkdir()
+    for name in MANAGED_HB_FILES:
+        (hb_dir / name).write_text("placeholder", encoding="utf-8")
     (tmp_path / ".gitignore").write_text(gitignore_contents, encoding="utf-8")
     if with_workflow:
         wf = tmp_path / WORKFLOW_REL
@@ -78,10 +78,10 @@ def test_local_only_mode_skips_workflow_install(tmp_path):
 
 def test_local_only_mode_offers_to_remove_existing_workflow(tmp_path):
     """An adopter who installed before the fix has a stale workflow. Re-running
-    setup.sh in local-only mode with CHANGEMATE_REMOVE_WORKFLOW=yes removes it."""
+    setup.sh in local-only mode with HORDEOFBOTS_REMOVE_WORKFLOW=yes removes it."""
     _stage_repo(tmp_path, "horde-of-bots/\n", with_workflow=True)
 
-    result = _run_setup(tmp_path, {"CHANGEMATE_REMOVE_WORKFLOW": "yes"})
+    result = _run_setup(tmp_path, {"HORDEOFBOTS_REMOVE_WORKFLOW": "yes"})
 
     assert result.returncode == 0, \
         f"setup.sh failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
@@ -92,7 +92,7 @@ def test_local_only_mode_keeps_workflow_when_removal_declined(tmp_path):
     """If the user declines removal, the workflow stays (with a warning)."""
     _stage_repo(tmp_path, "horde-of-bots/\n", with_workflow=True)
 
-    result = _run_setup(tmp_path, {"CHANGEMATE_REMOVE_WORKFLOW": "no"})
+    result = _run_setup(tmp_path, {"HORDEOFBOTS_REMOVE_WORKFLOW": "no"})
 
     assert result.returncode == 0
     assert (tmp_path / WORKFLOW_REL).exists(), "workflow should be kept when user declines"

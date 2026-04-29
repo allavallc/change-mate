@@ -1,37 +1,37 @@
-# Setting up change-mate
+# Setting up Horde of Bots
 
 One path. ~2 minutes.
 
-## Step 1 — Install change-mate
+## Step 1 — Install Horde of Bots
 
 From an agent session (any AI agent or bot that can run shell commands), say:
 
 ```
-I want to use change-mate. Set it up from https://github.com/allavallc/change-mate
+I want to use horde-of-bots. Set it up from https://github.com/allavallc/horde-of-bots
 ```
 
 Or run it manually:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/allavallc/change-mate/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/allavallc/horde-of-bots/main/setup.sh | bash
 ```
 
 Save it to your repo:
 
 ```bash
-git add change-mate/ CLAUDE.md
-git commit -m "add change-mate"
+git add horde-of-bots/ CLAUDE.md
+git commit -m "add Horde of Bots"
 git push
 ```
 
 ## Step 2 — Open the board
 
-- **On your computer:** double-click `change-mate/board.html`. It opens in your browser.
-- **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/change-mate/board.html`.
+- **On your computer:** double-click `horde-of-bots/board.html`. It opens in your browser.
+- **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/horde-of-bots/board.html`.
 
 **Board visibility follows repo visibility.** Public repo = public board, world-readable at the URL above. Private repo = private board (requires GitHub Pro for private Pages).
 
-If you want to keep the board off Pages output (but still in the repo), set Pages source to `/docs` instead of root — the board still exists at `change-mate/board.html` but isn't published. See [INSTALL-FAQ.md](change-mate/INSTALL-FAQ.md) for more.
+If you want to keep the board off Pages output (but still in the repo), set Pages source to `/docs` instead of root — the board still exists at `horde-of-bots/board.html` but isn't published. See [INSTALL-FAQ.md](horde-of-bots/INSTALL-FAQ.md) for more.
 
 ## Step 3 — Add or move tickets
 
@@ -40,7 +40,7 @@ You can edit markdown files in the repo, or click **+ Add story** in the browser
 **To use the Add story button**, the board needs to write to your repo. Create a fine-grained PAT once:
 
 1. Go to **[github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta)**.
-2. Click **Generate new token**. Name it `change-mate`.
+2. Click **Generate new token**. Name it `Horde of Bots`.
 3. **Repository access:** Only select repositories → pick this repo.
 4. **Permissions → Repository permissions → Contents:** Read and write.
 5. Click **Generate token**, copy it, save it in your password manager.
@@ -51,7 +51,7 @@ Open the board → click **+ Add story** → enter your name and the token once.
 
 The board polls the GitHub commits API every 30 seconds. When a teammate pushes a change, the page reloads automatically. No backend, no WebSocket, no service to manage.
 
-To change the polling interval, add `"poll_seconds": 60` (or any value ≥10) to `change-mate/config.json`.
+To change the polling interval, add `"poll_seconds": 60` (or any value ≥10) to `horde-of-bots/config.json`.
 
 **That's it.**
 
@@ -82,5 +82,5 @@ To change the polling interval, add `"poll_seconds": 60` (or any value ≥10) to
 
 ```bash
 py -m pytest -v             # run all tests
-bash change-mate/build.sh   # rebuild board locally (don't commit the output)
+bash horde-of-bots/build.sh   # rebuild board locally (don't commit the output)
 ```
