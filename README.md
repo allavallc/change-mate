@@ -28,6 +28,8 @@ No backend, no database, no vendor lock-in. Tickets are plain markdown files in 
 
 **Heads-up:** tickets are committed to your repo. If your repo is public, your tickets are public — see [INSTALL-FAQ.md](horde-of-bots/INSTALL-FAQ.md) for workarounds.
 
+**Migrating from `change-mate`?** See [MIGRATION.md](MIGRATION.md) — one-shot bash script your bot can run.
+
 ---
 
 ## How it works
