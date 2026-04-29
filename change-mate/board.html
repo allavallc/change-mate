@@ -619,6 +619,47 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "CM-069",
+      "title": "Filter and sort controls on the board",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-008-board-filtering",
+      "related": [
+        "CM-060"
+      ],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-29 16:30",
+      "completed": "",
+      "goal": "Let a user narrow or rank tickets on the board by priority, effort, or feature set without scanning every column.",
+      "why": "As the backlog grows, scanning four columns to find \"the highest-priority unblocked thing\" or \"the smallest-effort win\" gets tedious. The current 4-column kanban renders every active ticket \u2014 there's no way to focus. A user watching the board needs to slice it fast.",
+      "done_when": [
+        "A filter/sort bar appears above the kanban (Board view only \u2014 Feature Sets view unchanged).",
+        "Three single-select filter dropdowns: **Priority** (All / Critical / High / Medium / Low), **Effort** (All / XS / S / M / L / XL), **Feature set** (All / each existing fs slug). \"All\" = no filter.",
+        "One sort dropdown: Default / Priority high \u2192 low / Priority low \u2192 high / Effort small \u2192 large / Effort large \u2192 small.",
+        "Default state: every filter \"All\", sort \"Default\" \u2014 board renders identically to today.",
+        "A \"Clear\" pill appears when any filter or non-default sort is active; clicking it resets all controls.",
+        "Selections persist in `localStorage` under a namespaced key (`cm_board_filters_v1`); reload preserves them.",
+        "Filters apply to all four kanban columns plus the rejected column when shown.",
+        "Empty columns post-filter still render the \"No tickets\" placeholder (do not collapse).",
+        "Existing CM-relationship chips and the perimeter-walking robot still render on filtered cards.",
+        "Sort applies within each column independently.",
+        "All logic runs client-side at render time \u2014 no rebuild needed for filter/sort changes.",
+        "Mobile: filter bar wraps to multiple rows below 560px without overflow."
+      ],
+      "desired_output": "User picks Sort = \"Priority high \u2192 low\" and Priority filter = \"Critical\". The board shows only Critical tickets, ranked by priority, in the columns where they exist. Reload preserves the selection. \"Clear\" returns to default.",
+      "success_signals": "- Time to find the highest-priority unblocked ticket drops from \"scan all 4 columns\" to one glance.\n- Users with > 20 tickets actively use the feature-set filter.\n- No console errors, no perceivable lag with 100+ tickets.",
+      "failure_signals": "- Filtering hides a ticket the user expected to see (logic bug \u2014 likely a missing field default).\n- localStorage namespace collides with `cm_github_token` or future state \u2192 corruption. Mitigation: clearly namespaced key.\n- Filter bar layout breaks at narrow widths.\n- Sort isn't stable when two tickets share the same priority/effort \u2014 they shuffle on every render. Mitigation: tie-break on original index.",
+      "tests": "- Sort orders Critical > High > Medium > Low and reverse.\n- Sort orders XS < S < M < L < XL (small\u2192large) and reverse.\n- Filter \"Priority = Critical\" hides every non-Critical card across columns.\n- Filter \"Feature set = feature-set-006-redesign\" shows only that set's tickets.\n- Combined filter + sort renders correctly (e.g. Priority=High, sort by Effort small\u2192large).\n- localStorage round-trip: set filters, reload, state preserved.\n- Clear button resets all controls and storage.\n- Manual: viewport \u2264 560px \u2014 filter bar wraps cleanly.\n- Manual: in-progress tickets keep the perimeter-walking robot when filtered to visible.",
+      "notes": "- **Alternatives considered \u2014 per-column filters**: rejected. The user asked for a single bar; per-column UI multiplies surface area for the same task without proportional benefit.\n- **Alternatives considered \u2014 header-click-to-sort**: rejected. Discoverable only by accident, doesn't extend to filtering.\n- **Out of scope**: search-by-text on title/body. Pull a separate ticket if the user wants it.\n- **Out of scope**: filter by assignee. Separate ticket if pulled.\n- **Out of scope**: saved filter presets (\"my favorite filter\"). Over-engineering for v1.\n- **Risk**: the poll loop re-renders the board on origin SHA change; filter/sort must apply in the same render pass so the user doesn't see a flash of unfiltered cards. Solution: render order = parse \u2192 filter \u2192 sort \u2192 emit HTML, all in one pass.\n- **Confidence**: 85%. The logic is straightforward client-side rendering; the only fiddly bit is keeping the sort stable when ties exist (tie-break on the array index).",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "CM-001",
       "title": "Test ticket",
       "status": "done",
@@ -1919,9 +1960,19 @@ var D = {
         "CM-065",
         "CM-066"
       ]
+    },
+    {
+      "id": "feature-set-008-board-filtering",
+      "name": "[feature-set-008] Board filtering",
+      "goal": "User-side controls (filter, sort, eventually search) for slicing the board without rebuilding it.",
+      "rationale": "Once a backlog has dozens of tickets, the bare kanban gets noisy. This set covers the lightweight client-side controls a user reaches for to focus the view. Distinct from feature-set-004-board-ux (animation, perimeter robot) and feature-set-006-redesign (visual styling) \u2014 those are fixed presentation concerns, this is dynamic user control.",
+      "status": "Planned",
+      "tickets": [
+        "CM-069"
+      ]
     }
   ],
-  "generated": "2026-04-29T14:55:10.371950+00:00"
+  "generated": "2026-04-29T15:11:23.458398+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
@@ -2347,7 +2398,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "d54ec5c8daac4602329af666966c02a679a54c1c"}</script>
+<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "1959985353510d9f7eb3d42865d178f7a1566f32"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
