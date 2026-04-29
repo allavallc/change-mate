@@ -276,6 +276,59 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   margin-bottom: 24px;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.filter-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.filter-select {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  min-width: 140px;
+}
+.filter-select:hover { border-color: var(--ink-dim); }
+.filter-select:focus { outline: none; border-color: var(--accent); }
+.filter-clear {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.filter-clear:hover { color: var(--ink); border-color: var(--ink-dim); }
+.filter-clear:focus { outline: none; border-color: var(--accent); color: var(--ink); }
+@media (max-width: 560px) {
+  .filter-bar { gap: 12px; }
+  .filter-select { min-width: 120px; }
+}
 .btn-toggle-rejected:hover { color: var(--ink); border-color: var(--ink-dim); }
 .btn-toggle-rejected.active { color: var(--ink); border-color: var(--ink-dim); }
 @media (max-width: 900px) { .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .board.show-rejected { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -333,6 +386,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   font-weight: 400;
   letter-spacing: 0.05em;
   color: var(--ink);
+  white-space: nowrap;
 }
 .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .badge {
@@ -397,15 +451,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   word-break: break-word;
   min-width: 0;
 }
-.card-assignee {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ink-dimmer);
-}
 .card-fs {
   display: inline-block;
+  max-width: 100%;
   font-family: var(--mono);
   font-size: 0.65rem;
   font-weight: 500;
@@ -415,8 +463,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   border: 1px solid var(--line);
   border-radius: 0;
   padding: 2px 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
 }
 .card-rels { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .card-rel {
@@ -683,6 +738,46 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
     <button class="tab" data-view="feature-sets" onclick="switchTab(this)">Feature Sets</button>
   </div>
   <div class="view active" id="view-board">
+    <div class="filter-bar" id="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label" for="flt-priority">Priority</label>
+        <select class="filter-select" id="flt-priority">
+          <option value="">All</option>
+          <option>Critical</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="flt-effort">Effort</label>
+        <select class="filter-select" id="flt-effort">
+          <option value="">All</option>
+          <option>XS</option>
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="flt-featureset">Feature set</label>
+        <select class="filter-select" id="flt-featureset">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="flt-sort">Sort</label>
+        <select class="filter-select" id="flt-sort">
+          <option value="default">Default</option>
+          <option value="prio-desc">Priority high &rarr; low</option>
+          <option value="prio-asc">Priority low &rarr; high</option>
+          <option value="effort-asc">Effort small &rarr; large</option>
+          <option value="effort-desc">Effort large &rarr; small</option>
+        </select>
+      </div>
+      <button class="filter-clear" id="flt-clear" type="button" onclick="clearFilters()">Clear</button>
+    </div>
     <button class="btn-toggle-rejected" id="btn-rejected" onclick="toggleRejected()" style="display:none">Show rejected</button>
     <div class="board" id="board-grid">
       <div>
@@ -809,11 +904,11 @@ function cardHTML(t, isRejected) {
   else if (t.status === 'in-progress') statusClass = ' status-inprogress';
   else if (t.status === 'blocked') statusClass = ' status-blocked';
   else if (t.status === 'open') statusClass = ' status-open';
-  var fsChip = t.feature_set ? '<div class="card-fs">' + esc(t.feature_set) + '</div>' : '';
+  var fsChip = t.feature_set ? '<div class="card-fs" title="' + esc(t.feature_set) + '">' + esc(t.feature_set) + '</div>' : '';
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
   var relDetail = relDetailHTML(relChips);
-  var assignee = t.assigned_to ? '<div class="card-assignee">' + esc(t.assigned_to) + '</div>' : '';
+  var footer = t.assigned_to ? '<div class="card-footer">' + crabBadge(t.assigned_to) + '</div>' : '';
 
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
   var why   = t.why   ? '<div><div class="dl-label">Why</div><div class="dl-val">'   + esc(t.why)   + '</div></div>' : '';
@@ -836,15 +931,15 @@ function cardHTML(t, isRejected) {
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
     + robot
+    + fsChip
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
-    + '<div class="badges">' + crabBadge(t.assigned_to) + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
+    + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
-    + fsChip
     + relFace
-    + assignee
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
+    + footer
     + '</div>';
 }
 
@@ -922,6 +1017,27 @@ function render() {
 }
 
 render();
+
+// --- filter/sort UI (CM-069 phase 1: UI only, no logic yet) ---
+function populateFilterOptions() {
+  var sel = document.getElementById('flt-featureset');
+  if (!sel) return;
+  D.feature_sets.forEach(function(fs) {
+    var opt = document.createElement('option');
+    opt.value = fs.id;
+    opt.textContent = fs.id;
+    sel.appendChild(opt);
+  });
+}
+function clearFilters() {
+  ['flt-priority','flt-effort','flt-featureset'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  var sort = document.getElementById('flt-sort');
+  if (sort) sort.value = 'default';
+}
+populateFilterOptions();
 
 function openModal() {
   var sel = document.getElementById('f-featureset');
