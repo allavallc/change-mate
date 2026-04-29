@@ -30,10 +30,11 @@ CM = ROOT / "change-mate"
 sys.path.insert(0, str(CM))
 from build_lib import parse_ticket, parse_feature_set
 
-# Read change-mate config (project_name, poll_seconds, auto_commit_board, demo_mode, etc.)
+# Read change-mate config (project_name, ticket_prefix, poll_seconds, auto_commit_board, demo_mode, etc.)
 _cfg_path = CM / "config.json"
 _cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
 PROJECT_NAME = _cfg.get('project_name', '')
+TICKET_PREFIX = _cfg.get('ticket_prefix', 'CM')
 DEMO_MODE = DEMO_BUILD or bool(_cfg.get('demo_mode', False))
 
 
@@ -72,14 +73,14 @@ else:
     ]:
         d = CM / folder
         if d.exists():
-            for f in sorted(d.glob("CM-*.md")):
-                tickets.append(parse_ticket(f, default_status))
+            for f in sorted(d.glob(f"{TICKET_PREFIX}-*.md")):
+                tickets.append(parse_ticket(f, default_status, prefix=TICKET_PREFIX))
 
     feature_sets = []
     sd = CM / "feature-sets"
     if sd.exists():
         for f in sorted(sd.glob("feature-set-*.md")):
-            feature_sets.append(parse_feature_set(f))
+            feature_sets.append(parse_feature_set(f, prefix=TICKET_PREFIX))
 
 # Relationship analysis: inverse edge inference + orphan + cycle detection
 valid_ids = {t["id"] for t in tickets}
@@ -1198,10 +1199,12 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
+var TICKET_PREFIX = PLACEHOLDER_TICKET_PREFIX;
+var TICKET_ID_RE = new RegExp('^' + TICKET_PREFIX + '-(\\\\d+)$');
 function nextTicketIdNumber() {
   var max = 0;
   D.tickets.forEach(function(t) {
-    var m = (t.id || '').match(/^CM-(\\d+)$/);
+    var m = (t.id || '').match(TICKET_ID_RE);
     if (m) max = Math.max(max, parseInt(m[1], 10));
   });
   return max + 1;
@@ -1209,7 +1212,7 @@ function nextTicketIdNumber() {
 function formatTicketId(n) {
   var s = String(n);
   while (s.length < 3) s = '0' + s;
-  return 'CM-' + s;
+  return TICKET_PREFIX + '-' + s;
 }
 function utf8ToBase64(str) {
   var bytes = new TextEncoder().encode(str);
@@ -1519,7 +1522,8 @@ document.addEventListener('keydown', function(e) {
 output = (HTML
     .replace("PLACEHOLDER_JSON", data_json)
     .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
-    .replace("PLACEHOLDER_POLL_CONFIG", poll_config_json))
+    .replace("PLACEHOLDER_POLL_CONFIG", poll_config_json)
+    .replace("PLACEHOLDER_TICKET_PREFIX", json.dumps(TICKET_PREFIX)))
 out_path = Path("demo/index.html") if DEMO_BUILD else Path("change-mate/board.html")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(output, encoding="utf-8")

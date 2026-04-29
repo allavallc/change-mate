@@ -1,28 +1,41 @@
 import re
 
 
-_CM_ID_RE = re.compile(r"^CM-\d+$")
+DEFAULT_PREFIX = "CM"
 
 
-def _parse_id_list(value):
-    """Split a comma-separated CM-ID list. Strip whitespace, drop malformed entries, dedupe."""
+def _id_re(prefix):
+    return re.compile(rf"^{re.escape(prefix)}-\d+$")
+
+
+def _stem_re(prefix):
+    return re.compile(rf"^({re.escape(prefix)}-\d+)(?:-\d+)?$")
+
+
+def _list_id_re(prefix):
+    return re.compile(rf"^-\s+({re.escape(prefix)}-\d+)")
+
+
+def _parse_id_list(value, prefix=DEFAULT_PREFIX):
+    """Split a comma-separated ticket-ID list. Strip whitespace, drop malformed entries, dedupe."""
     if not value:
         return []
+    id_re = _id_re(prefix)
     out = []
     seen = set()
     for chunk in value.split(","):
         s = chunk.strip()
-        if _CM_ID_RE.match(s) and s not in seen:
+        if id_re.match(s) and s not in seen:
             out.append(s)
             seen.add(s)
     return out
 
 
-def parse_ticket(path, default_status):
+def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
     stem = path.stem
-    stem_m = re.match(r"^(CM-\d+)(?:-\d+)?$", stem)
+    stem_m = _stem_re(prefix).match(stem)
     t = {
         "id": stem_m.group(1) if stem_m else stem,
         "title": "",
@@ -69,7 +82,7 @@ def parse_ticket(path, default_status):
             elif k == "status" and v:
                 t["status"] = v
             elif k in id_list_keys:
-                t[k] = _parse_id_list(v)
+                t[k] = _parse_id_list(v, prefix)
 
     section, buf = None, []
 
@@ -105,7 +118,7 @@ def parse_ticket(path, default_status):
     return t
 
 
-def parse_feature_set(path):
+def parse_feature_set(path, prefix=DEFAULT_PREFIX):
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
     s = {
@@ -134,6 +147,7 @@ def parse_feature_set(path):
                 s["tickets"] = [x.strip() for x in v.split(",") if x.strip()]
 
     section, buf = None, []
+    list_re = _list_id_re(prefix)
 
     def flush():
         if not section:
@@ -147,9 +161,9 @@ def parse_feature_set(path):
             s["status"] = block
         elif section == "tickets":
             ids = [
-                re.match(r"^-\s+(CM-\d+)", l.strip()).group(1)
+                list_re.match(l.strip()).group(1)
                 for l in buf
-                if re.match(r"^-\s+(CM-\d+)", l.strip())
+                if list_re.match(l.strip())
             ]
             if ids:
                 s["tickets"] = ids
