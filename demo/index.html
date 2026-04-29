@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>change-mate board</title>
+<title>Horde of Bots board</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='3' r='2' fill='%23c4724a'/><rect x='15' y='4' width='2' height='5' fill='%23c4724a'/><rect x='4' y='9' width='24' height='20' rx='4' fill='%23c4724a'/><circle cx='12' cy='19' r='3' fill='%230a0a0a'/><circle cx='20' cy='19' r='3' fill='%230a0a0a'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -276,15 +276,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cm-robot {
+.hb-robot {
   position: absolute;
   width: 18px;
   height: 18px;
   pointer-events: none;
   z-index: 1;
-  animation: cm-robot-walk 12s linear infinite;
+  animation: hb-robot-walk 12s linear infinite;
 }
-@keyframes cm-robot-walk {
+@keyframes hb-robot-walk {
   0%   { top: -10px;             left: -10px; }
   25%  { top: -10px;             left: calc(100% - 8px); }
   50%  { top: calc(100% - 8px);  left: calc(100% - 8px); }
@@ -552,31 +552,31 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   z-index: 100;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-@keyframes cm-pulse {
+@keyframes hb-pulse {
   0%   { background: transparent; }
   30%  { background: rgba(196, 114, 74, 0.18); }
   100% { background: transparent; }
 }
-@keyframes cm-fadein {
+@keyframes hb-fadein {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.cm-moving { animation: cm-pulse 600ms ease; }
-.cm-new { animation: cm-fadein 300ms ease; }
+.hb-moving { animation: hb-pulse 600ms ease; }
+.hb-new { animation: hb-fadein 300ms ease; }
 #setup-modal .modal { max-width: 420px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-  .cm-robot { display: none; }
+  .hb-robot { display: none; }
 }
 </style>
 </head>
 <body>
 <header>
   <div style="display:flex;align-items:center;gap:10px;">
-    <span class="logo">change<span>-mate</span></span>
-    <span id="cm-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
+    <span class="logo">horde of <span>bots</span></span>
+    <span id="hb-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
       <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
-      <span class="cm-live-label">polling</span>
+      <span class="hb-live-label">polling</span>
     </span>
   </div>
   <div class="header-right">
@@ -662,7 +662,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "CM-001",
+      "id": "HB-001",
       "title": "Sign in with email + password",
       "status": "done",
       "priority": "Critical",
@@ -679,14 +679,14 @@ var D = {
         "Wrong password returns 401 with a generic error",
         "Rate limit: 10 attempts per 15 minutes per IP"
       ],
-      "notes": "JWT over sessions for stateless API compat. Refresh-token flow tracked in CM-003.",
+      "notes": "JWT over sessions for stateless API compat. Refresh-token flow tracked in HB-003.",
       "related": [],
       "blocks": [],
       "blocked_by": [],
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-002",
+      "id": "HB-002",
       "title": "User registration",
       "status": "done",
       "priority": "Critical",
@@ -703,14 +703,14 @@ var D = {
         "Email uniqueness enforced at the DB layer",
         "Account starts in pending state until verified"
       ],
-      "notes": "Email verification handled separately in CM-007.",
+      "notes": "Email verification handled separately in HB-007.",
       "related": [],
       "blocks": [],
       "blocked_by": [],
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-003",
+      "id": "HB-003",
       "title": "Session management",
       "status": "done",
       "priority": "High",
@@ -734,7 +734,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-004",
+      "id": "HB-004",
       "title": "Profile page",
       "status": "done",
       "priority": "Medium",
@@ -758,7 +758,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-005",
+      "id": "HB-005",
       "title": "OAuth Google integration",
       "status": "in-progress",
       "priority": "High",
@@ -782,7 +782,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-006",
+      "id": "HB-006",
       "title": "Password reset flow",
       "status": "in-progress",
       "priority": "High",
@@ -806,7 +806,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-007",
+      "id": "HB-007",
       "title": "Email verification",
       "status": "in-progress",
       "priority": "High",
@@ -830,7 +830,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-008",
+      "id": "HB-008",
       "title": "Sign in with Apple",
       "status": "open",
       "priority": "Medium",
@@ -853,7 +853,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-009",
+      "id": "HB-009",
       "title": "Two-factor authentication",
       "status": "open",
       "priority": "High",
@@ -877,7 +877,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-010",
+      "id": "HB-010",
       "title": "Basic search",
       "status": "done",
       "priority": "Critical",
@@ -901,7 +901,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-011",
+      "id": "HB-011",
       "title": "Search filters",
       "status": "done",
       "priority": "High",
@@ -925,7 +925,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-012",
+      "id": "HB-012",
       "title": "Search results pagination",
       "status": "done",
       "priority": "Medium",
@@ -948,7 +948,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-013",
+      "id": "HB-013",
       "title": "Search ranking algorithm",
       "status": "in-progress",
       "priority": "Medium",
@@ -972,7 +972,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-014",
+      "id": "HB-014",
       "title": "Recommendation engine v2",
       "status": "in-progress",
       "priority": "Medium",
@@ -996,7 +996,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-015",
+      "id": "HB-015",
       "title": "Search synonyms support",
       "status": "open",
       "priority": "Low",
@@ -1019,7 +1019,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "CM-016",
+      "id": "HB-016",
       "title": "Trending searches widget",
       "status": "open",
       "priority": "Low",
@@ -1051,15 +1051,15 @@ var D = {
       "rationale": "Every app needs a login the user can trust. This set covers the full account lifecycle from registration through password recovery and third-party sign-in.",
       "status": "In progress",
       "tickets": [
-        "CM-001",
-        "CM-002",
-        "CM-003",
-        "CM-004",
-        "CM-005",
-        "CM-006",
-        "CM-007",
-        "CM-008",
-        "CM-009"
+        "HB-001",
+        "HB-002",
+        "HB-003",
+        "HB-004",
+        "HB-005",
+        "HB-006",
+        "HB-007",
+        "HB-008",
+        "HB-009"
       ]
     },
     {
@@ -1069,17 +1069,17 @@ var D = {
       "rationale": "A populated app is useful only if users can navigate it. This set covers the discovery surface: search, filtering, pagination, and the recommendation engine that surfaces what a user didn't know to look for.",
       "status": "In progress",
       "tickets": [
-        "CM-010",
-        "CM-011",
-        "CM-012",
-        "CM-013",
-        "CM-014",
-        "CM-015",
-        "CM-016"
+        "HB-010",
+        "HB-011",
+        "HB-012",
+        "HB-013",
+        "HB-014",
+        "HB-015",
+        "HB-016"
       ]
     }
   ],
-  "generated": "2026-04-29T19:52:43.368082+00:00",
+  "generated": "2026-04-29T21:44:00.310154+00:00",
   "demo_mode": true
 };
 var DEFAULT_REPO = "allavallc/change-mate";
@@ -1104,7 +1104,7 @@ function robotSvg(name) {
   var c = name ? crabColor(name) : '#22c55e';
   var d = -Math.random() * 12;
   var style = 'color:' + c + ';filter:drop-shadow(0 0 3px ' + c + '99);animation-delay:' + d + 's';
-  return '<svg class="cm-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
+  return '<svg class="hb-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
     + '<circle cx="9" cy="1" r="1" fill="currentColor"/>'
     + '<line x1="9" y1="1.5" x2="9" y2="3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
     + '<rect x="3" y="3.5" width="12" height="10.5" rx="2" fill="currentColor"/>'
@@ -1292,7 +1292,7 @@ function render() {
 }
 
 // --- filter/sort (CM-069) ---
-var FILTER_KEY = 'cm_board_filters_v1';
+var FILTER_KEY = 'hb_board_filters_v1';
 var FILTER_DEFAULT = { priority: '', effort: '', featureset: '', sort: 'default' };
 var FILTER_STATE = Object.assign({}, FILTER_DEFAULT);
 var PRIO_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -1413,11 +1413,11 @@ function closeModal() {
   document.getElementById('f-featureset').value = '';
 }
 
-function getGithubToken() { return localStorage.getItem('cm_github_token') || ''; }
-function setGithubToken(t) { localStorage.setItem('cm_github_token', t); }
-function clearGithubToken() { localStorage.removeItem('cm_github_token'); }
-function getAgentName() { return localStorage.getItem('cm_agent_name') || ''; }
-function setAgentName(n) { localStorage.setItem('cm_agent_name', n); }
+function getGithubToken() { return localStorage.getItem('hb_github_token') || ''; }
+function setGithubToken(t) { localStorage.setItem('hb_github_token', t); }
+function clearGithubToken() { localStorage.removeItem('hb_github_token'); }
+function getAgentName() { return localStorage.getItem('hb_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('hb_agent_name', n); }
 
 function promptSetup(onSuccess, errorMsg) {
   var modal = document.getElementById('setup-modal');
@@ -1452,10 +1452,12 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
+var TICKET_PREFIX = "HB";
+var TICKET_ID_RE = new RegExp('^' + TICKET_PREFIX + '-(\\d+)$');
 function nextTicketIdNumber() {
   var max = 0;
   D.tickets.forEach(function(t) {
-    var m = (t.id || '').match(/^CM-(\d+)$/);
+    var m = (t.id || '').match(TICKET_ID_RE);
     if (m) max = Math.max(max, parseInt(m[1], 10));
   });
   return max + 1;
@@ -1463,7 +1465,7 @@ function nextTicketIdNumber() {
 function formatTicketId(n) {
   var s = String(n);
   while (s.length < 3) s = '0' + s;
-  return 'CM-' + s;
+  return TICKET_PREFIX + '-' + s;
 }
 function utf8ToBase64(str) {
   var bytes = new TextEncoder().encode(str);
@@ -1541,7 +1543,7 @@ async function createStory() {
     while (attempt < 5) {
       var ticketId = formatTicketId(idNum);
       var ts = Math.floor(Date.now() / 1000);
-      var filePath = 'change-mate/backlog/' + ticketId + '-' + ts + '.md';
+      var filePath = 'horde-of-bots/backlog/' + ticketId + '-' + ts + '.md';
       var markdown = renderTicketMarkdown(ticketId, payload);
       var commitMsg = ticketId + ': ' + payload.title;
 
@@ -1609,35 +1611,35 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "2c53e1a84b09a1b17e1a364a4ae61c0b4ca0a84f"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "c9ef9eb245cd4471066fa028e67963a9b6991fac"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
   // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
-  var cfg = JSON.parse(document.getElementById('cm-poll-config').textContent);
+  var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
   if (!cfg.repo) {
-    console.warn('[cm-poll] no repo detected, polling disabled');
+    console.warn('[hb-poll] no repo detected, polling disabled');
     return;
   }
   // file:// views are local snapshots — reloading just re-loads the same stale
   // file. Only useful when served over http(s) (GitHub Pages / a live server).
   if (location.protocol === 'file:') {
-    console.info('[cm-poll] file:// detected — polling disabled (open via http(s) for live updates)');
+    console.info('[hb-poll] file:// detected — polling disabled (open via http(s) for live updates)');
     return;
   }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
-  var indicator = document.getElementById('cm-live-indicator');
+  var indicator = document.getElementById('hb-live-indicator');
   if (indicator) {
     indicator.style.display = 'flex';
-    var label = indicator.querySelector('.cm-live-label');
+    var label = indicator.querySelector('.hb-live-label');
     if (label) label.textContent = 'polling';
   }
 
   var lastSha = cfg.head_sha || null;
   var consecutiveFailures = 0;
 
-  function getToken() { return localStorage.getItem('cm_github_token') || ''; }
+  function getToken() { return localStorage.getItem('hb_github_token') || ''; }
 
   async function pollOnce() {
     if (document.hidden) return;
@@ -1647,12 +1649,12 @@ document.addEventListener('keydown', function(e) {
       if (token) headers['Authorization'] = 'Bearer ' + token;
       var res = await fetch('https://api.github.com/repos/' + cfg.repo + '/commits/main', { headers: headers });
       if (res.status === 403) {
-        console.warn('[cm-poll] rate limited, backing off');
+        console.warn('[hb-poll] rate limited, backing off');
         consecutiveFailures++;
         return;
       }
       if (!res.ok) {
-        console.warn('[cm-poll] HTTP', res.status);
+        console.warn('[hb-poll] HTTP', res.status);
         consecutiveFailures++;
         return;
       }
@@ -1661,13 +1663,13 @@ document.addEventListener('keydown', function(e) {
       var sha = body && body.sha;
       if (!sha) return;
       if (lastSha && sha !== lastSha) {
-        console.log('[cm-poll] HEAD changed', lastSha, '->', sha, '— reloading');
+        console.log('[hb-poll] HEAD changed', lastSha, '->', sha, '— reloading');
         location.reload();
         return;
       }
       lastSha = sha;
     } catch (e) {
-      console.warn('[cm-poll] error', e);
+      console.warn('[hb-poll] error', e);
       consecutiveFailures++;
     }
   }
