@@ -237,6 +237,25 @@ Works from any folder: `backlog/`, `in-progress/`, or `blocked/`.
 
 ---
 
+## Consolidating tickets
+
+When two (or more) existing tickets cover the same work and should be merged:
+
+1. **Create a new ticket** with the consolidated scope. Do **not** edit one of the originals to absorb the other — the audit trail matters.
+2. **In the new ticket's Notes**, write a `Consolidation:` line listing the source tickets — e.g. `Consolidation of CM-012 and CM-024`. Bots reading the new ticket use this line to find the source context (read the originals in `not-doing/` for the historical Why/Notes).
+3. **Move each source ticket to `change-mate/not-doing/`** with `**Rejection reason**: consolidated into CM-XXX` (substitute the new ticket's ID).
+4. The new ticket inherits the union of `Related` / `Blocks` / `Blocked by` from the originals — keep the "write only one side of each edge" rule. De-dupe.
+5. Commit + push:
+   ```
+   git add change-mate/
+   git commit -m "CM-XXX: consolidates CM-A and CM-B"
+   git push
+   ```
+
+Why a new ticket rather than picking one of the originals? Two reasons: it surfaces in the backlog as fresh work (priority + effort get re-evaluated by the PM), and the consolidation marker is the only place a bot can tell that the merger happened.
+
+---
+
 ## When work is complete
 
 1. Tell the user what was done in plain language
