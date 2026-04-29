@@ -152,6 +152,7 @@ HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>change-mate board</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='3' r='2' fill='%23c4724a'/><rect x='15' y='4' width='2' height='5' fill='%23c4724a'/><rect x='4' y='9' width='24' height='20' rx='4' fill='%23c4724a'/><circle cx='12' cy='19' r='3' fill='%230a0a0a'/><circle cx='20' cy='19' r='3' fill='%230a0a0a'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@500;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -329,7 +330,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .card-id {
   font-family: var(--read);
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.05em;
   color: var(--ink);
 }
