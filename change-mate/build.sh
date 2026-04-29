@@ -1147,6 +1147,12 @@ document.addEventListener('keydown', function(e) {
     console.warn('[cm-poll] no repo detected, polling disabled');
     return;
   }
+  // file:// views are local snapshots — reloading just re-loads the same stale
+  // file. Only useful when served over http(s) (GitHub Pages / a live server).
+  if (location.protocol === 'file:') {
+    console.info('[cm-poll] file:// detected — polling disabled (open via http(s) for live updates)');
+    return;
+  }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
   var indicator = document.getElementById('cm-live-indicator');
