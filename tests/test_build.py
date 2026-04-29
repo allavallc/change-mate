@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "change-mate"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "horde-of-bots"))
 from build_lib import parse_feature_set, parse_ticket
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -214,25 +214,25 @@ def test_feature_set_empty_tickets(tmp_path):
 
 def test_build_generates_html(tmp_path):
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
-        (tmp_path / "change-mate" / folder).mkdir(parents=True)
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
 
-    write(tmp_path, "change-mate/backlog/CM-001-1000.md", FULL_TICKET)
-    write(tmp_path, "change-mate/not-doing/CM-005-1001.md", REJECTED_TICKET)
-    write(tmp_path, "change-mate/feature-sets/feature-set-001.md", FEATURE_SET)
+    write(tmp_path, "horde-of-bots/backlog/CM-001-1000.md", FULL_TICKET)
+    write(tmp_path, "horde-of-bots/not-doing/CM-005-1001.md", REJECTED_TICKET)
+    write(tmp_path, "horde-of-bots/feature-sets/feature-set-001.md", FEATURE_SET)
 
-    shutil.copy(REPO_ROOT / "change-mate" / "build.sh", tmp_path / "change-mate" / "build.sh")
-    shutil.copy(REPO_ROOT / "change-mate" / "build_lib.py", tmp_path / "change-mate" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
 
     result = subprocess.run(
-        ["bash", "change-mate/build.sh"],
+        ["bash", "horde-of-bots/build.sh"],
         cwd=tmp_path,
         capture_output=True,
         text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert "change-mate/board.html updated" in result.stdout
+    assert "horde-of-bots/board.html updated" in result.stdout
 
-    html = (tmp_path / "change-mate" / "board.html").read_text(encoding="utf-8")
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
 
     # Board structure
     assert "btn-rejected" in html
@@ -255,17 +255,17 @@ def test_build_generates_html(tmp_path):
 
 def test_build_hides_rejected_button_when_no_not_doing_tickets(tmp_path):
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
-        (tmp_path / "change-mate" / folder).mkdir(parents=True)
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
 
-    write(tmp_path, "change-mate/backlog/CM-001-1000.md", FULL_TICKET)
+    write(tmp_path, "horde-of-bots/backlog/CM-001-1000.md", FULL_TICKET)
 
-    shutil.copy(REPO_ROOT / "change-mate" / "build.sh", tmp_path / "change-mate" / "build.sh")
-    shutil.copy(REPO_ROOT / "change-mate" / "build_lib.py", tmp_path / "change-mate" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
 
-    result = subprocess.run(["bash", "change-mate/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 
-    html = (tmp_path / "change-mate" / "board.html").read_text(encoding="utf-8")
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
     # Button should be rendered but hidden (display:none when no not-doing tickets)
     assert 'style="display:none"' in html
 
@@ -285,63 +285,63 @@ g
 
 def _stage_repo(tmp_path):
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
-        (tmp_path / "change-mate" / folder).mkdir(parents=True, exist_ok=True)
-    shutil.copy(REPO_ROOT / "change-mate" / "build.sh", tmp_path / "change-mate" / "build.sh")
-    shutil.copy(REPO_ROOT / "change-mate" / "build_lib.py", tmp_path / "change-mate" / "build_lib.py")
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True, exist_ok=True)
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
 
 
 def test_build_warns_on_orphan_reference_and_still_exits_zero(tmp_path):
     _stage_repo(tmp_path)
     _write_min_ticket(
-        tmp_path / "change-mate/backlog/CM-001-1000.md",
+        tmp_path / "horde-of-bots/backlog/CM-001-1000.md",
         "CM-001", "Orphan owner",
         "- **Related**: CM-999\n- **Blocks**: CM-888\n",
     )
 
-    result = subprocess.run(["bash", "change-mate/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert "CM-999" in result.stderr
     assert "CM-888" in result.stderr
     assert "does not exist" in result.stderr
-    assert (tmp_path / "change-mate" / "board.html").exists()
+    assert (tmp_path / "horde-of-bots" / "board.html").exists()
 
 
 def test_build_warns_on_cycle_and_still_exits_zero(tmp_path):
     _stage_repo(tmp_path)
     _write_min_ticket(
-        tmp_path / "change-mate/backlog/CM-001-1000.md",
+        tmp_path / "horde-of-bots/backlog/CM-001-1000.md",
         "CM-001", "A",
         "- **Blocks**: CM-002\n",
     )
     _write_min_ticket(
-        tmp_path / "change-mate/backlog/CM-002-1001.md",
+        tmp_path / "horde-of-bots/backlog/CM-002-1001.md",
         "CM-002", "B",
         "- **Blocks**: CM-001\n",
     )
 
-    result = subprocess.run(["bash", "change-mate/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert "cycle detected" in result.stderr
     assert "CM-001" in result.stderr and "CM-002" in result.stderr
-    assert (tmp_path / "change-mate" / "board.html").exists()
+    assert (tmp_path / "horde-of-bots" / "board.html").exists()
 
 
 def test_build_inverse_blocked_by_inferred_is_rendered(tmp_path):
     """CM-001 Blocks CM-002. CM-002's card HTML should show a 'blocked_by_inferred' reference to CM-001."""
     _stage_repo(tmp_path)
     _write_min_ticket(
-        tmp_path / "change-mate/backlog/CM-001-1000.md",
+        tmp_path / "horde-of-bots/backlog/CM-001-1000.md",
         "CM-001", "Upstream",
         "- **Blocks**: CM-002\n",
     )
     _write_min_ticket(
-        tmp_path / "change-mate/backlog/CM-002-1001.md",
+        tmp_path / "horde-of-bots/backlog/CM-002-1001.md",
         "CM-002", "Downstream",
     )
 
-    result = subprocess.run(["bash", "change-mate/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
-    html = (tmp_path / "change-mate" / "board.html").read_text(encoding="utf-8")
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
     # The embedded JSON data should contain the inferred field populated for CM-002
     assert '"blocked_by_inferred"' in html
     # And the upstream's explicit blocks list should be there too
@@ -352,18 +352,18 @@ def test_in_progress_card_renders_cm_robot(tmp_path):
     """In-progress tickets should have the .cm-robot perimeter-walking element. Backlog tickets should not."""
     _stage_repo(tmp_path)
     _write_min_ticket(
-        tmp_path / "change-mate/in-progress/CM-001-1000.md",
+        tmp_path / "horde-of-bots/in-progress/CM-001-1000.md",
         "CM-001", "Active work",
         "- **Status**: in-progress\n",
     )
     _write_min_ticket(
-        tmp_path / "change-mate/backlog/CM-002-1001.md",
+        tmp_path / "horde-of-bots/backlog/CM-002-1001.md",
         "CM-002", "Just sitting",
     )
 
-    result = subprocess.run(["bash", "change-mate/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
-    html = (tmp_path / "change-mate" / "board.html").read_text(encoding="utf-8")
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
     # Robot CSS class and keyframes are always present in the stylesheet
     assert ".cm-robot" in html
     assert "@keyframes cm-robot-walk" in html

@@ -26,11 +26,11 @@ UTC = timezone.utc
 DEMO_BUILD = os.environ.get("CHANGEMATE_DEMO", "").lower() in ("1", "true", "yes")
 
 ROOT = Path.cwd()
-CM = ROOT / "change-mate"
+CM = ROOT / "horde-of-bots"
 sys.path.insert(0, str(CM))
 from build_lib import parse_ticket, parse_feature_set
 
-# Read change-mate config (project_name, ticket_prefix, poll_seconds, auto_commit_board, demo_mode, etc.)
+# Read horde-of-bots config (project_name, ticket_prefix, poll_seconds, auto_commit_board, demo_mode, etc.)
 _cfg_path = CM / "config.json"
 _cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
 PROJECT_NAME = _cfg.get('project_name', '')
@@ -1290,7 +1290,7 @@ async function createStory() {
     while (attempt < 5) {
       var ticketId = formatTicketId(idNum);
       var ts = Math.floor(Date.now() / 1000);
-      var filePath = 'change-mate/backlog/' + ticketId + '-' + ts + '.md';
+      var filePath = 'horde-of-bots/backlog/' + ticketId + '-' + ts + '.md';
       var markdown = renderTicketMarkdown(ticketId, payload);
       var commitMsg = ticketId + ': ' + payload.title;
 
@@ -1524,7 +1524,7 @@ output = (HTML
     .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
     .replace("PLACEHOLDER_POLL_CONFIG", poll_config_json)
     .replace("PLACEHOLDER_TICKET_PREFIX", json.dumps(TICKET_PREFIX)))
-out_path = Path("demo/index.html") if DEMO_BUILD else Path("change-mate/board.html")
+out_path = Path("demo/index.html") if DEMO_BUILD else Path("horde-of-bots/board.html")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(output, encoding="utf-8")
 print(f"{out_path} updated")

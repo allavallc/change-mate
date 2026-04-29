@@ -26,7 +26,7 @@
 - Treat change-mate files as coordination metadata, not code. Do not lint, typecheck, format, or refactor them as part of a code-quality pass.
 - When summarizing repo changes, exclude change-mate file changes by default unless the user explicitly asks about workflow.
 - When writing tests, CI config, or deploy scripts, assume `change-mate/` does not exist at build time.
-- Never wire a change-mate ticket ID (e.g. `// see CM-042`) into product source. Ticket IDs must not survive into shipped code.
+- Never wire a change-mate ticket ID (e.g. `// see HB-042`) into product source. Ticket IDs must not survive into shipped code.
 
 ---
 
@@ -101,11 +101,11 @@ When the user asks "what's next?" or starts a session:
 What are we working on?
 
 Backlog:
-  CM-003 — Add user authentication
-  CM-005 — Fix pagination bug
+  HB-003 — Add user authentication
+  HB-005 — Fix pagination bug
 
 In Progress (by others):
-  CM-002 — Refactor data layer [Sarah, 2h ago]
+  HB-002 — Refactor data layer [Sarah, 2h ago]
 
 Or tell me something new to add.
 ```
@@ -176,8 +176,8 @@ When the user picks a ticket from the backlog:
 ⚠️  CM-XXX was just picked up by someone else.
 
 Remaining backlog:
-  CM-005 — Fix pagination bug
-  CM-007 — Add export feature
+  HB-005 — Fix pagination bug
+  HB-007 — Add export feature
 
 Want to pick one of these instead?
 ```
@@ -242,7 +242,7 @@ Works from any folder: `backlog/`, `in-progress/`, or `blocked/`.
 When two (or more) existing tickets cover the same work and should be merged:
 
 1. **Create a new ticket** with the consolidated scope. Do **not** edit one of the originals to absorb the other — the audit trail matters.
-2. **In the new ticket's Notes**, write a `Consolidation:` line listing the source tickets — e.g. `Consolidation of CM-012 and CM-024`. Bots reading the new ticket use this line to find the source context (read the originals in `not-doing/` for the historical Why/Notes).
+2. **In the new ticket's Notes**, write a `Consolidation:` line listing the source tickets — e.g. `Consolidation of HB-012 and HB-024`. Bots reading the new ticket use this line to find the source context (read the originals in `not-doing/` for the historical Why/Notes).
 3. **Move each source ticket to `change-mate/not-doing/`** with `**Rejection reason**: consolidated into CM-XXX` (substitute the new ticket's ID).
 4. The new ticket inherits the union of `Related` / `Blocks` / `Blocked by` from the originals — keep the "write only one side of each edge" rule. De-dupe.
 5. Commit + push:
@@ -275,11 +275,11 @@ Why a new ticket rather than picking one of the originals? Two reasons: it surfa
 Ticket filenames include a Unix timestamp suffix to prevent conflicts between agents working in parallel:
 
 ```
-CM-004-1736847392.md
+HB-004-1736847392.md
 ```
 
 - The timestamp is generated at creation time: `date +%s` (shell) or `Math.floor(Date.now()/1000)` (JS)
-- The display ID inside the file and on the board is always clean: `# [CM-004] Title`
+- The display ID inside the file and on the board is always clean: `# [HB-004] Title`
 - The timestamp is only in the filename — never shown to users
 
 ---
@@ -348,7 +348,7 @@ Three optional fields express how tickets relate to each other:
 
 Values are comma-separated `CM-XXX` IDs. Whitespace is tolerated. Entries that don't match `CM-\d+` are ignored silently.
 
-**Write only one side of each edge.** If CM-005 declares `Blocks: CM-006`, do not also add `Blocked by: CM-005` on CM-006 — the renderer infers the inverse at build time and shows it on the counterpart card automatically. Writing both sides creates maintenance drift.
+**Write only one side of each edge.** If HB-005 declares `Blocks: HB-006`, do not also add `Blocked by: HB-005` on HB-006 — the renderer infers the inverse at build time and shows it on the counterpart card automatically. Writing both sides creates maintenance drift.
 
 Convention: prefer the upstream side. Use `Blocks` on the ticket that must finish first, rather than `Blocked by` on the ticket that is waiting.
 
@@ -356,7 +356,7 @@ Convention: prefer the upstream side. Use `Blocks` on the ticket that must finis
 
 ## Ticket ID format
 
-Read all files across all folders in `change-mate/` including `not-doing/`. Find the highest existing CM-XXX number and increment by 1. Start at CM-001 if no tickets exist.
+Read all files across all folders in `change-mate/` including `not-doing/`. Find the highest existing CM-XXX number and increment by 1. Start at HB-001 if no tickets exist.
 
 ---
 

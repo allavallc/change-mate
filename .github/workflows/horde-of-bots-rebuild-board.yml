@@ -1,4 +1,4 @@
-name: change-mate rebuild board
+name: horde-of-bots rebuild board
 
 on:
   push:
@@ -12,34 +12,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect change-mate presence
+      - name: Detect horde-of-bots presence
         id: detect
         run: |
-          if [ -f change-mate/build.sh ]; then
+          if [ -f horde-of-bots/build.sh ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "change-mate/build.sh not found in checkout — local-only mode or change-mate/ gitignored. Skipping board rebuild."
+            echo "horde-of-bots/build.sh not found in checkout — local-only mode or horde-of-bots/ gitignored. Skipping board rebuild."
           fi
 
       - name: Build board
         if: steps.detect.outputs.present == 'true'
-        run: bash change-mate/build.sh
+        run: bash horde-of-bots/build.sh
 
       - name: Build demo board
         if: steps.detect.outputs.present == 'true' && hashFiles('demo/data.json') != ''
-        run: CHANGEMATE_DEMO=1 bash change-mate/build.sh
+        run: CHANGEMATE_DEMO=1 bash horde-of-bots/build.sh
 
       - name: Resolve auto_commit_board
         id: resolve
         if: steps.detect.outputs.present == 'true'
         run: |
-          if [ ! -f change-mate/config.json ]; then
+          if [ ! -f horde-of-bots/config.json ]; then
             echo "should_commit=true" >> "$GITHUB_OUTPUT"
             echo "reason=no config.json — default to commit so Pages stays fresh"
             exit 0
           fi
-          EXPLICIT=$(jq -r '.auto_commit_board // empty' change-mate/config.json)
+          EXPLICIT=$(jq -r '.auto_commit_board // empty' horde-of-bots/config.json)
           if [ "$EXPLICIT" = "false" ]; then
             echo "should_commit=false" >> "$GITHUB_OUTPUT"
             echo "reason=explicit auto_commit_board=false"
@@ -53,7 +53,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add change-mate/board.html
+          git add horde-of-bots/board.html
           if [ -f demo/index.html ]; then
             git add demo/index.html
           fi

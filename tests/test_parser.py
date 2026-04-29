@@ -167,7 +167,7 @@ def test_parse_feature_set_new_format(tmp_path):
     body = """# [feature-set-001] Workflow Hygiene
 
 ## Goal
-Polish the change-mate workflow surface.
+Polish the horde-of-bots workflow surface.
 
 ## Rationale
 CM-003 and CM-004 belong together because both reshape ticket structure.
@@ -183,7 +183,7 @@ In progress
     s = parse_feature_set(p)
 
     assert "Workflow Hygiene" in s["name"]
-    assert s["goal"] == "Polish the change-mate workflow surface."
+    assert s["goal"] == "Polish the horde-of-bots workflow surface."
     assert "ticket structure" in s["rationale"]
     assert s["status"] == "In progress"
     assert s["tickets"] == ["CM-003", "CM-004"]
@@ -339,9 +339,9 @@ g
 
 def test_every_committed_ticket_parses_without_error():
     repo_root = Path(__file__).parent.parent
-    base = repo_root / "change-mate"
+    base = repo_root / "horde-of-bots"
     if not base.exists():
-        pytest.skip("change-mate directory not present")
+        pytest.skip("horde-of-bots directory not present")
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing"):
         d = base / folder
         if not d.exists():
