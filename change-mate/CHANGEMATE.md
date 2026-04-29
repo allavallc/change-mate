@@ -15,9 +15,9 @@
 
 ## Sync modes
 
-**Git sync (default).** Tickets live in the repo. `git pull` before reading the backlog, `git push` after moving a ticket. All agents and developers see the same board.
+**Git sync (default).** Tickets live in the repo. `git pull` before reading the backlog, `git push` after moving a ticket. All agents and developers see the same board. `setup.sh` installs `.github/workflows/change-mate-rebuild-board.yml`, which rebuilds the board on every push to `main`.
 
-**Local-only.** Add `change-mate/` to `.gitignore`. The board still renders for a single machine, but collaboration is disabled — each developer's tickets are private to their own working tree. Use only if developers manage their own work independently.
+**Local-only.** Add `change-mate/` to `.gitignore`. The board still renders for a single machine, but collaboration is disabled — each developer's tickets are private to their own working tree. Use only if developers manage their own work independently. **The rebuild-board workflow is intentionally not installed in this mode** (the workflow runs in CI where `change-mate/build.sh` isn't present, so it would fail every push). Re-run `setup.sh` and it will detect the mode and prompt to remove a stale workflow if one is present.
 
 ---
 

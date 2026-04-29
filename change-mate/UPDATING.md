@@ -62,3 +62,4 @@ The list lives in `change-mate/MANIFEST.json` under `files`. As of this writing:
 - **Upstream unreachable** (offline / rate-limited): both modes exit 2 with a clear error. Try again later.
 - **Partial fetch failure**: if any file fails mid-upgrade, the local manifest is left untouched so the next check still shows everything as stale.
 - **Local edits to managed files**: the upgrade overwrites them. If you must edit a managed file, fork it under a different name and reference that.
+- **Local-only mode** (`change-mate/` is in `.gitignore`): both check and upgrade skip `.github/workflows/change-mate-rebuild-board.yml` — it would fail in CI since `build.sh` isn't tracked. The workflow itself is also self-defending: if installed but `change-mate/build.sh` is absent at run time, it short-circuits with a notice instead of failing.

@@ -64,6 +64,14 @@ py_cmd() {
   return 1
 }
 
+# Returns 0 (true) if change-mate/ is excluded from the repo (local-only mode).
+# Matches: change-mate, change-mate/, /change-mate, /change-mate/ (with optional trailing whitespace).
+# Lines starting with # are ignored. .gitignore must already exist.
+is_local_only_mode() {
+  [ -f .gitignore ] || return 1
+  grep -qE '^[[:space:]]*/?change-mate/?[[:space:]]*$' .gitignore
+}
+
 # Diff upstream manifest against local. Outputs tab-separated `path<TAB>upstream<TAB>local` per stale file.
 manifest_diff() {
   local upstream="$1" local_m="$2"
@@ -125,9 +133,17 @@ run_upgrade_mode() {
     rm -f "$tmp_manifest"
     return 0
   fi
+  local local_only=0
+  if is_local_only_mode; then
+    local_only=1
+  fi
   local failed=0
   while IFS=$'\t' read -r path up loc; do
     [ -z "$path" ] && continue
+    if [ $local_only -eq 1 ] && [ "$path" = ".github/workflows/change-mate-rebuild-board.yml" ]; then
+      echo -e "${YELLOW}~${NC} skipping $path (local-only mode — workflow not used)"
+      continue
+    fi
     mkdir -p "$(dirname "$path")"
     if curl -fsSL "$REPO_URL/$path" -o "$path"; then
       echo -e "${GREEN}✓${NC} updated $path (${loc:-installed} → $up)"
@@ -217,7 +233,27 @@ download "change-mate/MANIFEST.json"          change-mate/MANIFEST.json
 download "change-mate/build.sh"               change-mate/build.sh
 download "change-mate/build_lib.py"           change-mate/build_lib.py
 download "change-mate/config.json"            change-mate/config.json
-download ".github/workflows/change-mate-rebuild-board.yml" .github/workflows/change-mate-rebuild-board.yml
+
+# The rebuild-board workflow is git-sync only. In local-only mode (change-mate/ in
+# .gitignore), it would fail on every push since change-mate/build.sh isn't checked in.
+WORKFLOW_PATH=".github/workflows/change-mate-rebuild-board.yml"
+if is_local_only_mode; then
+  echo -e "${YELLOW}~${NC} local-only mode detected (change-mate/ in .gitignore) — skipping rebuild-board workflow"
+  if [ -f "$WORKFLOW_PATH" ]; then
+    echo ""
+    echo -e "${YELLOW}!${NC} an existing $WORKFLOW_PATH was found"
+    echo "  in local-only mode it will fail on every push (build.sh isn't tracked)."
+    if prompt_yn "remove it now? [y/N]" CHANGEMATE_REMOVE_WORKFLOW no; then
+      rm -f "$WORKFLOW_PATH"
+      echo -e "${GREEN}✓${NC} removed $WORKFLOW_PATH"
+    else
+      echo "kept $WORKFLOW_PATH — note: it will fail on every push to main"
+    fi
+    echo ""
+  fi
+else
+  download "$WORKFLOW_PATH" "$WORKFLOW_PATH"
+fi
 
 chmod +x change-mate/build.sh 2>/dev/null || true
 
@@ -318,18 +354,25 @@ done
 # --- .gitignore guidance --------------------------------------------------
 
 if [ -f ".gitignore" ]; then
-  if grep -qE "^change-mate" .gitignore; then
+  if is_local_only_mode; then
     echo ""
-    echo -e "⚠️  WARNING: change-mate/ is in your .gitignore"
-    echo "   Tickets won't sync between teammates until you remove it."
-    echo "   Remove this line from .gitignore: change-mate"
+    echo -e "${YELLOW}local-only mode${NC}: change-mate/ is gitignored — tickets won't sync between teammates."
+    echo "   To switch to git-sync mode, remove the change-mate/ line from .gitignore"
+    echo "   and re-run setup.sh."
     echo ""
-  fi
-  GIT_MARKER="# change-mate/ is dev-only tooling; do not ignore unless using local-only mode (see change-mate/CHANGEMATE.md)"
-  if ! grep -qF "$GIT_MARKER" .gitignore; then
-    [ -s ".gitignore" ] && [ "$(tail -c1 .gitignore 2>/dev/null | wc -l)" = "0" ] && echo "" >> .gitignore
-    echo "$GIT_MARKER" >> .gitignore
-    echo -e "${GREEN}✓${NC} added dev-only-tooling marker comment to .gitignore"
+    LOCAL_ONLY_MARKER="# change-mate: local-only mode (rebuild-board workflow intentionally not installed)"
+    if ! grep -qF "$LOCAL_ONLY_MARKER" .gitignore; then
+      [ -s ".gitignore" ] && [ "$(tail -c1 .gitignore 2>/dev/null | wc -l)" = "0" ] && echo "" >> .gitignore
+      echo "$LOCAL_ONLY_MARKER" >> .gitignore
+      echo -e "${GREEN}✓${NC} added local-only marker comment to .gitignore"
+    fi
+  else
+    GIT_MARKER="# change-mate/ is dev-only tooling; do not ignore unless using local-only mode (see change-mate/CHANGEMATE.md)"
+    if ! grep -qF "$GIT_MARKER" .gitignore; then
+      [ -s ".gitignore" ] && [ "$(tail -c1 .gitignore 2>/dev/null | wc -l)" = "0" ] && echo "" >> .gitignore
+      echo "$GIT_MARKER" >> .gitignore
+      echo -e "${GREEN}✓${NC} added dev-only-tooling marker comment to .gitignore"
+    fi
   fi
 fi
 

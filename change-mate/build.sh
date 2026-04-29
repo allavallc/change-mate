@@ -154,7 +154,7 @@ HTML = """<!DOCTYPE html>
 <title>change-mate board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@500;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #0a0a0a;
@@ -166,6 +166,7 @@ HTML = """<!DOCTYPE html>
   --line: #1f1d1b;
   --accent: #c4724a;
   --display: 'Big Shoulders Display', 'Inter', sans-serif;
+  --read: 'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
 }
@@ -317,6 +318,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   padding: 16px;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
+  min-width: 0;
 }
 .card:hover { border-color: var(--ink-dim); background: var(--bg-2); }
 .card.status-open       { border: 1px solid var(--ink-dimmer); }
@@ -325,12 +327,11 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .card.status-blocked    { border: 1px dotted var(--accent); }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .card-id {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ink-dimmer);
+  font-family: var(--read);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink);
 }
 .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .badge {
@@ -384,15 +385,16 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   100% { top: -10px;             left: -10px; }
 }
 .card-title {
-  font-family: var(--display);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.005em;
-  text-transform: uppercase;
+  font-family: var(--read);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0;
   color: var(--ink);
   margin-bottom: 8px;
   overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 .card-assignee {
   font-family: var(--mono);
@@ -478,11 +480,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   border-bottom: 1px solid var(--line);
 }
 .feature-set-name {
-  font-family: var(--display);
-  font-size: 1.5rem;
+  font-family: var(--read);
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--ink);
   margin-bottom: 6px;
 }
@@ -566,11 +567,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   overflow-y: auto;
 }
 .modal-title {
-  font-family: var(--display);
-  font-size: 1.5rem;
+  font-family: var(--read);
+  font-size: 1.25rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   margin-bottom: 24px;
   color: var(--ink);
 }

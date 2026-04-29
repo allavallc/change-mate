@@ -12,11 +12,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Detect change-mate presence
+        id: detect
+        run: |
+          if [ -f change-mate/build.sh ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "change-mate/build.sh not found in checkout — local-only mode or change-mate/ gitignored. Skipping board rebuild."
+          fi
+
       - name: Build board
+        if: steps.detect.outputs.present == 'true'
         run: bash change-mate/build.sh
 
       - name: Resolve auto_commit_board
         id: resolve
+        if: steps.detect.outputs.present == 'true'
         run: |
           if [ ! -f change-mate/config.json ]; then
             echo "should_commit=true" >> "$GITHUB_OUTPUT"
@@ -33,7 +45,7 @@ jobs:
           fi
 
       - name: Commit and push updated board
-        if: steps.resolve.outputs.should_commit == 'true'
+        if: steps.detect.outputs.present == 'true' && steps.resolve.outputs.should_commit == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
