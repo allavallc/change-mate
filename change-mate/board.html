@@ -1921,7 +1921,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-29T14:53:25.759956+00:00"
+  "generated": "2026-04-29T14:55:10.371950+00:00"
 };
 var DEFAULT_REPO = "allavallc/change-mate";
 
@@ -2347,7 +2347,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "dd4c0b38b738629f4e022efb8cf325e6068a11a2"}</script>
+<script id="cm-poll-config" type="application/json">{"repo": "allavallc/change-mate", "poll_seconds": 30, "head_sha": "d54ec5c8daac4602329af666966c02a679a54c1c"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
@@ -2355,6 +2355,12 @@ document.addEventListener('keydown', function(e) {
   var cfg = JSON.parse(document.getElementById('cm-poll-config').textContent);
   if (!cfg.repo) {
     console.warn('[cm-poll] no repo detected, polling disabled');
+    return;
+  }
+  // file:// views are local snapshots — reloading just re-loads the same stale
+  // file. Only useful when served over http(s) (GitHub Pages / a live server).
+  if (location.protocol === 'file:') {
+    console.info('[cm-poll] file:// detected — polling disabled (open via http(s) for live updates)');
     return;
   }
 
