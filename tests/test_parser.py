@@ -334,6 +334,64 @@ g
     assert t["blocked_by"] == ["CM-010", "CM-011"]
 
 
+# ---------- split_from field ----------
+
+
+def test_parse_split_from_single(tmp_path):
+    body = """# [CM-600] Child ticket
+
+- **Status**: backlog
+- **Split from**: CM-005
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-600.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["split_from"] == ["CM-005"]
+
+
+def test_parse_split_from_multi(tmp_path):
+    body = """# [CM-601] Child of multi-split
+
+- **Status**: backlog
+- **Split from**: CM-005, CM-006, CM-007
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-601.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["split_from"] == ["CM-005", "CM-006", "CM-007"]
+
+
+def test_parse_split_from_default_empty(tmp_path):
+    body = """# [CM-602] No split
+
+- **Status**: backlog
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-602.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["split_from"] == []
+
+
+def test_parse_split_from_malformed_dropped(tmp_path):
+    body = """# [CM-603] Mixed valid+invalid
+
+- **Status**: backlog
+- **Split from**: CM-005, foo, , CM-006
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-603.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["split_from"] == ["CM-005", "CM-006"]
+
+
 # ---------- regression: every committed ticket parses ----------
 
 

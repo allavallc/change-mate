@@ -100,7 +100,7 @@ for t in tickets:
 
 # Orphan detection — reference to a CM-ID that doesn't exist on disk
 for t in tickets:
-    for field in ("related", "blocks", "blocked_by"):
+    for field in ("related", "blocks", "blocked_by", "split_from"):
         for ref in t.get(field, []):
             if ref not in valid_ids:
                 print(f"[warn] {t['id']} references {ref} in {field} but {ref} does not exist", file=sys.stderr)
@@ -892,6 +892,7 @@ function buildRelChips(t) {
   (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
   (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
   Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\\u2190'}); });
+  (t.split_from || []).forEach(function(id) { all.push({kind:'split_from', id:id, prefix:'\\u21B0'}); });
   return all;
 }
 
@@ -900,7 +901,7 @@ function relChipsFaceHTML(chips, cap) {
   var visible = chips.slice(0, cap);
   var extra = chips.length - visible.length;
   var html = visible.map(function(c) {
-    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : 'Blocked by ') + c.id;
+    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : c.kind === 'split_from' ? 'Split from ' : 'Blocked by ') + c.id;
     return '<span class="card-rel" title="' + esc(title) + '">' + c.prefix + ' ' + esc(c.id) + '</span>';
   }).join('');
   if (extra > 0) html += '<span class="card-rel card-rel-more">+' + extra + ' more</span>';
@@ -909,12 +910,13 @@ function relChipsFaceHTML(chips, cap) {
 
 function relDetailHTML(chips) {
   if (!chips.length) return '';
-  var groups = {related: [], blocks: [], blocked_by: []};
+  var groups = {related: [], blocks: [], blocked_by: [], split_from: []};
   chips.forEach(function(c) { groups[c.kind].push(c.id); });
   var parts = [];
   if (groups.related.length)    parts.push('<div><div class="dl-label">Related</div><div class="dl-val">'    + groups.related.map(esc).join(', ')    + '</div></div>');
   if (groups.blocks.length)     parts.push('<div><div class="dl-label">Blocks</div><div class="dl-val">'     + groups.blocks.map(esc).join(', ')     + '</div></div>');
   if (groups.blocked_by.length) parts.push('<div><div class="dl-label">Blocked by</div><div class="dl-val">' + groups.blocked_by.map(esc).join(', ') + '</div></div>');
+  if (groups.split_from.length) parts.push('<div><div class="dl-label">Split from</div><div class="dl-val">' + groups.split_from.map(esc).join(', ') + '</div></div>');
   return parts.join('');
 }
 

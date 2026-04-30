@@ -368,6 +368,7 @@ HB-004-1736847392.md
 - **Related**: HB-XXX, HB-YYY (comma-separated, or blank)
 - **Blocks**: HB-XXX, HB-YYY (comma-separated, or blank)
 - **Blocked by**: HB-XXX, HB-YYY (comma-separated, or blank)
+- **Split from**: HB-XXX, HB-YYY (comma-separated, or blank — set when this ticket was decomposed from another)
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
@@ -408,15 +409,16 @@ Unit tests, integration tests, or manual QA the developer should produce before 
 Decisions made, alternatives considered and rejected (with reasons), gotchas, out-of-scope items pushed to other tickets.
 ```
 
-**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, or the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`) must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
+**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, or the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`) must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
 
 ## Relationship fields
 
-Three optional fields express how tickets relate to each other:
+Four optional fields express how tickets relate to each other:
 
 - **Related**: loose "see also" link. No scheduling implication.
 - **Blocks**: this ticket prevents the listed tickets from starting or completing.
 - **Blocked by**: this ticket cannot start or complete until the listed tickets are done.
+- **Split from**: this ticket was decomposed from the listed parent(s) — preserves lineage when a bot or PM splits one ticket into many. Pure provenance; no scheduling implication.
 
 Values are comma-separated `HB-XXX` IDs. Whitespace is tolerated. Entries that don't match `HB-\d+` are ignored silently.
 

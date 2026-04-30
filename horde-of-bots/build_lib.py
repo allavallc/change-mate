@@ -46,6 +46,7 @@ def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
         "related": [],
         "blocks": [],
         "blocked_by": [],
+        "split_from": [],
         "assigned_to": "",
         "started": "",
         "completed": "",
@@ -71,7 +72,7 @@ def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
         "priority", "effort", "feature_set", "assigned_to",
         "started", "completed", "rejected_by", "rejected", "rejection_reason",
     )
-    id_list_keys = ("related", "blocks", "blocked_by")
+    id_list_keys = ("related", "blocks", "blocked_by", "split_from")
     for line in lines:
         m = re.match(r"^-\s+\*\*([^*]+)\*\*:\s*(.*)", line)
         if m:
