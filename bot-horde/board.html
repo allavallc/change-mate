@@ -691,7 +691,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "HB-001",
+      "id": "BH-001",
       "title": "Test ticket",
       "status": "done",
       "priority": "Low",
@@ -722,7 +722,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-002",
+      "id": "BH-002",
       "title": "Test 2",
       "status": "done",
       "priority": "Low",
@@ -753,7 +753,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-003",
+      "id": "BH-003",
       "title": "Ticket relationships (related / blocks / blocked-by)",
       "status": "done",
       "priority": "Medium",
@@ -782,14 +782,14 @@ var D = {
       "success_signals": "- New tickets created after this ships include the new fields where applicable\n- Chips on CM-A say \"Blocks: CM-B\" and CM-B's card automatically shows \"Blocked by: CM-A\" without the user writing it twice\n- Legacy tickets without these fields still parse and render\n- Overflow displays cleanly on tickets with many relationships",
       "failure_signals": "- Orphaned references (CM-XXX listed but file not found) \u2014 build logs a warning, chip is skipped\n- Cycles (A blocks B blocks A) \u2014 build logs a warning, cards still render\n- Board layout breaking when a ticket has many relationships \u2014 overflow cap prevents this\n- Symmetric inference double-renders an edge (deduped in Python pre-render pass)",
       "tests": "- Parser unit tests: each field present / missing / single ID / multiple IDs / malformed / empty-value / whitespace / dedupe (7 tests in `tests/test_parser.py`)\n- Build-time subprocess tests: orphan produces stderr warning + exit 0, cycle produces stderr warning + exit 0, inferred `blocked_by` appears in output HTML (3 tests in `tests/test_build.py`)",
-      "notes": "**Design decisions agreed with user**:\n- **Symmetry**: inferred at render time, not persisted. One side of the edge is written; renderer walks the reverse map and shows the counterpart automatically.\n- **Placement**: all chips on card face, cap at 3 with \"+N more\" overflow; full list grouped by kind on card-detail open.\n- **Orphan / cycle handling**: warn in build log (stderr), skip broken chip, keep building (non-fatal).\n\n**Phase-by-phase ship log**:\n- Phase 1: parser + format docs + 7 tests \u2014 commit `b5ed2f5`\n- Phase 2: build.sh renderer + symmetry inference + orphan/cycle warnings \u2014 commit `191f6b8`\n- Phase 3: PM skill \"Set relationships\" step + 3 build-time tests \u2014 commit `eddf73d`\n\n**Not in scope** (left for future work):\n- Clickable chips that scroll/highlight the target card\n- Visual graph view of relationships\n- Dependency enforcement at workflow time (refusing to mark a ticket done while it still blocks something)\n\n**Follow-on**: feature-set-002-workflow-hygiene now at 2 of 3 tickets done (HB-003 + HB-004); only HB-010 (second-LLM review) remains \u2014 Low priority, deliberately waiting for the PM skill to see real use. Natural next pick is HB-005 (Supabase schema, opens feature-set-001).",
+      "notes": "**Design decisions agreed with user**:\n- **Symmetry**: inferred at render time, not persisted. One side of the edge is written; renderer walks the reverse map and shows the counterpart automatically.\n- **Placement**: all chips on card face, cap at 3 with \"+N more\" overflow; full list grouped by kind on card-detail open.\n- **Orphan / cycle handling**: warn in build log (stderr), skip broken chip, keep building (non-fatal).\n\n**Phase-by-phase ship log**:\n- Phase 1: parser + format docs + 7 tests \u2014 commit `b5ed2f5`\n- Phase 2: build.sh renderer + symmetry inference + orphan/cycle warnings \u2014 commit `191f6b8`\n- Phase 3: PM skill \"Set relationships\" step + 3 build-time tests \u2014 commit `eddf73d`\n\n**Not in scope** (left for future work):\n- Clickable chips that scroll/highlight the target card\n- Visual graph view of relationships\n- Dependency enforcement at workflow time (refusing to mark a ticket done while it still blocks something)\n\n**Follow-on**: feature-set-002-workflow-hygiene now at 2 of 3 tickets done (BH-003 + BH-004); only BH-010 (second-LLM review) remains \u2014 Low priority, deliberately waiting for the PM skill to see real use. Natural next pick is BH-005 (Supabase schema, opens feature-set-001).",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-004",
+      "id": "BH-004",
       "title": "Reframe BOTHORDE.md agent persona: senior technical PM, not senior dev",
       "status": "done",
       "priority": "Medium",
@@ -815,21 +815,21 @@ var D = {
         "`build_lib.py` parses new sections + feature_set; legacy tickets still parse \u2705",
         "`build.sh` renders feature set on card face, new sections on card open \u2705",
         "pytest harness + GitHub Actions CI runs on every PR \u2705",
-        "HB-003 and HB-005\u2013HB-009 backfilled into the new format (plus HB-010 which was added mid-build) \u2705",
+        "BH-003 and BH-005\u2013BH-009 backfilled into the new format (plus BH-010 which was added mid-build) \u2705",
         "Work split into 6 phases (\u22645 files each), each with explicit user approval gate \u2705"
       ],
       "desired_output": "The agent that intercepts \"add a story about X\" produces a fully-drafted, PM-grade ticket \u2014 including success/failure signals and test directives \u2014 instead of asking the user a numbered question list.",
       "success_signals": "- New tickets created after this ships contain all four new sections without prompting\n- Tickets carry a feature-set assignment at creation time\n- Parser + renderer handle legacy and new formats with zero errors\n- pytest runs green in CI",
       "failure_signals": "- Parser crashes on malformed sections from older or hand-written tickets\n- LLM drifts back into dev-voice on sub-tasks (skill prompt needs to be firm)\n- Feature-set proposals feel random \u2014 skill needs clear heuristics for \"is this a match\"\n- Board card face becomes visually crowded by the feature-set label\n- Tests flake on CRLF/LF line ending differences (Windows \u2194 CI) \u2014 addressed via `.gitattributes` in Phase 5",
       "tests": "- `test_parse_legacy_ticket` \u2014 old format parses cleanly, new fields are None\n- `test_parse_new_ticket_full` \u2014 all four new sections + feature_set populate\n- `test_parse_partial_new_ticket` \u2014 some new sections missing\n- `test_parse_feature_set_new_format` \u2014 section-based feature set file parses\n- `test_every_committed_ticket_parses_without_error` \u2014 regression sweep\n- Manual: live board renders feature-set chip on card face and new sections on card open",
-      "notes": "**Plan lived in**: `tasks/todo.md`.\n\n**Phase-by-phase ship log**:\n- Phase 1: BOTHORDE.md persona sweep \u2014 commit `1bb1499`\n- Phase 2: product-manager skill + setup.sh wiring \u2014 commit `bf78dc9`\n- Phase 3: build_lib.py parser updates \u2014 commit `43c061a`\n- Phase 4: build.sh renderer updates \u2014 commit `776d683`\n- Phase 5: pytest harness + GitHub Actions test workflow + .gitattributes \u2014 commit `3d33982`\n- Phase 6a: feature sets + backfill HB-003/004/005 \u2014 commit `4c0a17a`\n- Phase 6b: backfill HB-006/007/008/009/010 \u2014 commit `7d43476`\n\n**Key decisions made during build**:\n- PM skill written from scratch \u2014 did not clone the external reference the user linked (wrong shape for this context: too many human-team assumptions that don't apply to a solo-dev + AI, git-backed board)\n- HB-010 (second-LLM review) was spun out as a separate ticket rather than bundled into HB-004\n- Stale `feature-set-001.md` placeholder template removed during Phase 6a cleanup (conflicting ID, no real references)\n- `.gitattributes` added in Phase 5 to fix a Windows-only CRLF issue that was breaking the pre-existing `test_build.py` subprocess tests\n\n**Out of scope** (lived separately):\n- Relationship chips on card face \u2192 HB-003\n- Second-LLM review of drafts \u2192 HB-010\n\n**Sequencing**: landed before HB-003 so relationship fields will slot cleanly into the new ticket format.\n\n**Follow-on**: feature-set-002-workflow-hygiene is now in progress with HB-003 and HB-010 remaining. The Supabase upgrade feature set (feature-set-001) is still planned \u2014 next coherent chunk of work.",
+      "notes": "**Plan lived in**: `tasks/todo.md`.\n\n**Phase-by-phase ship log**:\n- Phase 1: BOTHORDE.md persona sweep \u2014 commit `1bb1499`\n- Phase 2: product-manager skill + setup.sh wiring \u2014 commit `bf78dc9`\n- Phase 3: build_lib.py parser updates \u2014 commit `43c061a`\n- Phase 4: build.sh renderer updates \u2014 commit `776d683`\n- Phase 5: pytest harness + GitHub Actions test workflow + .gitattributes \u2014 commit `3d33982`\n- Phase 6a: feature sets + backfill BH-003/004/005 \u2014 commit `4c0a17a`\n- Phase 6b: backfill BH-006/007/008/009/010 \u2014 commit `7d43476`\n\n**Key decisions made during build**:\n- PM skill written from scratch \u2014 did not clone the external reference the user linked (wrong shape for this context: too many human-team assumptions that don't apply to a solo-dev + AI, git-backed board)\n- BH-010 (second-LLM review) was spun out as a separate ticket rather than bundled into BH-004\n- Stale `feature-set-001.md` placeholder template removed during Phase 6a cleanup (conflicting ID, no real references)\n- `.gitattributes` added in Phase 5 to fix a Windows-only CRLF issue that was breaking the pre-existing `test_build.py` subprocess tests\n\n**Out of scope** (lived separately):\n- Relationship chips on card face \u2192 BH-003\n- Second-LLM review of drafts \u2192 BH-010\n\n**Sequencing**: landed before BH-003 so relationship fields will slot cleanly into the new ticket format.\n\n**Follow-on**: feature-set-002-workflow-hygiene is now in progress with BH-003 and BH-010 remaining. The Supabase upgrade feature set (feature-set-001) is still planned \u2014 next coherent chunk of work.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-005",
+      "id": "BH-005",
       "title": "Supabase schema: locks, ticket_events, write_keys + RLS",
       "status": "done",
       "priority": "High",
@@ -858,14 +858,14 @@ var D = {
       "success_signals": "- Running the SQL twice produces no errors\n- `select` on `write_keys` from anon role returns zero rows (RLS works)\n- Inserting a duplicate `ticket_id` into `locks` fails atomically\n- `ticket_events` rows visible to anon read, not writable without key",
       "failure_signals": "- RLS disabled accidentally \u2192 full-table leak of keys\n- Missing index on `ticket_events.ticket_id` \u2192 slow queries as history grows\n- Lock table not using a unique constraint \u2192 two agents both \"winning\" the same ticket",
       "tests": "- pgTap or SQL assertion file covering each RLS policy\n- Integration test: two concurrent inserts into `locks` for same ticket \u2192 exactly one succeeds",
-      "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (HB-006 through HB-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `bot-horde-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
+      "notes": "**Sequencing**: first in the Supabase upgrade chain. Nothing else (BH-006 through BH-009) can land until this is live.\n\n**Alternatives considered**:\n- Roll our own auth on top of `bot-horde-config.json` PATs \u2192 rejected; reinvents what RLS already does and keeps PATs in browser\n- Use Supabase Auth (full sign-in flow) \u2192 rejected for v1; write-key + RLS is the lighter wedge",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-006",
+      "id": "BH-006",
       "title": "Supabase Edge Function `cm-write` (validated ticket writes via GitHub API)",
       "status": "done",
       "priority": "High",
@@ -893,16 +893,16 @@ var D = {
       ],
       "desired_output": "A callable HTTPS endpoint the board JS hits with a write key and a ticket payload. PAT never reaches the client.",
       "success_signals": "- A valid write key + valid payload produces a new file in the repo and a `ticket_events` row\n- Invalid/revoked keys are rejected with clear error codes\n- GitHub PAT never appears in client bundle, browser network logs, or function output logs",
-      "failure_signals": "- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting HB-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes",
+      "failure_signals": "- PAT accidentally logged in function output\n- Race condition on CM-ID assignment (two writes getting BH-009)\n- Edge Function cold-start latency spiking add-story UX\n- GitHub API rate limits under burst writes",
       "tests": "- Unit tests for key validation (valid / invalid / revoked / malformed)\n- Unit tests for payload validation (missing fields, oversized notes)\n- Integration test against a sandbox repo: full round-trip create\n- Concurrency test: ten parallel writes get ten sequential CM-IDs, no collisions",
-      "notes": "**Sequencing**: depends on HB-005 (needs `write_keys` + `ticket_events` tables). Blocks HB-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
+      "notes": "**Sequencing**: depends on BH-005 (needs `write_keys` + `ticket_events` tables). Blocks BH-007.\n\n**Alternatives considered**:\n- Frontend-direct GitHub OAuth flow \u2192 rejected; requires every user to register an OAuth app\n- Server proxy outside Supabase (e.g. Cloudflare Worker) \u2192 rejected; introduces a second cloud dependency",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-007",
+      "id": "BH-007",
       "title": "Board modes + write-key prompt + Add Story via Edge Function",
       "status": "done",
       "priority": "High",
@@ -932,14 +932,14 @@ var D = {
       "success_signals": "- Flipping `board_mode` in config produces the expected UX on next build\n- Write key prompt appears exactly once per browser (cached in localStorage)\n- Add Story round-trips through the Edge Function in under 2s",
       "failure_signals": "- Write keys leaking into analytics / Sentry / URL params\n- `private` mode flashing content before the gate renders (FOUC-style leak)\n- localStorage cache not invalidating when a key is revoked server-side",
       "tests": "- Snapshot tests for each of the three modes (readonly, write, private)\n- Unit test for write-key prompt flow (first visit, cached visit, revoked key)\n- Manual QA checklist for each mode before merge",
-      "notes": "**Sequencing**: depends on HB-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.\n\n**Alternatives considered**:\n- Single mode toggle (public/private) without `public-write` \u2192 rejected; loses the most useful intermediate state for community projects\n- Server-rendered private board \u2192 rejected; breaks the static-HTML deployment model",
+      "notes": "**Sequencing**: depends on BH-006 (`cm-write` must exist). Covers the \"Add Story button UX\" memory note \u2014 that thread closes when this ships.\n\n**Alternatives considered**:\n- Single mode toggle (public/private) without `public-write` \u2192 rejected; loses the most useful intermediate state for community projects\n- Server-rendered private board \u2192 rejected; breaks the static-HTML deployment model",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-008",
+      "id": "BH-008",
       "title": "Migrate agent locking + event logging from Gist to Supabase",
       "status": "done",
       "priority": "High",
@@ -969,14 +969,14 @@ var D = {
       "success_signals": "- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `HORDEOFBOTS_GITHUB_TOKEN` anymore",
       "failure_signals": "- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)",
       "tests": "- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent",
-      "notes": "**Sequencing**: depends on HB-005. Can land in parallel with HB-006/HB-007 since it touches a different surface (agent workflow, not board UI).\n\n**Alternatives considered**:\n- Keep Gist locking, add Supabase only for events \u2192 rejected; doesn't fix the atomicity bug or the token requirement\n- File-based lock in the repo itself \u2192 rejected; git push race conditions are worse than Gist races",
+      "notes": "**Sequencing**: depends on BH-005. Can land in parallel with BH-006/BH-007 since it touches a different surface (agent workflow, not board UI).\n\n**Alternatives considered**:\n- Keep Gist locking, add Supabase only for events \u2192 rejected; doesn't fix the atomicity bug or the token requirement\n- File-based lock in the repo itself \u2192 rejected; git push race conditions are worse than Gist races",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-009",
+      "id": "BH-009",
       "title": "Setup docs for the new Supabase-backed architecture",
       "status": "done",
       "priority": "Medium",
@@ -992,7 +992,7 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Write end-to-end setup documentation so a new project can install Horde of Bots v5 (Supabase locks + events + write keys + Edge Function) from scratch in under 15 minutes.",
-      "why": "The new architecture touches four systems (Supabase Postgres, Supabase Edge Functions, GitHub API, GitHub Actions). Without a clean setup guide, every new install becomes a support ticket. Docs are the final mile that makes HB-005 through HB-008 actually usable by anyone other than us.",
+      "why": "The new architecture touches four systems (Supabase Postgres, Supabase Edge Functions, GitHub API, GitHub Actions). Without a clean setup guide, every new install becomes a support ticket. Docs are the final mile that makes BH-005 through BH-008 actually usable by anyone other than us.",
       "done_when": [
         "`docs/SETUP.md` (or README section) covers:",
         "Creating a Supabase project",
@@ -1009,14 +1009,14 @@ var D = {
       "success_signals": "- A person unfamiliar with the project completes setup from the doc alone\n- \"Verify install\" checklist catches misconfigured RLS and missing secrets",
       "failure_signals": "- Docs drifting from the actual code (pin examples to real file names and commit SHAs)\n- Setup steps that assume prior Supabase knowledge without linking to their docs\n- Missing coverage of the write-key lifecycle (create / distribute / revoke)",
       "tests": "- Dogfood: run through the setup doc against a fresh Supabase project \u2014 time it, note every friction point\n- Doc-lint: all referenced file paths exist in the repo",
-      "notes": "**Sequencing**: last in the chain. Depends on HB-005, HB-006, HB-007, HB-008 all being live.\n\n**Alternatives considered**:\n- Defer docs and rely on code reading \u2192 rejected; new users are exactly the people who can't read four-system code\n- Video walkthrough \u2192 rejected for v1; videos rot faster than markdown when files change",
+      "notes": "**Sequencing**: last in the chain. Depends on BH-005, BH-006, BH-007, BH-008 all being live.\n\n**Alternatives considered**:\n- Defer docs and rely on code reading \u2192 rejected; new users are exactly the people who can't read four-system code\n- Video walkthrough \u2192 rejected for v1; videos rot faster than markdown when files change",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-012",
+      "id": "BH-012",
       "title": "Show active agent/assignee on board cards via live locks",
       "status": "done",
       "priority": "Medium",
@@ -1057,16 +1057,16 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-048",
+      "id": "BH-048",
       "title": "Scope, dependency, and LLM guardrails in BOTHORDE.md",
       "status": "done",
       "priority": "High",
       "effort": "S",
       "feature_set": "feature-set-003-scope-hygiene",
       "related": [
-        "HB-049",
-        "HB-050",
-        "HB-051"
+        "BH-049",
+        "BH-050",
+        "BH-051"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1090,24 +1090,24 @@ var D = {
       "success_signals": "- Future adopter feedback does not repeat the \"is this product code?\" confusion.\n- LLMs (Claude, Codex, other agents) reading the repo do not propose wiring code references to Horde of Bots paths when drafting feature work.\n- Solo-only users no longer ask whether they should commit `bot-horde/` to a shared remote.",
       "failure_signals": "- Scope statement drifts out of sync with actual behavior (e.g. a future ticket ships something that does deploy Horde of Bots files \u2014 then the statement is a lie).\n- \"Do not lint/typecheck\" guidance gets over-interpreted and adopters exclude Horde of Bots from ALL tooling including basic repo hygiene (trailing whitespace, etc.).\n- Local-only `.gitignore` guidance causes adopters to skip commits and then discover their tickets vanished on machine switch.",
       "tests": "- Manual: read the first two screens of the updated BOTHORDE.md from cold and verify scope, dependency rule, sync modes, and LLM guidance are present and unambiguous.\n- Manual: verify README.md files table labels Horde of Bots files as dev-only.\n- Existing pytest suite passes unchanged.",
-      "notes": "- **Alternative considered**: split into four tiny tickets (one per feedback item). Rejected \u2014 all four changes touch the same BOTHORDE.md preamble, splitting just creates edit churn and four board rebuilds.\n- **Alternative considered (sync modes)**: build first-class support for local-only mode (no git sync, live-lock and Realtime still work per-user). Rejected as out of scope \u2014 the lock/Realtime design assumes shared ticket state. One-paragraph doc note is correct for v1; revisit if there's real demand.\n- **Out of scope**: folder layout changes (HB-049), setup.sh deploy-ignore defaults (HB-050), workflow changes (HB-051).\n- **Risk**: LLM guidance is advisory only \u2014 adopters' own linters will still run on `bot-horde/` unless they exclude it themselves. HB-050 handles the mechanical exclusion.\n- **Confidence**: 95%. Highest-ROI ticket in this feature set per the feedback author's own TL;DR.",
+      "notes": "- **Alternative considered**: split into four tiny tickets (one per feedback item). Rejected \u2014 all four changes touch the same BOTHORDE.md preamble, splitting just creates edit churn and four board rebuilds.\n- **Alternative considered (sync modes)**: build first-class support for local-only mode (no git sync, live-lock and Realtime still work per-user). Rejected as out of scope \u2014 the lock/Realtime design assumes shared ticket state. One-paragraph doc note is correct for v1; revisit if there's real demand.\n- **Out of scope**: folder layout changes (BH-049), setup.sh deploy-ignore defaults (BH-050), workflow changes (BH-051).\n- **Risk**: LLM guidance is advisory only \u2014 adopters' own linters will still run on `bot-horde/` unless they exclude it themselves. BH-050 handles the mechanical exclusion.\n- **Confidence**: 95%. Highest-ROI ticket in this feature set per the feedback author's own TL;DR.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-049",
+      "id": "BH-049",
       "title": "Consolidate Horde of Bots footprint into bot-horde/ folder",
       "status": "done",
       "priority": "High",
       "effort": "L",
       "feature_set": "feature-set-003-scope-hygiene",
       "related": [
-        "HB-048"
+        "BH-048"
       ],
       "blocks": [
-        "HB-050"
+        "BH-050"
       ],
       "blocked_by": [],
       "split_from": [],
@@ -1117,7 +1117,7 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Move every Horde of Bots artifact that currently sits at repo root (`BOTHORDE.md`, `build.sh`, `build_lib.py`, `bot-horde-board.html`, `bot-horde-config.json`) into the `bot-horde/` folder, so that the rule \"anything under `bot-horde/` is dev tooling\" becomes mechanically true and `.dockerignore` / `.gcloudignore` exclusions collapse to one line.",
-      "why": "The current scattered layout forces every adopter and every LLM to independently build a mental model of which files belong to Horde of Bots and which are product. That mental model fails \u2014 see HB-048's underlying feedback. Consolidation makes the rule enforceable by tooling instead of tribal knowledge, and it's the enabler for HB-050's single-line deploy-ignore default.",
+      "why": "The current scattered layout forces every adopter and every LLM to independently build a mental model of which files belong to Horde of Bots and which are product. That mental model fails \u2014 see BH-048's underlying feedback. Consolidation makes the rule enforceable by tooling instead of tribal knowledge, and it's the enabler for BH-050's single-line deploy-ignore default.",
       "done_when": [
         "`BOTHORDE.md` lives at `bot-horde/BOTHORDE.md`.",
         "`build.sh` lives at `bot-horde/build.sh`. It still runs from repo root (`bash bot-horde/build.sh`).",
@@ -1135,25 +1135,25 @@ var D = {
       "success_signals": "- `.dockerignore` exclusion for Horde of Bots is one line (`bot-horde/`), verified in a sample adopter repo.\n- No adopter reports \"Horde of Bots files leaked into my deploy\" post-ship.\n- LLMs asked to summarize recent changes in an adopter repo cleanly bucket Horde of Bots vs product commits by folder.",
       "failure_signals": "- Existing adopters' boards break silently because their workflow still references `build.sh` at root. Mitigation: setup.sh migration path + release note.\n- `bash bot-horde/build.sh` breaks on Windows Git Bash paths. Mitigation: CI integration test.\n- `build.sh` reads config by absolute path (e.g. `bot-horde-config.json` as sibling) and the move breaks credential loading.\n- Adopters with bookmarked `bot-horde-board.html` URLs (GitHub Pages) hit a 404 until they update the link.",
       "tests": "- `tests/test_build.py`: run `bash bot-horde/build.sh` from repo root, confirm `bot-horde/board.html` is produced, confirm old `bot-horde-board.html` is NOT produced.\n- Unit: `parse_ticket` and `parse_feature_set` still work unchanged (pure functions, just moved).\n- Manual: on a throwaway clone with the legacy layout, run setup.sh migration path \u2014 verify it moves all five files correctly and rewrites the CLAUDE.md import. Run migration again \u2014 verify no-op.\n- Manual: `grep -r \"bot-horde-board.html\" .` and `grep -r \"bot-horde-config.json\" .` after the change \u2014 the only hits should be historical ticket bodies and changelog notes.\n- Manual: open the generated `bot-horde/board.html` in a browser and verify cards, Supabase live locks, and Add Story still function.",
-      "notes": "- **Alternative considered**: keep the root layout but aggressively prefix files (`Horde of Bots-build.sh` etc.). Rejected \u2014 doesn't solve the one-line deploy-exclude problem and leaves the mental model fractured.\n- **Alternative considered**: keep `BOTHORDE.md` at root, move the rest. Rejected \u2014 feedback explicitly calls out root-level BOTHORDE.md as part of the \"looks like product\" problem. Keeping it out of the folder breaks the one-folder rule that makes everything else mechanical.\n- **Alternative considered**: emit the board as `bot-horde/index.html` so Pages serves it at `/bot-horde/`. Attractive but out of scope for this ticket \u2014 stick with `board.html` and let a future ticket decide the public URL story.\n- **Breaking change**: yes. Existing adopters must run migration. Ship with a visible changelog entry and tested setup.sh migration path.\n- **Out of scope**: deploy-ignore defaults (HB-050), opt-in CI commits (HB-051), any change to ticket format.\n- **Risk (highest)**: `setup.sh` runs remotely via `curl | bash`. Migration branch must be idempotent and must not destroy local uncommitted changes to any of the five files.\n- **Confidence**: 75%. Mechanically obvious, but the breaking-change cost is real.",
+      "notes": "- **Alternative considered**: keep the root layout but aggressively prefix files (`Horde of Bots-build.sh` etc.). Rejected \u2014 doesn't solve the one-line deploy-exclude problem and leaves the mental model fractured.\n- **Alternative considered**: keep `BOTHORDE.md` at root, move the rest. Rejected \u2014 feedback explicitly calls out root-level BOTHORDE.md as part of the \"looks like product\" problem. Keeping it out of the folder breaks the one-folder rule that makes everything else mechanical.\n- **Alternative considered**: emit the board as `bot-horde/index.html` so Pages serves it at `/bot-horde/`. Attractive but out of scope for this ticket \u2014 stick with `board.html` and let a future ticket decide the public URL story.\n- **Breaking change**: yes. Existing adopters must run migration. Ship with a visible changelog entry and tested setup.sh migration path.\n- **Out of scope**: deploy-ignore defaults (BH-050), opt-in CI commits (BH-051), any change to ticket format.\n- **Risk (highest)**: `setup.sh` runs remotely via `curl | bash`. Migration branch must be idempotent and must not destroy local uncommitted changes to any of the five files.\n- **Confidence**: 75%. Mechanically obvious, but the breaking-change cost is real.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-050",
+      "id": "BH-050",
       "title": "setup.sh writes deploy-ignore defaults for bot-horde/",
       "status": "done",
       "priority": "Medium",
       "effort": "S",
       "feature_set": "feature-set-003-scope-hygiene",
       "related": [
-        "HB-048"
+        "BH-048"
       ],
       "blocks": [],
       "blocked_by": [
-        "HB-049"
+        "BH-049"
       ],
       "split_from": [],
       "assigned_to": "claude",
@@ -1162,7 +1162,7 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Make setup.sh the place that prevents Horde of Bots from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
-      "why": "HB-048 tells readers that Horde of Bots must not enter deploys. HB-049 makes that rule mechanically enforceable with one folder. HB-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read BOTHORDE.md, internalize the rule, and wire it themselves.",
+      "why": "BH-048 tells readers that Horde of Bots must not enter deploys. BH-049 makes that rule mechanically enforceable with one folder. BH-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read BOTHORDE.md, internalize the rule, and wire it themselves.",
       "done_when": [
         "`setup.sh` detects the presence of `.dockerignore`, `.gcloudignore`, `.vercelignore` and for each that exists, appends `bot-horde/` as an exclusion if not already present.",
         "If an ignore file does not exist, setup.sh does NOT create it (don't surprise adopters with new tooling files; only modify what's already there).",
@@ -1173,24 +1173,24 @@ var D = {
       ],
       "desired_output": "An adopter runs `setup.sh` in a repo that already has Docker. The next `docker build` excludes `bot-horde/` from the image. No configuration, no thought required. Verifiable with `docker run <image> ls /app/Horde of Bots` \u2192 not found.",
       "success_signals": "- Adopters running Docker-based deploys see zero Horde of Bots files in their images post-ship.\n- No issue reports of \"Horde of Bots files ended up in my deploy\".",
-      "failure_signals": "- setup.sh appends to an ignore file using a non-default format (e.g. `.gcloudignore` syntax differs subtly) and breaks the file.\n- Append runs on re-install and duplicates entries (idempotency bug).\n- Adopter using the local-only mode from HB-048 is confused when `.gitignore` comment contradicts their usage. Mitigation: comment references HB-048's doc section.\n- Adopter has carefully tuned ignore files and resents the append. Mitigation: single clear line with a comment explaining why.",
+      "failure_signals": "- setup.sh appends to an ignore file using a non-default format (e.g. `.gcloudignore` syntax differs subtly) and breaks the file.\n- Append runs on re-install and duplicates entries (idempotency bug).\n- Adopter using the local-only mode from BH-048 is confused when `.gitignore` comment contradicts their usage. Mitigation: comment references BH-048's doc section.\n- Adopter has carefully tuned ignore files and resents the append. Mitigation: single clear line with a comment explaining why.",
       "tests": "- Integration (new): run setup.sh twice in a temp dir with a pre-existing `.dockerignore` \u2014 confirm `bot-horde/` is added once, not twice.\n- Integration (new): run setup.sh in a temp dir with no ignore files \u2014 confirm nothing is created.\n- Manual: verify `docker build` in a sample adopter repo excludes `bot-horde/` after install.\n- Manual: verify `.gitignore` gets the commented explanation line, not an exclusion line.",
-      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `Horde of Bots.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (HB-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on HB-049**: if Horde of Bots files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
+      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `Horde of Bots.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (BH-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on BH-049**: if Horde of Bots files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-051",
+      "id": "BH-051",
       "title": "Board rebuild workflow: mode-aware auto-commit + rename",
       "status": "done",
       "priority": "Medium",
       "effort": "S",
       "feature_set": "feature-set-003-scope-hygiene",
       "related": [
-        "HB-048",
-        "HB-049"
+        "BH-048",
+        "BH-049"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1217,14 +1217,14 @@ var D = {
       "success_signals": "- Noise commits from Horde of Bots on `main` drop to near-zero for solo adopters using default config.\n- Team adopters report no change in board freshness.\n- No adopter needs to edit the workflow YAML to change behavior \u2014 config flag is the sole surface.",
       "failure_signals": "- Solo adopter hosting on Pages sees their board go stale without understanding why. Mitigation: SETUP.md solo-mode section mentions the override.\n- Mode detection misfires \u2014 e.g. `supabase_url: \"\"` reads as present and triggers auto-commit. Treat empty string as absent.\n- Config key typo (`auto-commit-board` vs `auto_commit_board`) silently takes the default and looks like the flag doesn't work.\n- `jq` missing on a minimal runner. GitHub-hosted runners have it \u2014 verify explicitly.",
       "tests": "- Workflow test: config with `supabase_url` set + no flag \u2192 commit happens.\n- Workflow test: config with no `supabase_url` + no flag \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: false` + Supabase set \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: true` + no Supabase \u2192 commit.\n- Workflow test: `supabase_url: \"\"` treated as absent (no commit by default).\n- Manual: confirm workflow UI shows \"Horde of Bots: rebuild board\".\n- Manual: read SETUP.md / BOTHORDE.md and confirm the mode-aware default is documented clearly.",
-      "notes": "- **Alternative considered**: flat default `false` for everyone. Rejected \u2014 breaks the \"humans watch\" primitive for Pages-hosted team boards until they find the flag.\n- **Alternative considered**: flat default `true` for everyone. Rejected \u2014 status quo; feedback is that the noise is a real problem for solo users.\n- **Alternative considered**: emit the board via Actions deploy to Pages instead of committing to main. Cleaner for Pages adopters but bigger scope \u2014 own ticket if pulled for.\n- **Out of scope**: rewriting build.sh (HB-049), deploy-ignore defaults (HB-050).\n- **Risk**: mode detection uses `supabase_url` as a proxy for \"team mode.\" Adopters with Supabase configured but no Pages get auto-commit they don't need \u2014 one-line config fix.\n- **Confidence**: 85% (up from 70% with the mode-aware default \u2014 solves the Pages-freshness concern surfaced during drafting).",
+      "notes": "- **Alternative considered**: flat default `false` for everyone. Rejected \u2014 breaks the \"humans watch\" primitive for Pages-hosted team boards until they find the flag.\n- **Alternative considered**: flat default `true` for everyone. Rejected \u2014 status quo; feedback is that the noise is a real problem for solo users.\n- **Alternative considered**: emit the board via Actions deploy to Pages instead of committing to main. Cleaner for Pages adopters but bigger scope \u2014 own ticket if pulled for.\n- **Out of scope**: rewriting build.sh (BH-049), deploy-ignore defaults (BH-050).\n- **Risk**: mode detection uses `supabase_url` as a proxy for \"team mode.\" Adopters with Supabase configured but no Pages get auto-commit they don't need \u2014 one-line config fix.\n- **Confidence**: 85% (up from 70% with the mode-aware default \u2014 solves the Pages-freshness concern surfaced during drafting).",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-052",
+      "id": "BH-052",
       "title": "Walking-robot perimeter animation on in-progress cards",
       "status": "done",
       "priority": "Low",
@@ -1260,19 +1260,19 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-057",
+      "id": "BH-057",
       "title": "Replace Supabase Realtime with GitHub commit polling",
       "status": "done",
       "priority": "High",
       "effort": "M",
       "feature_set": "feature-set-005-kill-supabase",
       "related": [
-        "HB-058",
-        "HB-059"
+        "BH-058",
+        "BH-059"
       ],
       "blocks": [
-        "HB-058",
-        "HB-059"
+        "BH-058",
+        "BH-059"
       ],
       "blocked_by": [],
       "split_from": [],
@@ -1295,28 +1295,28 @@ var D = {
       "success_signals": "- Adopters with public repos see the board work without setting up anything beyond the initial `setup.sh`.\n- Adopters with private repos see it work with just their PAT.\n- Push-to-board latency stays under ~35 seconds at default interval.\n- GitHub API rate limit headroom \u2014 anonymous public-repo polling at 30s = 120 calls/hour, well under the 60/hour anonymous limit per IP for unauth'd... wait, that's tight. Authenticated polling at 30s = 120 calls/hour, well under the 5000/hour PAT limit.",
       "failure_signals": "- Anonymous polling exhausts the 60/hour rate limit for adopters viewing public repos without a token.\n- A burst of pushes triggers thrashing refetches.\n- Browser tab left open overnight runs unbounded fetches; needs document.hidden check to pause polling when tab is backgrounded.\n- Pages cache makes the polled response stale even when GitHub returns fresh data.",
       "tests": "- Unit (new): `tests/test_build.py` asserts the generated `board.html` no longer contains `supabase` / `supabase-js` / `realtime`.\n- Unit (new): asserts the generated `board.html` contains the polling code (e.g. `setInterval` and `commits?sha=main`).\n- Manual: open board, push a new ticket via git, wait \u226430s, confirm board updates without manual refresh.\n- Manual: throttle network in devtools, confirm polling fails gracefully (header indicator shows \"offline\").\n- Manual: switch tab away for 2 minutes, switch back \u2014 confirm polling resumes and refetches once.",
-      "notes": "- **Alternative considered**: WebSocket via Cloudflare Workers/Durable Objects. Rejected \u2014 still requires deploying something. Polling at 30s is good enough for a kanban board people glance at.\n- **Alternative considered**: GitHub webhooks \u2192 small Cloudflare Worker \u2192 SSE to browser. Cleaner UX, requires deploying a Worker. Out of scope for \"kill all backends\".\n- **Alternative considered**: Drop polling entirely, rely on manual refresh. Rejected \u2014 too far from \"live\" feel.\n- **Out of scope**: replacing cm-write (HB-058), removing the Supabase folder + docs (HB-059), live lock pulse (drop entirely as part of HB-059).\n- **Risk**: anonymous public-repo polling rate limit. Mitigation: detect rate-limit response, back off + warn in the header indicator.\n- **Confidence**: 80%. Main unknown is whether the board can re-render cleanly mid-session without a full page reload \u2014 the JSON is currently baked into the HTML at build time. May need a small static `tickets.json` that the build step writes separately so the polling code can refetch JSON only.",
+      "notes": "- **Alternative considered**: WebSocket via Cloudflare Workers/Durable Objects. Rejected \u2014 still requires deploying something. Polling at 30s is good enough for a kanban board people glance at.\n- **Alternative considered**: GitHub webhooks \u2192 small Cloudflare Worker \u2192 SSE to browser. Cleaner UX, requires deploying a Worker. Out of scope for \"kill all backends\".\n- **Alternative considered**: Drop polling entirely, rely on manual refresh. Rejected \u2014 too far from \"live\" feel.\n- **Out of scope**: replacing cm-write (BH-058), removing the Supabase folder + docs (BH-059), live lock pulse (drop entirely as part of BH-059).\n- **Risk**: anonymous public-repo polling rate limit. Mitigation: detect rate-limit response, back off + warn in the header indicator.\n- **Confidence**: 80%. Main unknown is whether the board can re-render cleanly mid-session without a full page reload \u2014 the JSON is currently baked into the HTML at build time. May need a small static `tickets.json` that the build step writes separately so the polling code can refetch JSON only.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-058",
+      "id": "BH-058",
       "title": "Add Story \u2192 direct GitHub Contents API (drop cm-write)",
       "status": "done",
       "priority": "High",
       "effort": "M",
       "feature_set": "feature-set-005-kill-supabase",
       "related": [
-        "HB-057",
-        "HB-059"
+        "BH-057",
+        "BH-059"
       ],
       "blocks": [
-        "HB-059"
+        "BH-059"
       ],
       "blocked_by": [
-        "HB-057"
+        "BH-057"
       ],
       "split_from": [],
       "assigned_to": "claude",
@@ -1335,31 +1335,31 @@ var D = {
         "On 401/403, browser clears the cached PAT and prompts the setup modal.",
         "The `cm-write` URL and anon key placeholders in `build.sh` are removed."
       ],
-      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (HB-057) detects the change and re-renders. No Supabase function was contacted.",
+      "desired_output": "A user opens the board, clicks Add Story, fills the form, clicks Create Story. Within ~2 seconds the file lands in the repo, CI rebuilds the board, polling (BH-057) detects the change and re-renders. No Supabase function was contacted.",
       "success_signals": "- Add Story works for adopters who never deployed an Edge Function.\n- Latency from click to \"ticket appears in backlog\" is comparable to current cm-write flow (PAT-direct GitHub call vs. cm-write \u2192 Postgres \u2192 GitHub call).\n- No more 401/403/network errors stemming from a paused Supabase project.",
       "failure_signals": "- Two simultaneous clicks race for the same CM-ID and one fails after retry. Mitigation: retry-on-conflict with a fresh ID scan.\n- PAT scope insufficient \u2014 caller has only Read, can't PUT. UI must surface the GitHub error clearly.\n- A push from another agent during the form-fill window means the ID we computed is now stale by the time we PUT. Same mitigation: retry once on 422.",
-      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in HB-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `bot-horde/backlog/`. Verify board updates within 30s (via HB-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
-      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (HB-059), polling code (HB-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at HB-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
+      "tests": "- Unit (existing cm-write tests can be archived \u2014 function will be deleted in BH-059).\n- Unit (new): browser-side helper functions (next-ID computation, markdown rendering) are testable in isolation. Add a small Node/Deno test or just a JS smoke test inline in `tests/test_build.py` (asserting the generated HTML contains the expected functions).\n- Manual: from the live board, Add Story with a test title. Verify file lands in `bot-horde/backlog/`. Verify board updates within 30s (via BH-057 polling).\n- Manual: with two browsers open, click Add Story near-simultaneously. Verify both succeed with sequential CM-IDs (one retried).\n- Manual: revoke the user's PAT, click Add Story \u2192 verify clean error and prompt for new token.",
+      "notes": "- **Alternative considered**: keep cm-write but rewrite it as a Cloudflare Worker. Rejected \u2014 still requires deploying something.\n- **Alternative considered**: write the ticket via a GitHub Issue + Action that converts. Rejected \u2014 bigger architectural change, more moving parts than direct Contents API.\n- **Out of scope**: removing the Supabase project / supabase folder (BH-059), polling code (BH-057).\n- **Risk**: PAT exposure. The PAT lives in localStorage (already does today). Same security posture as current Add Story.\n- **Risk**: ticket-ID race. The current cm-write uses a Postgres sequence for atomicity; browser-direct loses that. Mitigation is one retry on 422 \u2014 the CM-ID space is sparse (we're at BH-056, sequence supports billions), so a collision is rare and a single retry will succeed in practice.\n- **Confidence**: 85%. The browser already has every input it needs; only thing being moved is the orchestration layer.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-059",
+      "id": "BH-059",
       "title": "Delete Supabase footprint and simplify setup",
       "status": "done",
       "priority": "High",
       "effort": "M",
       "feature_set": "feature-set-005-kill-supabase",
       "related": [
-        "HB-057",
-        "HB-058"
+        "BH-057",
+        "BH-058"
       ],
       "blocks": [],
       "blocked_by": [
-        "HB-057",
-        "HB-058"
+        "BH-057",
+        "BH-058"
       ],
       "split_from": [],
       "assigned_to": "claude",
@@ -1367,14 +1367,14 @@ var D = {
       "completed": "2026-04-27",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Once polling (HB-057) and direct Add Story (HB-058) are live, remove every trace of Supabase from the codebase: the `supabase/` folder, the config fields, the verify scripts, the Team-path setup docs, the live lock pulse UI, and any tests covering Supabase pieces.",
+      "goal": "Once polling (BH-057) and direct Add Story (BH-058) are live, remove every trace of Supabase from the codebase: the `supabase/` folder, the config fields, the verify scripts, the Team-path setup docs, the live lock pulse UI, and any tests covering Supabase pieces.",
       "why": "Leftover Supabase code is a drag on the project \u2014 bigger surface area for adopters to read, more ways setup can fail, more tests to maintain, more docs to keep in sync. The whole point of feature-set-005 is to be done with that backend. This ticket finishes the job.",
       "done_when": [
         "`supabase/` folder is deleted (migrations, function, scripts, README).",
         "`bot-horde/config.json` no longer requires `supabase_url` or `supabase_publishable_key`. Existing values are ignored.",
         "`tests/test_verify_supabase.py` deleted (or archived under historical notes).",
         "`scripts/verify_supabase.py` deleted.",
-        "The board no longer has the \"live\" header indicator (or it's repurposed to show polling status \u2014 see HB-057).",
+        "The board no longer has the \"live\" header indicator (or it's repurposed to show polling status \u2014 see BH-057).",
         "The board no longer has the lock-pulse `cm-active` class, the postgres_changes subscription, or any Realtime channel code.",
         "`SETUP.md` is rewritten \u2014 no more Solo / Team paths split. Single path: install \u2192 push \u2192 use. No CLI, no Edge Function, no migrations.",
         "`README.md` updated \u2014 drop the Supabase-related \"Files\" rows and the Live lock registry section (Gist version was already retired).",
@@ -1394,7 +1394,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-060",
+      "id": "BH-060",
       "title": "Apply SimplifyOps brutalist style to the board",
       "status": "done",
       "priority": "High",
@@ -1449,18 +1449,18 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-061",
+      "id": "BH-061",
       "title": "setup.sh installs the runtime files (build.sh, build_lib.py, workflow, config)",
       "status": "done",
       "priority": "High",
       "effort": "M",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-062",
-        "HB-063",
-        "HB-064",
-        "HB-065",
-        "HB-066"
+        "BH-062",
+        "BH-063",
+        "BH-064",
+        "BH-065",
+        "BH-066"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1477,7 +1477,7 @@ var D = {
         "`bot-horde/build.sh`",
         "`bot-horde/build_lib.py`",
         "`bot-horde/config.json` (only if not present \u2014 don't overwrite an existing one)",
-        "`bot-horde/INSTALL-FAQ.md` (HB-066 ships the content)",
+        "`bot-horde/INSTALL-FAQ.md` (BH-066 ships the content)",
         "`.github/workflows/Horde of Bots-rebuild-board.yml`",
         "A starter `bot-horde/board.html` is generated by running `bash bot-horde/build.sh` once at end of install (so the adopter sees a board immediately, even before their first push).",
         "All download URLs use `$REPO_URL/...` so the install honors the same upstream as the existing BOTHORDE.md fetch.",
@@ -1489,21 +1489,21 @@ var D = {
       "success_signals": "- Time-to-working-board drops from \"manual copy + 5 follow-up questions\" to \"two commands.\"\n- Zero \"I ran setup.sh but build.sh isn't there\" issues post-ship.",
       "failure_signals": "- Workflow YAML overwrites an adopter's existing GitHub Actions setup. Mitigation: skip if file exists, log the skip.\n- Generated board.html commits with embedded creds. Mitigation: build.sh no longer touches Supabase, so no creds \u2014 but verify.\n- Adopter on a flaky network sees a partial install. Mitigation: setup.sh exits non-zero on any download failure (`set -e` already does this).",
       "tests": "- Manual: `mktemp -d`, `git init`, `bash setup.sh`, confirm all expected files exist.\n- Manual: re-run setup.sh in the same dir, confirm no overwrites and no duplicates.\n- Manual: in a repo with an unrelated `.github/workflows/` file, confirm setup doesn't touch it.",
-      "notes": "- **Alternative considered**: distribute Horde of Bots as a single `setup.sh` that contains the file content inline (here-docs). Rejected \u2014 drift between Horde of Bots's source repo and the inlined version is harder to maintain than `curl` from the source repo.\n- **Out of scope**: skill versioning (HB-065), non-interactive prompts (HB-062), README copy (HB-064), FAQ content (HB-066).\n- **Risk**: silent rate-limiting on raw.githubusercontent.com if many adopters install at once. Acceptable \u2014 it's not a credentialed call and unauth'd raw.githubusercontent has high limits.\n- **Confidence**: 90%.",
+      "notes": "- **Alternative considered**: distribute Horde of Bots as a single `setup.sh` that contains the file content inline (here-docs). Rejected \u2014 drift between Horde of Bots's source repo and the inlined version is harder to maintain than `curl` from the source repo.\n- **Out of scope**: skill versioning (BH-065), non-interactive prompts (BH-062), README copy (BH-064), FAQ content (BH-066).\n- **Risk**: silent rate-limiting on raw.githubusercontent.com if many adopters install at once. Acceptable \u2014 it's not a credentialed call and unauth'd raw.githubusercontent has high limits.\n- **Confidence**: 90%.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-062",
+      "id": "BH-062",
       "title": "Non-interactive install path for setup.sh",
       "status": "done",
       "priority": "High",
       "effort": "S",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-061"
+        "BH-061"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1532,15 +1532,15 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-063",
+      "id": "BH-063",
       "title": "Do-not-edit markers around the CLAUDE.md import block",
       "status": "done",
       "priority": "Medium",
       "effort": "XS",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-061",
-        "HB-066"
+        "BH-061",
+        "BH-066"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1568,15 +1568,15 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-064",
+      "id": "BH-064",
       "title": "README + docs honesty pass",
       "status": "done",
       "priority": "Medium",
       "effort": "S",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-061",
-        "HB-066"
+        "BH-061",
+        "BH-066"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1586,11 +1586,11 @@ var D = {
       "completed": "2026-04-27",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Remove three inaccurate or misleading claims from README.md and SETUP.md: (1) \"no external dependencies beyond git\" is false (Python 3 is required to run `build.sh`); (2) the README implies `bash bot-horde/build.sh` works after install but it doesn't yet (will be true once HB-061 lands); (3) GitHub Pages caveats \u2014 no warning that the board will be world-readable at `/bot-horde/board.html` when Pages is enabled on `main`.",
+      "goal": "Remove three inaccurate or misleading claims from README.md and SETUP.md: (1) \"no external dependencies beyond git\" is false (Python 3 is required to run `build.sh`); (2) the README implies `bash bot-horde/build.sh` works after install but it doesn't yet (will be true once BH-061 lands); (3) GitHub Pages caveats \u2014 no warning that the board will be world-readable at `/bot-horde/board.html` when Pages is enabled on `main`.",
       "why": "A careful adopter reading the README before installing flagged each of these as a credibility issue. Inaccurate setup docs make people distrust the rest of the project. These are 30-minute copy edits that pay off in one place every adopter looks.",
       "done_when": [
         "README.md \"Contributing\" or top-level intro states **Requirements: git + Python 3** (or removes the no-deps claim).",
-        "README.md / SETUP.md `bash bot-horde/build.sh` mentions are accurate after HB-061 lands. (Pre-HB-061: add a note that the script ships in a follow-up.)",
+        "README.md / SETUP.md `bash bot-horde/build.sh` mentions are accurate after BH-061 lands. (Pre-BH-061: add a note that the script ships in a follow-up.)",
         "SETUP.md Pages step adds a one-line warning: \"If your repo is public, the board at `bot-horde/board.html` is world-readable. To keep it private, use a private repo + GitHub Pro.\"",
         "README adds a single line under the Setup section: \"Tickets are committed to your repo. If your repo is public, your tickets are public.\"",
         "No invented features. Don't claim any capability the code doesn't actually have today."
@@ -1599,21 +1599,21 @@ var D = {
       "success_signals": "- Adopter feedback shifts from \"this didn't match what I expected\" to \"this matched the README.\"\n- Public-repo / private-tickets confusion goes away.",
       "failure_signals": "- Adopters get scared off by the warnings. Mitigation: keep the warnings short and factual \u2014 not a wall of caveats.",
       "tests": "- Manual: read README + SETUP cold, list any remaining inaccuracies.\n- Manual: grep README for \"no dependencies\", \"no external deps\", \"zero deps\" \u2014 should be zero hits.",
-      "notes": "- **Out of scope**: changing how Pages works (we can't), changing the public-repo model (HB-066 documents workarounds).\n- **Confidence**: 95%.",
+      "notes": "- **Out of scope**: changing how Pages works (we can't), changing the public-repo model (BH-066 documents workarounds).\n- **Confidence**: 95%.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-065",
+      "id": "BH-065",
       "title": "Version pin + upgrade path for the product-manager skill",
       "status": "done",
       "priority": "Low",
       "effort": "S",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-061"
+        "BH-061"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1629,7 +1629,7 @@ var D = {
         "`skills/product-manager/SKILL.md` (source) has a `## Version` line at the top with a semver value.",
         "`setup.sh` reads the version line from both the installed and the upstream copy. If they differ, it prints the diff (`local 1.0.0 \u2192 upstream 1.1.0`) and asks whether to upgrade.",
         "`bash setup.sh --upgrade-skill` (or `HORDEOFBOTS_UPGRADE_SKILL=yes`) bypasses the prompt and forces overwrite.",
-        "The non-interactive path (HB-062) treats the upgrade prompt the same way as the migration prompt.",
+        "The non-interactive path (BH-062) treats the upgrade prompt the same way as the migration prompt.",
         "Adopters running setup.sh today (without the version line) see the new version on first re-run after this lands; behavior is purely additive."
       ],
       "desired_output": "An adopter on a 6-month-old install runs setup.sh and learns \"your PM skill is v1.0.0; upstream is v1.3.0. Upgrade? [y/N].\" One command later they're current.",
@@ -1643,15 +1643,15 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-066",
+      "id": "BH-066",
       "title": "bot-horde/INSTALL-FAQ.md \u2014 answers to install-time questions",
       "status": "done",
       "priority": "High",
       "effort": "S",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-061",
-        "HB-063"
+        "BH-061",
+        "BH-063"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1662,7 +1662,7 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Capture the install-time questions a careful adopter asks (CLAUDE.md import semantics, public-repo exposure, Pages collisions, PAT security, polling rate limits, skill versioning, idempotency) into a single file that ships with the install. Both bots and humans read it on first contact, so the same questions don't have to be answered repeatedly.",
-      "why": "A real adopter sent ~12 install-time questions before running setup.sh. Most have correct answers but those answers live nowhere in the repo today \u2014 they're in scattered tickets, conversations, and people's heads. Centralising them in `bot-horde/INSTALL-FAQ.md` (installed automatically by setup.sh per HB-061) makes the project self-documenting at the moment adopters most need it.",
+      "why": "A real adopter sent ~12 install-time questions before running setup.sh. Most have correct answers but those answers live nowhere in the repo today \u2014 they're in scattered tickets, conversations, and people's heads. Centralising them in `bot-horde/INSTALL-FAQ.md` (installed automatically by setup.sh per BH-061) makes the project self-documenting at the moment adopters most need it.",
       "done_when": [
         "`bot-horde/INSTALL-FAQ.md` exists in the source repo.",
         "It covers, at minimum:",
@@ -1674,15 +1674,15 @@ var D = {
         "**Polling rate limits**: 5000/hr per authenticated user, 60/hr unauth per IP; behavior under sustained failure (auto-disable after 5 misses).",
         "**Skill upgrade**: where the global skill lives, how to upgrade, why it's global.",
         "**Idempotency**: setup.sh is safe to re-run; what gets skipped vs touched.",
-        "**Non-interactive install**: env var or flag to skip prompts (after HB-062 lands).",
+        "**Non-interactive install**: env var or flag to skip prompts (after BH-062 lands).",
         "**Python requirement**: build.sh needs Python 3.",
         "File is concise \u2014 one sentence per answer where possible, link to deeper docs for the rest.",
         "File is referenced from the README setup section (\"After install, see `bot-horde/INSTALL-FAQ.md`\").",
-        "HB-061 wires setup.sh to download this file alongside BOTHORDE.md."
+        "BH-061 wires setup.sh to download this file alongside BOTHORDE.md."
       ],
       "desired_output": "An adopter who clones Horde of Bots and runs setup.sh sees `bot-horde/INSTALL-FAQ.md` in their repo. They (or their agent) read it once and get the answer to every common install-time question without contacting the maintainer.",
       "success_signals": "- \"How does the CLAUDE.md import work?\" / \"Are tickets public?\" / \"Where does the PAT live?\" stop showing up in adopter feedback.",
-      "failure_signals": "- The FAQ goes stale as the code evolves. Mitigation: tie updates to the tickets that change behavior (HB-061 / 062 / 063 / 064 / 065 each link to their FAQ section).",
+      "failure_signals": "- The FAQ goes stale as the code evolves. Mitigation: tie updates to the tickets that change behavior (BH-061 / 062 / 063 / 064 / 065 each link to their FAQ section).",
       "tests": "- Manual: read the FAQ cold, confirm every question from the original feedback batch has a matching answer.\n- Manual: cross-reference each answer against current code/docs; flag any that no longer match.",
       "notes": "- **Alternative considered**: append the FAQ to BOTHORDE.md. Rejected \u2014 BOTHORDE.md is loaded into every Claude Code session via @-import; growing it costs context budget. INSTALL-FAQ.md is opened explicitly by the agent or human when they need it.\n- **Out of scope**: explaining the entire workflow (that's BOTHORDE.md's job). The FAQ is install-time only.\n- **Confidence**: 95%.",
       "rejected_by": "",
@@ -1691,14 +1691,14 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-067",
+      "id": "BH-067",
       "title": "No-secrets rule for tickets",
       "status": "done",
       "priority": "High",
       "effort": "XS",
       "feature_set": "feature-set-002-workflow-hygiene",
       "related": [
-        "HB-066"
+        "BH-066"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1725,17 +1725,17 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-068",
+      "id": "BH-068",
       "title": "MANIFEST.json \u2014 versioned upgrade path for managed files",
       "status": "done",
       "priority": "High",
       "effort": "S",
       "feature_set": "feature-set-007-installer-hardening",
       "related": [
-        "HB-061",
-        "HB-065",
-        "HB-066",
-        "HB-067"
+        "BH-061",
+        "BH-065",
+        "BH-066",
+        "BH-067"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1746,7 +1746,7 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Give bots and humans a deterministic way to answer \"is my local copy of Horde of Bots up to date?\" \u2014 without relying on file mtimes, hashes, or \"delete and re-run.\" A single `bot-horde/MANIFEST.json` lists every managed file and its upstream version stamp. Local copy includes the manifest as of last install. Upgrade = fetch upstream manifest, diff, fetch the files that changed.",
-      "why": "After HB-067 added the no-secrets rule, existing adopters had no path to the new BOTHORDE.md / INSTALL-FAQ.md other than `delete + re-run` or manual curl. That same gap exists for every future doc/script update. A manifest closes the gap once: bots fetch one tiny JSON file, diff against their local copy, know exactly what's stale, and can update only what changed.",
+      "why": "After BH-067 added the no-secrets rule, existing adopters had no path to the new BOTHORDE.md / INSTALL-FAQ.md other than `delete + re-run` or manual curl. That same gap exists for every future doc/script update. A manifest closes the gap once: bots fetch one tiny JSON file, diff against their local copy, know exactly what's stale, and can update only what changed.",
       "done_when": [
         "`bot-horde/MANIFEST.json` exists at repo root with `schema_version`, `updated` (ISO 8601 timestamp), and `files` (path \u2192 version date) for every managed file: BOTHORDE.md, INSTALL-FAQ.md, build.sh, build_lib.py, config.json, the workflow YAML, and the PM skill.",
         "`setup.sh` installs MANIFEST.json on fresh install (idempotent \u2014 skipped if present).",
@@ -1767,14 +1767,14 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-069",
+      "id": "BH-069",
       "title": "Filter and sort controls on the board",
       "status": "done",
       "priority": "Medium",
       "effort": "M",
       "feature_set": "feature-set-008-board-filtering",
       "related": [
-        "HB-060"
+        "BH-060"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1811,15 +1811,15 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-070",
+      "id": "BH-070",
       "title": "Hosted demo board with frozen example tickets",
       "status": "done",
       "priority": "Medium",
       "effort": "M",
       "feature_set": "feature-set-009-showcase",
       "related": [
-        "HB-060",
-        "HB-069"
+        "BH-060",
+        "BH-069"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -1850,7 +1850,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-071",
+      "id": "BH-071",
       "title": "`Split-from:` field for ticket decomposition",
       "status": "done",
       "priority": "Medium",
@@ -1865,27 +1865,27 @@ var D = {
       "completed": "2026-04-30",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Add an optional `**Split-from**: HB-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
+      "goal": "Add an optional `**Split-from**: BH-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
       "why": "A bot mid-claim sometimes realizes a ticket should have been three. Today there's no way to record that lineage in the schema \u2014 provenance lives in commit messages or Notes, neither of which is machine-readable. With this field, `git blame` on the new tickets is one click, and the audit trail for decomposition is preserved without conventions in commit messages.",
       "done_when": [
         "`build_lib.parse_ticket` recognizes `**Split-from**:` and returns `split_from` on the ticket dict (single ID or list, comma-separated)",
-        "Board renders `Split from HB-XXX` as a chip next to existing relationship chips, same styling",
+        "Board renders `Split from BH-XXX` as a chip next to existing relationship chips, same styling",
         "BOTHORDE.md schema reference lists `Split-from:` as an optional field with example",
         "PM skill prompt mentions `split_from` so it can populate the field when generating decomposed tickets",
         "`tests/test_parser.py` covers a ticket with `Split-from` set (single + multi)"
       ],
-      "desired_output": "A user splits HB-005 into HB-080, HB-081, HB-082. Each child shows a `Split from HB-005` chip. The parent's history is one click away.",
-      "success_signals": "- When the user later asks \"where did HB-080 come from?\", the answer is on the card, not buried in `git log`.\n- Bots writing decomposition tickets populate the field by default.",
-      "failure_signals": "- Field becomes decorative \u2014 bots forget to set it, no inverse rendering on the parent, audit value never materializes.\n- Mitigation: PM skill defaults to populating it; HB-076 validator does not require it (optional field).",
-      "tests": "- `tests/test_parser.py` adds two cases: ticket with `Split-from: HB-005` and ticket with `Split-from: HB-005, HB-006`\n- `tests/test_build.py` adds a case that confirms the chip renders in HTML",
-      "notes": "- Inverse rendering (\"Split into HB-080, HB-081\" on the parent) is **out of scope** for this ticket. Renderer infers other inverses (Blocks/Blocked-by) at build time; could add for split later as a polish pass if it becomes valuable.\n- Field is optional everywhere \u2014 legacy tickets without it parse fine.",
+      "desired_output": "A user splits BH-005 into BH-080, BH-081, BH-082. Each child shows a `Split from BH-005` chip. The parent's history is one click away.",
+      "success_signals": "- When the user later asks \"where did BH-080 come from?\", the answer is on the card, not buried in `git log`.\n- Bots writing decomposition tickets populate the field by default.",
+      "failure_signals": "- Field becomes decorative \u2014 bots forget to set it, no inverse rendering on the parent, audit value never materializes.\n- Mitigation: PM skill defaults to populating it; BH-076 validator does not require it (optional field).",
+      "tests": "- `tests/test_parser.py` adds two cases: ticket with `Split-from: BH-005` and ticket with `Split-from: BH-005, BH-006`\n- `tests/test_build.py` adds a case that confirms the chip renders in HTML",
+      "notes": "- Inverse rendering (\"Split into BH-080, BH-081\" on the parent) is **out of scope** for this ticket. Renderer infers other inverses (Blocks/Blocked-by) at build time; could add for split later as a polish pass if it becomes valuable.\n- Field is optional everywhere \u2014 legacy tickets without it parse fine.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-072",
+      "id": "BH-072",
       "title": "`Verification:` field separate from `Status:`",
       "status": "done",
       "priority": "High",
@@ -1909,13 +1909,13 @@ var D = {
         "Board renders a verification badge on done cards \u2014 mono uppercase, short label (e.g., `BOT` / `TESTS` / `BOT-REV` / `HUMAN-REV`), styled distinctly from status. `bot-claimed` is the visually weakest; `human-reviewed` is the strongest.",
         "BOTHORDE.md guidance section: explains the four states and who sets each",
         "PM skill prompt updated: when generating done-state tickets, include `Verification: bot-claimed` by default",
-        "HB-076 validator requires `Verification:` field on done/ tickets and rejects invalid values",
+        "BH-076 validator requires `Verification:` field on done/ tickets and rejects invalid values",
         "`tests/test_parser.py` covers parsing each of the four values + missing field"
       ],
       "desired_output": "A user looks at the done column. Tickets with `Verification: human-reviewed` look visibly more verified than `Verification: bot-claimed`. Trust is glanceable. A reviewer working through the pile can prioritize unreviewed tickets at a glance.",
       "success_signals": "- Over time, the proportion of `bot-claimed` \u2192 `human-reviewed` transitions reflects actual review cadence.\n- Bots downstream of completed work read `Verification:` to decide whether to trust an upstream change.",
       "failure_signals": "- Everything stays at `bot-claimed` forever because no human ever updates the field. The field becomes decorative noise.\n- Mitigation: board UI surfaces \"unverified\" count somewhere visible (e.g., column header subtitle); makes the gap visible.",
-      "tests": "- `tests/test_parser.py` \u2014 parse each of the four values + a missing-field case\n- Validator test (in HB-076): done ticket missing `Verification:` fails; done ticket with invalid value fails",
+      "tests": "- `tests/test_parser.py` \u2014 parse each of the four values + a missing-field case\n- Validator test (in BH-076): done ticket missing `Verification:` fails; done ticket with invalid value fails",
       "notes": "- **Not** a Status replacement. Status = workflow stage (which folder). Verification = trust level on the contents of a done ticket.\n- Allowed values are deliberately small (4) \u2014 easy to remember, no ambiguity. Resist adding more.\n- Out of scope: a \"verifying agent\" workflow that automates promotion from `tests-passed` to `bot-reviewed`. That's a v3.0 platform concern; here we're just shipping the schema field so it exists when that work happens.",
       "rejected_by": "",
       "rejected": "",
@@ -1923,7 +1923,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-073",
+      "id": "BH-073",
       "title": "`Failure-mode:` field on blocked tickets",
       "status": "done",
       "priority": "Medium",
@@ -1945,13 +1945,13 @@ var D = {
         "`build_lib.parse_ticket` recognizes `**Failure-mode**:` and returns `failure_mode` on the ticket dict",
         "Board renders the failure mode as a chip on blocked cards \u2014 accent-bordered, mono uppercase",
         "BOTHORDE.md guidance: when a bot moves a ticket to `blocked/`, it must set `Failure-mode:`. Reclaiming bots read the field first to decide whether to take it.",
-        "HB-076 validator requires `Failure-mode:` to be set when a ticket is in `blocked/`, and rejects invalid values",
+        "BH-076 validator requires `Failure-mode:` to be set when a ticket is in `blocked/`, and rejects invalid values",
         "`tests/test_parser.py` covers each value + a blocked ticket missing the field (validator test)"
       ],
       "desired_output": "User glances at the blocked column. `needs-human` chips show what's waiting on them. `context-exceeded` and `failed-tests` chips show what another bot could pick up.",
       "success_signals": "- Over time, the distribution of failure modes guides where to invest (lots of `context-exceeded` \u2192 smaller tickets; lots of `needs-human` \u2192 unclear specs).\n- Reclaiming bots filter blocked tickets by failure mode.",
       "failure_signals": "- Every blocked ticket gets `needs-human` because bots default to that. The field becomes useless.\n- Mitigation: BOTHORDE.md documents specific guidance per mode so bots can pick correctly.",
-      "tests": "- `tests/test_parser.py` \u2014 parse each of the five values\n- Validator test (in HB-076): blocked ticket without `Failure-mode:` fails; blocked ticket with invalid value fails",
+      "tests": "- `tests/test_parser.py` \u2014 parse each of the five values\n- Validator test (in BH-076): blocked ticket without `Failure-mode:` fails; blocked ticket with invalid value fails",
       "notes": "- **Out of scope**: introducing distinct folders per failure mode (e.g., `failed-tests/`, `merge-conflict/`). Field-on-card is the lightweight version; folders create mental + filesystem overhead and humans have to maintain them.\n- Allowed values are deliberately small (5) and cover the actual failure shapes we've seen. Adding values later is cheap; removing them later is hard.",
       "rejected_by": "",
       "rejected": "",
@@ -1959,7 +1959,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-074",
+      "id": "BH-074",
       "title": "Commit-message provenance convention",
       "status": "done",
       "priority": "Medium",
@@ -1975,7 +1975,7 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Document and adopt a commit-message convention for bot commits that captures model + trigger + ticket. Pure docs + PM skill update \u2014 no schema change, no validator, no enforcement. Audit comes from `git log` once the convention is in place.",
-      "why": "Git already records author, timestamp, and diff. What it doesn't capture: which model/agent did the work, what triggered the commit (claim, heartbeat, done, edit), and which ticket it serves. A simple trailer convention turns `git log --grep \"HB-072\"` into a complete audit trail with zero new infrastructure. Bots can read each other's history. Humans can answer \"what did the bots actually do this week?\" without reading source.\n\nThe trailer format:\n\n```\nHB-072: tests passing on verification field\n\n<commit body \u2014 short description of what changed>\n\nModel: claude-opus-4-7\nTrigger: HB-072 done\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\n```\n\n`Trigger:` format: `HB-XXX <action>` where action is one of: `claim`, `heartbeat`, `done`, `edit`, `blocked`, `reclaim`.",
+      "why": "Git already records author, timestamp, and diff. What it doesn't capture: which model/agent did the work, what triggered the commit (claim, heartbeat, done, edit), and which ticket it serves. A simple trailer convention turns `git log --grep \"BH-072\"` into a complete audit trail with zero new infrastructure. Bots can read each other's history. Humans can answer \"what did the bots actually do this week?\" without reading source.\n\nThe trailer format:\n\n```\nBH-072: tests passing on verification field\n\n<commit body \u2014 short description of what changed>\n\nModel: claude-opus-4-7\nTrigger: BH-072 done\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\n```\n\n`Trigger:` format: `BH-XXX <action>` where action is one of: `claim`, `heartbeat`, `done`, `edit`, `blocked`, `reclaim`.",
       "done_when": [
         "BOTHORDE.md gains a \"Provenance\" section that documents the convention with two or three example commits",
         "README mentions the convention briefly under an \"Auditability\" or \"Workflow\" subsection",
@@ -1983,7 +1983,7 @@ var D = {
         "One pytest assertion in `tests/test_parser.py` (or new `test_pm_skill_format.py`) confirms the PM skill's documented commit format example contains both trailers",
         "No code changes to build, no schema, no enforcement"
       ],
-      "desired_output": "Six months from now, `git log` is a readable, machine-greppable record of every bot decision. `git log --grep \"Trigger: HB-072\"` returns the full lifecycle of HB-072: claim, heartbeats, done, follow-up edits.",
+      "desired_output": "Six months from now, `git log` is a readable, machine-greppable record of every bot decision. `git log --grep \"Trigger: BH-072\"` returns the full lifecycle of BH-072: claim, heartbeats, done, follow-up edits.",
       "success_signals": "- Bots adopt the convention without prompting because the PM skill writes it.\n- Humans can audit a week's worth of bot work with two or three `git log` queries.",
       "failure_signals": "- Bots forget the trailers. Audit gracefully degrades \u2014 the commit still has author + timestamp + ticket reference in the subject line, just no model/trigger detail.\n- Mitigation: convention is documented in PM skill prompts so bots populate by default. If we later see widespread non-compliance, escalate to a commit-msg hook (out of scope for this ticket).",
       "tests": "- Pytest assertion that the PM skill commit-format example in `skills/product-manager/SKILL.md` contains `Model:` and `Trigger:` lines\n- (Optional) doc-lint test that BOTHORDE.md's Provenance section examples include both trailers",
@@ -1994,7 +1994,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-075",
+      "id": "BH-075",
       "title": "Dependency enforcement: render + filter",
       "status": "done",
       "priority": "Medium",
@@ -2009,21 +2009,21 @@ var D = {
       "completed": "2026-04-30",
       "verification": "tests-passed",
       "failure_mode": "",
-      "goal": "Existing `Blocked-by:` field is already parsed and rendered. Add: (a) a \"Ready only\" filter toggle on the board that hides backlog/in-progress tickets whose `Blocked-by:` references a ticket not yet in `done/`; (b) validator rule (HB-076) refusing `done/` placement while `Blocked-by:` references unfinished tickets.",
-      "why": "Today nothing prevents a bot from claiming a ticket whose dependencies aren't met. If HB-005 is `Blocked-by: HB-003` and HB-003 is in `backlog/`, a bot can grab HB-005 and burn cycles. The schema already encodes the dependency; we're not adding a feature, we're enforcing the field that already exists. The board filter helps humans + bots see only ready work; the validator catches premature done-transitions in CI.",
+      "goal": "Existing `Blocked-by:` field is already parsed and rendered. Add: (a) a \"Ready only\" filter toggle on the board that hides backlog/in-progress tickets whose `Blocked-by:` references a ticket not yet in `done/`; (b) validator rule (BH-076) refusing `done/` placement while `Blocked-by:` references unfinished tickets.",
+      "why": "Today nothing prevents a bot from claiming a ticket whose dependencies aren't met. If BH-005 is `Blocked-by: BH-003` and BH-003 is in `backlog/`, a bot can grab BH-005 and burn cycles. The schema already encodes the dependency; we're not adding a feature, we're enforcing the field that already exists. The board filter helps humans + bots see only ready work; the validator catches premature done-transitions in CI.",
       "done_when": [
         "Board filter bar gains a \"Ready only\" toggle (single checkbox, persists in `localStorage` under existing `hb_board_filters_v1` key)",
         "When toggle is on: tickets with at least one `Blocked-by:` reference that is **not** in `done/` are hidden from `backlog/` and `in-progress/` columns. `done/`, `blocked/`, and `not-doing/` columns are unaffected (they always show).",
         "Default toggle state: **off** \u2014 preserves current behavior for existing adopters; users opt in.",
-        "Validator (HB-076) refuses `done/` placement if any `Blocked-by:` reference points to a ticket not in `done/`. Error message lists the unmet deps.",
+        "Validator (BH-076) refuses `done/` placement if any `Blocked-by:` reference points to a ticket not in `done/`. Error message lists the unmet deps.",
         "BOTHORDE.md updated: agents check `Blocked-by:` before claiming; the validator will catch errors at build time",
         "`tests/test_build.py` covers: ready-only filter HTML output (toggle off \u2192 all visible; toggle on \u2192 blocked-by-unmet hidden)",
-        "Validator test (in HB-076): done-transition with unmet deps fails"
+        "Validator test (in BH-076): done-transition with unmet deps fails"
       ],
       "desired_output": "User toggles \"Ready only\" on the board. The backlog column shrinks to actionable work. CI catches accidental done-transitions of dependency-unmet tickets at PR time.",
       "success_signals": "- \"Ready only\" becomes a default-on view for active contributors (their preference stored in localStorage).\n- The validator rule catches at least one bad transition during the rollout period.",
       "failure_signals": "- \"Ready only\" filter logic conflicts with the existing single-select Priority/Effort/Feature-set filters in the bar. Mitigation: the new toggle is a checkbox alongside the dropdowns, not in the dropdown \u2014 independent filter axis.\n- Bots claim tickets via raw filesystem moves and bypass the filter view entirely. The filter is for humans; the validator is the enforcement.",
-      "tests": "- `tests/test_build.py` \u2014 render board with mixed deps, assert that `Ready only` mode hides the right cards\n- Validator test (in HB-076) \u2014 done ticket with unmet `Blocked-by:` fails with a clear error listing the unmet deps",
+      "tests": "- `tests/test_build.py` \u2014 render board with mixed deps, assert that `Ready only` mode hides the right cards\n- Validator test (in BH-076) \u2014 done ticket with unmet `Blocked-by:` fails with a clear error listing the unmet deps",
       "notes": "- **`Related:` is not a hard dependency** \u2014 the filter only acts on `Blocked-by:`. `Related:` continues to be informational.\n- **Default off** is a deliberate gentle rollout; can be flipped later if adopters prefer ready-only as the default.\n- The filter logic ('referenced ticket is not in `done/`') treats `not-doing/` as not-done. If a `Blocked-by:` reference is in `not-doing/`, the dependent ticket stays hidden when \"Ready only\" is on. This is correct: the dependency was abandoned, not satisfied.",
       "rejected_by": "",
       "rejected": "",
@@ -2031,7 +2031,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-076",
+      "id": "BH-076",
       "title": "`validate.py` enforcing the schema in CI",
       "status": "done",
       "priority": "High",
@@ -2040,10 +2040,10 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [
-        "HB-071",
-        "HB-072",
-        "HB-073",
-        "HB-075"
+        "BH-071",
+        "BH-072",
+        "BH-073",
+        "BH-075"
       ],
       "split_from": [],
       "assigned_to": "claude",
@@ -2051,8 +2051,8 @@ var D = {
       "completed": "2026-04-30",
       "verification": "tests-passed",
       "failure_mode": "",
-      "goal": "Add `bot-horde/validate.py` that walks the ticket tree, parses every ticket, and asserts each one against the schema. Wire it into `build.sh` so CI fails on malformed tickets. This is the enforcement layer that makes the new fields from HB-071/072/073/075 trustworthy.",
-      "why": "Today nothing checks that Status matches its folder, that dates parse, that referenced tickets exist, or that required fields are present. HB-060 sat in `backlog/` with `Status: in-progress` for two days because nothing caught it. With validation in CI, malformed tickets can't merge. As the schema gains fields (Verification, Failure-mode, Split-from), the only reasonable way to keep them honest is automated checking.",
+      "goal": "Add `bot-horde/validate.py` that walks the ticket tree, parses every ticket, and asserts each one against the schema. Wire it into `build.sh` so CI fails on malformed tickets. This is the enforcement layer that makes the new fields from BH-071/072/073/075 trustworthy.",
+      "why": "Today nothing checks that Status matches its folder, that dates parse, that referenced tickets exist, or that required fields are present. BH-060 sat in `backlog/` with `Status: in-progress` for two days because nothing caught it. With validation in CI, malformed tickets can't merge. As the schema gains fields (Verification, Failure-mode, Split-from), the only reasonable way to keep them honest is automated checking.",
       "done_when": [
         "New file `bot-horde/validate.py` that:",
         "Walks every ticket file in `backlog/`, `in-progress/`, `done/`, `blocked/`, `not-doing/`",
@@ -2066,7 +2066,7 @@ var D = {
         "**`Verification:` present and valid** (value in `bot-claimed | tests-passed | bot-reviewed | human-reviewed`) iff ticket is in `done/`",
         "**`Failure-mode:` present and valid** (value in `failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human`) iff ticket is in `blocked/`",
         "**Reference resolution**: every ID in `Blocked-by:`, `Blocks:`, `Related:`, `Split-from:` resolves to a real ticket file",
-        "**Dependency satisfaction**: when ticket is in `done/`, every `Blocked-by:` reference must be in `done/` (HB-075 enforcement)",
+        "**Dependency satisfaction**: when ticket is in `done/`, every `Blocked-by:` reference must be in `done/` (BH-075 enforcement)",
         "Prints all errors in a single pass with file path and line context",
         "Exit non-zero if any errors found, zero if all pass",
         "`build.sh` runs `python3 bot-horde/validate.py` before generating HTML; build fails on validation error",
@@ -2075,18 +2075,18 @@ var D = {
         "BOTHORDE.md gains a short \"Validation\" section: tickets are validated in CI, here are the rules",
         "Backfill: any existing tickets that fail the new rules are fixed in the same PR (expected: very few \u2014 most current tickets predate the new fields, and the new fields are not retroactively required for legacy tickets)"
       ],
-      "desired_output": "A contributor opens a PR with a malformed ticket. CI fails with a precise message: `bot-horde/blocked/HB-099-1234.md: Failure-mode is required for blocked tickets but was not set`. They fix it; CI passes.",
-      "success_signals": "- At least one PR is caught by the validator during the rollout period.\n- HB-060-style orphan-status tickets become impossible to land.",
+      "desired_output": "A contributor opens a PR with a malformed ticket. CI fails with a precise message: `bot-horde/blocked/BH-099-1234.md: Failure-mode is required for blocked tickets but was not set`. They fix it; CI passes.",
+      "success_signals": "- At least one PR is caught by the validator during the rollout period.\n- BH-060-style orphan-status tickets become impossible to land.",
       "failure_signals": "- Validator too strict \u2014 legacy tickets fail and have to be backfilled across the board. Mitigation: legacy tickets without Verification/Failure-mode pass silently if the new field is absent on a ticket created before this feature set lands. Concretely: only validate `Verification:` on done tickets that were touched after the validator landed (use Started/Completed date as the gate, OR backfill all done tickets to `bot-claimed` in the same PR).\n- Performance \u2014 walking ~30 tickets at build time is negligible (<100ms expected); flag if it becomes >500ms.",
-      "tests": "- `tests/test_validate.py` covers each error class with a minimal fixture ticket:\n  - Missing required field (Status, Priority, Effort)\n  - Status/folder mismatch (Status: done in backlog/)\n  - Unparseable date\n  - Assigned-to missing on in-progress\n  - Completed missing on done\n  - Verification missing or invalid on done\n  - Failure-mode missing or invalid on blocked\n  - Unresolved reference (Blocked-by: HB-9999)\n  - Done with unmet deps (Blocked-by: HB-003 where HB-003 is in backlog/)\n- `tests/test_build.py` confirms `build.sh` exits non-zero when a tmp ticket tree contains a malformed ticket",
-      "notes": "- **Build-sequence dependency**: this ticket is `Blocked-by: HB-071, HB-072, HB-073, HB-075` because it enforces fields/rules those tickets introduce. Build them first; this ticket lands last in the feature set.\n- **No fix-it mode.** The validator only reports; it doesn't auto-fix. Auto-fix would mask schema drift instead of surfacing it.\n- **Performance budget**: keep validation under 500ms on a tree of 100 tickets. Use simple file walks, no expensive parsing beyond what `build_lib.parse_ticket` already does.",
+      "tests": "- `tests/test_validate.py` covers each error class with a minimal fixture ticket:\n  - Missing required field (Status, Priority, Effort)\n  - Status/folder mismatch (Status: done in backlog/)\n  - Unparseable date\n  - Assigned-to missing on in-progress\n  - Completed missing on done\n  - Verification missing or invalid on done\n  - Failure-mode missing or invalid on blocked\n  - Unresolved reference (Blocked-by: BH-9999)\n  - Done with unmet deps (Blocked-by: BH-003 where BH-003 is in backlog/)\n- `tests/test_build.py` confirms `build.sh` exits non-zero when a tmp ticket tree contains a malformed ticket",
+      "notes": "- **Build-sequence dependency**: this ticket is `Blocked-by: BH-071, BH-072, BH-073, BH-075` because it enforces fields/rules those tickets introduce. Build them first; this ticket lands last in the feature set.\n- **No fix-it mode.** The validator only reports; it doesn't auto-fix. Auto-fix would mask schema drift instead of surfacing it.\n- **Performance budget**: keep validation under 500ms on a tree of 100 tickets. Use simple file walks, no expensive parsing beyond what `build_lib.parse_ticket` already does.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-077",
+      "id": "BH-077",
       "title": "Stale-claim render on in-progress cards",
       "status": "done",
       "priority": "Medium",
@@ -2122,7 +2122,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-078",
+      "id": "BH-078",
       "title": "Polling source honesty + README update",
       "status": "done",
       "priority": "Medium",
@@ -2160,7 +2160,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-079",
+      "id": "BH-079",
       "title": "Post-rename test infrastructure cleanup",
       "status": "done",
       "priority": "Medium",
@@ -2179,7 +2179,7 @@ var D = {
       "why": "Both bugs make the test setup pretend to work. Standalone path invocations fail with `ModuleNotFoundError: build_lib`, hiding why CI passes but local runs of a single file don't. The regression test claims to verify every committed ticket parses \u2014 but currently walks zero files, catching nothing. As fs-010 adds new schema fields (Verification, Failure-mode), that regression test is exactly what we need to catch breakage on real tickets.",
       "done_when": [
         "`conftest.py` at repo root adds `bot-horde/` to `sys.path` (not just repo root) so `from build_lib import ...` resolves regardless of pytest invocation form",
-        "`tests/test_parser.py::test_every_committed_ticket_parses_without_error` globs `HB-*.md` and asserts a non-zero ticket count walked (so an empty walk is caught)",
+        "`tests/test_parser.py::test_every_committed_ticket_parses_without_error` globs `BH-*.md` and asserts a non-zero ticket count walked (so an empty walk is caught)",
         "`py -m pytest tests/test_parser.py` passes standalone (currently fails)",
         "Full `py -m pytest` continues to pass"
       ],
@@ -2187,14 +2187,14 @@ var D = {
       "success_signals": "- `py -m pytest tests/test_parser.py` passes \u2014 local debugging works\n- Schema breakage from fs-010 work (new Verification/Failure-mode field handling) gets caught against real tickets, not just synthetic fixtures",
       "failure_signals": "- conftest path fix breaks unrelated Python module resolution \u2014 unlikely (no name collisions in `bot-horde/`)",
       "tests": "- `py -m pytest tests/test_parser.py` standalone \u2192 passes\n- `py -m pytest` from repo root \u2192 all tests pass (count grows by 0 or 1)\n- Verify empty-walk assertion fires: temporarily change glob back to `CM-*.md`; the count assertion should fail",
-      "notes": "- Surfaced during HB-071 build. The conftest bug predates the rename (path was always wrong); the glob bug was introduced by the Phase 3 rename when prefix flipped CM \u2192 HB but the test wasn't updated.\n- **Out of scope**: broader test refactors (no parametrize sweep, no fixture dir reorg). Just the two specific fixes.",
+      "notes": "- Surfaced during BH-071 build. The conftest bug predates the rename (path was always wrong); the glob bug was introduced by the Phase 3 rename when prefix flipped CM \u2192 HB but the test wasn't updated.\n- **Out of scope**: broader test refactors (no parametrize sweep, no fixture dir reorg). Just the two specific fixes.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-010",
+      "id": "BH-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not-doing",
       "priority": "Low",
@@ -2210,12 +2210,12 @@ var D = {
       "verification": "",
       "failure_mode": "",
       "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
-      "why": "The product-manager skill (HB-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
+      "why": "The product-manager skill (BH-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
       "done_when": [
         "Config file migrates from `bot-horde-config.json` to `Horde of Bots-config.jsonc` (JSONC = JSON + comments). Existing JSON readers updated to strip comments before parsing. Works in any project, no new runtime dependencies.",
         "New block in the config:",
         "Off by default. Explicit opt-in. Setup wizard does NOT prompt for it \u2014 users flip the flag themselves.",
-        "`reviewer_llm_engaged` absent or `false` \u2192 no review, no network call, no warning. Behavior identical to HB-004 baseline.",
+        "`reviewer_llm_engaged` absent or `false` \u2192 no review, no network call, no warning. Behavior identical to BH-004 baseline.",
         "`reviewer_llm_engaged` true AND both `provider` + `api_key` non-empty \u2192 review pass runs.",
         "`reviewer_llm_engaged` true AND `provider` or `api_key` missing/empty \u2192 **reject**: skip the review, print a one-line warning to stderr, append a one-line note to the draft the user sees (\"\u26a0 reviewer config incomplete \u2014 skipping review\"). Draft still proceeds normally.",
         "Any runtime error during review (network failure, invalid key, bad provider response, unknown provider name) \u2192 **log the error to stderr, include a one-line note in the draft, continue with the unreviewed draft**. Never crash the PM skill or the session.",
@@ -2223,17 +2223,17 @@ var D = {
         "User sees the final (reviewed) draft. The review exchange is not shown unless they ask."
       ],
       "desired_output": "An optional critic pass that tightens drafts when turned on, and is a silent no-op when turned off. A misconfiguration is visible but non-fatal \u2014 it never blocks ticket creation.",
-      "success_signals": "- Engaged + valid: drafts arrive with tighter acceptance criteria and clearer risk callouts.\n- Engaged + misconfigured: user sees \"\u26a0 reviewer config incomplete\" and the draft still lands. They fix the config at their leisure.\n- Disengaged: behavior is identical to HB-004 baseline.\n- Runtime error mid-review: user sees \"\u26a0 reviewer errored \u2014 using unreviewed draft\" and the draft still lands.",
+      "success_signals": "- Engaged + valid: drafts arrive with tighter acceptance criteria and clearer risk callouts.\n- Engaged + misconfigured: user sees \"\u26a0 reviewer config incomplete\" and the draft still lands. They fix the config at their leisure.\n- Disengaged: behavior is identical to BH-004 baseline.\n- Runtime error mid-review: user sees \"\u26a0 reviewer errored \u2014 using unreviewed draft\" and the draft still lands.",
       "failure_signals": "- Latency spike on ticket creation when engaged (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n- Any failure mode that crashes the PM skill instead of degrading gracefully",
       "tests": "- Unit: `reviewer_llm_engaged` absent \u2192 single draft pass-through unchanged, no warning surfaced.\n- Unit: `reviewer_llm_engaged` false \u2192 identical to above.\n- Unit: `reviewer_llm_engaged` true, `provider` empty \u2192 draft passes through with warning, no LLM call made.\n- Unit: `reviewer_llm_engaged` true, `api_key` empty \u2192 same as above.\n- Unit: engaged + valid + reviewer returns \"approved\" \u2192 draft unchanged.\n- Unit: engaged + valid + reviewer returns \"revise\" \u2192 draft rewritten exactly once.\n- Unit: engaged + valid + reviewer call throws \u2192 draft passes through with warning, no crash.\n- Unit: JSONC parser handles: no comments, line `//` comments, block `/* */` comments, trailing commas disallowed (strict).",
-      "notes": "**Sequencing**: depends on HB-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Config format decision**: JSONC over plain JSON because the optional reviewer block benefits from inline instructions. JSONC over TypeScript because Horde of Bots must work in any project (Python, Go, static HTML, etc.) \u2014 forcing a TS runtime on non-TS users would break the \"zero dependencies beyond git\" promise.\n\n**Error surface**: stderr + a one-line note on the draft the user sees. No separate log file. The user finds out about misconfiguration at the moment it matters \u2014 when they're about to approve a draft.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance\n- TypeScript config file \u2192 rejected; forces TS runtime on every consumer (bash, python, board HTML) and breaks the \"any stack\" promise\n- Separate log file for reviewer errors \u2192 rejected; adds state the user has to know about; stderr + draft note reach the human when it matters",
+      "notes": "**Sequencing**: depends on BH-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Config format decision**: JSONC over plain JSON because the optional reviewer block benefits from inline instructions. JSONC over TypeScript because Horde of Bots must work in any project (Python, Go, static HTML, etc.) \u2014 forcing a TS runtime on non-TS users would break the \"zero dependencies beyond git\" promise.\n\n**Error surface**: stderr + a one-line note on the draft the user sees. No separate log file. The user finds out about misconfiguration at the moment it matters \u2014 when they're about to approve a draft.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance\n- TypeScript config file \u2192 rejected; forces TS runtime on every consumer (bash, python, board HTML) and breaks the \"any stack\" promise\n- Separate log file for reviewer errors \u2192 rejected; adds state the user has to know about; stderr + draft note reach the human when it matters",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-011",
+      "id": "BH-011",
       "title": "Animated forge scenes at column headers",
       "status": "not-doing",
       "priority": "Medium",
@@ -2270,7 +2270,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-045",
+      "id": "BH-045",
       "title": "Test ticket from curl",
       "status": "not-doing",
       "priority": "Low",
@@ -2299,7 +2299,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-046",
+      "id": "BH-046",
       "title": "test",
       "status": "not-doing",
       "priority": "Low",
@@ -2328,7 +2328,7 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-047",
+      "id": "BH-047",
       "title": "testing flow 1",
       "status": "not-doing",
       "priority": "Low",
@@ -2357,14 +2357,14 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-053",
+      "id": "BH-053",
       "title": "Animation demo \u2014 visual test card (do not move)",
       "status": "not-doing",
       "priority": "Low",
       "effort": "XS",
       "feature_set": "feature-set-004-board-ux",
       "related": [
-        "HB-052"
+        "BH-052"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -2374,8 +2374,8 @@ var D = {
       "completed": "",
       "verification": "",
       "failure_mode": "",
-      "goal": "Live in-progress card on the board so the user can evaluate the walking-robot animation shipped by HB-052.",
-      "why": "HB-052 shipped the animation but there is no real in-progress work to render it against. This card exists purely to make the animation visible while the user reviews it.",
+      "goal": "Live in-progress card on the board so the user can evaluate the walking-robot animation shipped by BH-052.",
+      "why": "BH-052 shipped the animation but there is no real in-progress work to render it against. This card exists purely to make the animation visible while the user reviews it.",
       "done_when": [],
       "desired_output": "",
       "success_signals": "",
@@ -2388,15 +2388,15 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-054",
+      "id": "BH-054",
       "title": "Animation demo \u2014 second agent (do not move)",
       "status": "not-doing",
       "priority": "Low",
       "effort": "XS",
       "feature_set": "feature-set-004-board-ux",
       "related": [
-        "HB-052",
-        "HB-053"
+        "BH-052",
+        "BH-053"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -2406,7 +2406,7 @@ var D = {
       "completed": "",
       "verification": "",
       "failure_mode": "",
-      "goal": "Second live in-progress card so the user can compare the per-agent robot color against HB-053 (test-agent).",
+      "goal": "Second live in-progress card so the user can compare the per-agent robot color against BH-053 (test-agent).",
       "why": "With two cards in `in-progress/` assigned to different agents, the user can verify that the per-agent color hashing actually produces visibly different robots.",
       "done_when": [],
       "desired_output": "",
@@ -2420,16 +2420,16 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-055",
+      "id": "BH-055",
       "title": "Animation demo \u2014 third agent (do not move)",
       "status": "not-doing",
       "priority": "Low",
       "effort": "XS",
       "feature_set": "feature-set-004-board-ux",
       "related": [
-        "HB-052",
-        "HB-053",
-        "HB-054"
+        "BH-052",
+        "BH-053",
+        "BH-054"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -2453,17 +2453,17 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-056",
+      "id": "BH-056",
       "title": "Animation demo \u2014 fourth agent (do not move)",
       "status": "not-doing",
       "priority": "Low",
       "effort": "XS",
       "feature_set": "feature-set-004-board-ux",
       "related": [
-        "HB-052",
-        "HB-053",
-        "HB-054",
-        "HB-055"
+        "BH-052",
+        "BH-053",
+        "BH-054",
+        "BH-055"
       ],
       "blocks": [],
       "blocked_by": [],
@@ -2492,40 +2492,40 @@ var D = {
       "id": "feature-set-001-supabase-upgrade",
       "name": "[feature-set-001] Supabase Upgrade",
       "goal": "Replace the Gist-based locking and per-user GitHub PAT setup with a Supabase-backed multi-user, access-controlled, live ticket board.",
-      "rationale": "The current setup uses a fragile GitHub Gist for locking, has zero history of ticket transitions, and requires every user to bring their own GitHub PAT for the Add Story button. HB-005 through HB-009 together replace that surface \u2014 schema, server-side write path, board access modes, agent locking via Supabase, and setup docs \u2014 into one coherent architectural cut. Bundling them prevents partial migrations that leave the system in two states at once.",
+      "rationale": "The current setup uses a fragile GitHub Gist for locking, has zero history of ticket transitions, and requires every user to bring their own GitHub PAT for the Add Story button. BH-005 through BH-009 together replace that surface \u2014 schema, server-side write path, board access modes, agent locking via Supabase, and setup docs \u2014 into one coherent architectural cut. Bundling them prevents partial migrations that leave the system in two states at once.",
       "status": "Done \u2014 2026-04-16",
       "tickets": [
-        "HB-005",
-        "HB-006",
-        "HB-007",
-        "HB-008",
-        "HB-009",
-        "HB-012"
+        "BH-005",
+        "BH-006",
+        "BH-007",
+        "BH-008",
+        "BH-009",
+        "BH-012"
       ]
     },
     {
       "id": "feature-set-002-workflow-hygiene",
       "name": "[feature-set-002] Workflow Hygiene",
       "goal": "Reshape the Horde of Bots ticket workflow so the agent operates as a senior technical PM, ticket structure carries explicit success/failure signals, tickets can reference each other, and ticket drafts can optionally pass through a critic.",
-      "rationale": "Tickets created by the LLM today follow a thin format and a developer-voice persona, with no way to express relationships between work items. HB-003, HB-004, and HB-010 collectively address all three: relationship fields (HB-003), PM persona + new sections + product-manager skill (HB-004), and second-LLM critic on drafts (HB-010). Bundling keeps the ticket-format changes coherent and avoids two formats coexisting mid-rollout.",
+      "rationale": "Tickets created by the LLM today follow a thin format and a developer-voice persona, with no way to express relationships between work items. BH-003, BH-004, and BH-010 collectively address all three: relationship fields (BH-003), PM persona + new sections + product-manager skill (BH-004), and second-LLM critic on drafts (BH-010). Bundling keeps the ticket-format changes coherent and avoids two formats coexisting mid-rollout.",
       "status": "In progress",
       "tickets": [
-        "HB-003",
-        "HB-004",
-        "HB-010"
+        "BH-003",
+        "BH-004",
+        "BH-010"
       ]
     },
     {
       "id": "feature-set-003-scope-hygiene",
       "name": "[feature-set-003] Scope & footprint hygiene",
       "goal": "Make it mechanically clear that Horde of Bots is dev workflow tooling, not product code \u2014 through explicit scope docs, folder consolidation, install-time deploy-ignore defaults, and a quieter CI workflow.",
-      "rationale": "An adopter running Horde of Bots inside a production monorepo (hana-core) reported that Horde of Bots files leaked into their mental model of product code, caused deploy-pipeline anxiety, and created noise commits on `main`. Root cause: Horde of Bots's files are scattered across repo root and the docs don't explicitly mark the project as dev-only. This feature set hardens the line between \"Horde of Bots (dev workflow)\" and \"product code\" through four coherent changes. Bundled because HB-050 depends on HB-049, and HB-048 documents the rule that HB-049/050/051 make enforceable.",
+      "rationale": "An adopter running Horde of Bots inside a production monorepo (hana-core) reported that Horde of Bots files leaked into their mental model of product code, caused deploy-pipeline anxiety, and created noise commits on `main`. Root cause: Horde of Bots's files are scattered across repo root and the docs don't explicitly mark the project as dev-only. This feature set hardens the line between \"Horde of Bots (dev workflow)\" and \"product code\" through four coherent changes. Bundled because BH-050 depends on BH-049, and BH-048 documents the rule that BH-049/050/051 make enforceable.",
       "status": "Done \u2014 2026-04-24",
       "tickets": [
-        "HB-048",
-        "HB-049",
-        "HB-050",
-        "HB-051"
+        "BH-048",
+        "BH-049",
+        "BH-050",
+        "BH-051"
       ]
     },
     {
@@ -2535,11 +2535,11 @@ var D = {
       "rationale": "The board is the primary \"humans watch what bots are doing\" surface. Static cards do not communicate that work is actually happening; subtle animation does. This feature set collects polish work that improves the watching experience without adding runtime dependencies or heavy assets.",
       "status": "Done \u2014 2026-04-27",
       "tickets": [
-        "HB-052",
-        "HB-053",
-        "HB-054",
-        "HB-055",
-        "HB-056"
+        "BH-052",
+        "BH-053",
+        "BH-054",
+        "BH-055",
+        "BH-056"
       ]
     },
     {
@@ -2549,9 +2549,9 @@ var D = {
       "rationale": "Supabase was added in feature-set-001 to give the board live updates and a server-side ticket-ID claim. In practice the project pauses after a week of inactivity, the migrations are fragile across pause-restore cycles, and the cost (Edge Function deploy, CLI install, three SQL migrations, two API keys) far outweighs the benefit (30-second freshness vs. live updates). Git is already the source of truth; the browser already has the user's GitHub PAT. Removing the backend simplifies setup from ~15 minutes to ~30 seconds and eliminates the project-paused failure mode entirely.",
       "status": "Done \u2014 2026-04-27",
       "tickets": [
-        "HB-057",
-        "HB-058",
-        "HB-059"
+        "BH-057",
+        "BH-058",
+        "BH-059"
       ]
     },
     {
@@ -2561,7 +2561,7 @@ var D = {
       "rationale": "The user owns simplifyops.com and wants Horde of Bots visually unified with it. The styleguide is well-defined and complete. Redesign happens before the kill-Supabase work (feature-set-005) because visual changes get faster feedback and the Supabase removal doesn't touch CSS \u2014 the two streams are independent.",
       "status": "In progress",
       "tickets": [
-        "HB-060"
+        "BH-060"
       ]
     },
     {
@@ -2571,12 +2571,12 @@ var D = {
       "rationale": "A user reviewing the install before running it found a real install-blocker (build.sh + workflow not actually downloaded by setup.sh), several non-interactive-install hazards, and a long list of clarifying questions about behavior. Most of the clarifications are answerable but live nowhere in the repo today; they get asked over and over. This feature set turns the answers into either code (when there's a fix) or a single FAQ file the agent + adopter read at install time.",
       "status": "Done \u2014 2026-04-27",
       "tickets": [
-        "HB-061",
-        "HB-062",
-        "HB-063",
-        "HB-064",
-        "HB-065",
-        "HB-066"
+        "BH-061",
+        "BH-062",
+        "BH-063",
+        "BH-064",
+        "BH-065",
+        "BH-066"
       ]
     },
     {
@@ -2584,9 +2584,9 @@ var D = {
       "name": "[feature-set-008] Board filtering",
       "goal": "User-side controls (filter, sort, eventually search) for slicing the board without rebuilding it.",
       "rationale": "Once a backlog has dozens of tickets, the bare kanban gets noisy. This set covers the lightweight client-side controls a user reaches for to focus the view. Distinct from feature-set-004-board-ux (animation, perimeter robot) and feature-set-006-redesign (visual styling) \u2014 those are fixed presentation concerns, this is dynamic user control.",
-      "status": "In progress \u2014 v1 shipped in HB-069. Future work in this set: search-by-text, filter-by-assignee, saved filter presets (each as its own ticket if pulled).",
+      "status": "In progress \u2014 v1 shipped in BH-069. Future work in this set: search-by-text, filter-by-assignee, saved filter presets (each as its own ticket if pulled).",
       "tickets": [
-        "HB-069"
+        "BH-069"
       ]
     },
     {
@@ -2596,7 +2596,7 @@ var D = {
       "rationale": "Adopters install on a hunch \u2014 \"looks interesting, let's try it.\" The hunch is built on what they see in the README and any live preview. This set collects work that lowers the bar from \"imagine your board with tickets\" to \"click and look.\"",
       "status": "In progress \u2014 demo live; README screenshot + demo URL link land next.",
       "tickets": [
-        "HB-070"
+        "BH-070"
       ]
     },
     {
@@ -2606,12 +2606,12 @@ var D = {
       "rationale": "Feedback (\"v3.0\") proposed a category-redefining bot-native tracker. Most of the proposal required infrastructure and broke the files-and-git contract that makes Horde of Bots small. A subset \u2014 the schema-only items \u2014 is implementable as additions to the existing markdown format with no platform jump. This feature set ships exactly that subset, plus a validator that makes the new fields trustworthy.\n\nThe platform-scale items (capability matching, scheduling, cross-repo coordination, lease daemons) are deferred to a separate exploration doc and are not work in this repo.",
       "status": "Backlog",
       "tickets": [
-        "HB-071",
-        "HB-072",
-        "HB-073",
-        "HB-074",
-        "HB-075",
-        "HB-076"
+        "BH-071",
+        "BH-072",
+        "BH-073",
+        "BH-074",
+        "BH-075",
+        "BH-076"
       ]
     },
     {
@@ -2621,22 +2621,22 @@ var D = {
       "rationale": "Two small fixes surfaced during the v3.0 feedback evaluation but didn't fit the schema-redesign feature set (fs-010). Both reduce false confidence in what the board displays:\n\n- A claim sitting with no commits in 18h looks alive until someone reads the file.\n- Polling tries to hit GitHub even on `file://` and non-GitHub hosts, then quietly fails.\n\nBundled because they're the same shape of fix at different layers (render + config). Independent on their own; together they're a coherent \"honest presentation\" pass.",
       "status": "Backlog",
       "tickets": [
-        "HB-077",
-        "HB-078"
+        "BH-077",
+        "BH-078"
       ]
     },
     {
       "id": "feature-set-012-test-infrastructure",
       "name": "[feature-set-012] Test infrastructure",
       "goal": "Test infrastructure that actually works \u2014 pytest invocation forms all succeed, regression tests verify real state, no silent passes.",
-      "rationale": "Two pre-existing bugs surfaced during the fs-010 build (HB-071): the repo-root `conftest.py` adds the wrong path so specific-test pytest invocations fail, and a regression test still globs the pre-rename ticket prefix so it walks zero files. Bundled because both are \"the test setup pretends to work but doesn't\" \u2014 same shape at different layers. One-ticket feature set today; if similar rot surfaces, add to it.",
+      "rationale": "Two pre-existing bugs surfaced during the fs-010 build (BH-071): the repo-root `conftest.py` adds the wrong path so specific-test pytest invocations fail, and a regression test still globs the pre-rename ticket prefix so it walks zero files. Bundled because both are \"the test setup pretends to work but doesn't\" \u2014 same shape at different layers. One-ticket feature set today; if similar rot surfaces, add to it.",
       "status": "Backlog",
       "tickets": [
-        "HB-079"
+        "BH-079"
       ]
     }
   ],
-  "generated": "2026-04-30T16:40:14.474442+00:00",
+  "generated": "2026-04-30T16:49:58.878120+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3093,7 +3093,7 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
-var TICKET_PREFIX = "HB";
+var TICKET_PREFIX = "BH";
 var TICKET_ID_RE = new RegExp('^' + TICKET_PREFIX + '-(\\d+)$');
 function nextTicketIdNumber() {
   var max = 0;
@@ -3252,7 +3252,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "f152b5c8b5d7e1b1e5ddfb6cd2015da3daf743b4", "poll_source": "github"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "d34ba61275e92a8813c588069fed4f001b2983b3", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
@@ -3260,7 +3260,7 @@ document.addEventListener('keydown', function(e) {
   var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
   var indicator = document.getElementById('hb-live-indicator');
 
-  // HB-078: pollSource: "none" — board is served somewhere off-GitHub (or
+  // BH-078: pollSource: "none" — board is served somewhere off-GitHub (or
   // bundled offline). Surface that explicitly instead of attempting fetches
   // that will fail.
   if (cfg.poll_source === 'none') {
