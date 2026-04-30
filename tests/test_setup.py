@@ -110,6 +110,42 @@ def test_local_only_mode_adds_marker_comment_to_gitignore(tmp_path):
     assert "rebuild-board workflow intentionally not installed" in gi
 
 
+def test_setup_strips_stale_horde_of_bots_import_block(tmp_path):
+    """An adopter who installed the previous (Horde of Bots) version has a
+    stale `<!-- horde-of-bots import block -->` marker pair plus an
+    `@horde-of-bots/HORDEOFBOTS.md` import in their CLAUDE.md. setup.sh must
+    strip the old block in-place before adding the new bot-horde block."""
+    _stage_repo(tmp_path, "", with_workflow=True)
+    (tmp_path / "CLAUDE.md").write_text(
+        "Existing project rules.\n"
+        "\n"
+        "<!-- horde-of-bots import block — managed by setup.sh; remove the block to disable horde-of-bots -->\n"
+        "# horde-of-bots\n"
+        "@horde-of-bots/HORDEOFBOTS.md\n"
+        "<!-- /horde-of-bots import block -->\n"
+        "\n"
+        "More project rules.\n",
+        encoding="utf-8",
+    )
+
+    result = _run_setup(tmp_path, {})
+    assert result.returncode == 0, \
+        f"setup.sh failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+
+    claude_md = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
+    # Stale markers and stale import gone
+    assert "horde-of-bots import block" not in claude_md, \
+        "stale Horde-of-Bots marker survived the upgrade"
+    assert "@horde-of-bots/HORDEOFBOTS.md" not in claude_md, \
+        "stale Horde-of-Bots import line survived the upgrade"
+    # New block in place
+    assert "<!-- bot-horde import block" in claude_md
+    assert "@bot-horde/BOTHORDE.md" in claude_md
+    # Surrounding content preserved
+    assert "Existing project rules." in claude_md
+    assert "More project rules." in claude_md
+
+
 def test_local_only_mode_detection_ignores_unrelated_lines(tmp_path):
     """A .gitignore that mentions horde-of-bots in a comment or a partial-match
     pattern (e.g. horde-of-bots-output/, foo/bot-horde/) must NOT trigger

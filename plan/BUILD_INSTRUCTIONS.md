@@ -1,8 +1,10 @@
-# Horde of Bots v3 — build instructions for Claude Code
+# Bot Horde — historical build instructions (archived)
+
+> **Note:** this is an archived build-instructions document from an earlier era of the project (when feature sets and the visual board were being added). Some of the directives here are stale — directory naming has been finalized as `bot-horde/feature-sets/` (hyphenated, not "feature sets"), the generated board is `bot-horde/board.html` (not `bot-horde-board.html`), the ticket prefix is `BH-` (not `CM-`), and the design has since been redone in a brutalist style per `plan/style-guide.md`. Refer to the current code and `bot-horde/BOTHORDE.md` for the live spec; this file is kept for historical context only.
 
 ## Overview
 
-We are adding two things to Horde of Bots:
+We are adding two things to Bot Horde:
 1. Feature Set support — a way to group tickets under a named goal
 2. A visual board — a single HTML file that shows all tickets in two views
 

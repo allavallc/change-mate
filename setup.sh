@@ -264,6 +264,33 @@ CM_MARKER_OPEN="<!-- bot-horde import block — managed by setup.sh; remove the 
 CM_MARKER_CLOSE="<!-- /bot-horde import block -->"
 IMPORT_LINE="@bot-horde/BOTHORDE.md"
 
+# Backward-compat: adopters of the previous names (Horde of Bots, change-mate)
+# have stale marker blocks and stale @-imports in their CLAUDE.md. Strip those
+# in-place so the fresh-add logic below produces a single clean block.
+if [ -f "CLAUDE.md" ]; then
+  STALE_OPENS=("<!-- horde-of-bots import block" "<!-- change-mate import block")
+  STALE_CLOSES=("<!-- /horde-of-bots import block -->" "<!-- /change-mate import block -->")
+  STALE_IMPORTS=("@horde-of-bots/HORDEOFBOTS.md" "@change-mate/CHANGEMATE.md")
+  STALE_HASHES=("# horde-of-bots" "# change-mate")
+  for i in 0 1; do
+    if grep -qF "${STALE_OPENS[$i]}" CLAUDE.md; then
+      awk -v open_pat="${STALE_OPENS[$i]}" -v close_pat="${STALE_CLOSES[$i]}" '
+        in_block { if (index($0, close_pat)) in_block=0; next }
+        index($0, open_pat) { in_block=1; next }
+        { print }
+      ' CLAUDE.md > CLAUDE.md.cmtmp && mv CLAUDE.md.cmtmp CLAUDE.md
+      echo -e "${YELLOW}~${NC} removed stale ${STALE_OPENS[$i]/<!-- /} block from CLAUDE.md (project renamed to Bot Horde)"
+    fi
+    # Strip any orphan un-wrapped @-import / hash-comment line.
+    for orphan in "${STALE_IMPORTS[$i]}" "${STALE_HASHES[$i]}"; do
+      if grep -qxF "$orphan" CLAUDE.md; then
+        grep -vxF "$orphan" CLAUDE.md > CLAUDE.md.cmtmp && mv CLAUDE.md.cmtmp CLAUDE.md
+        echo -e "${YELLOW}~${NC} removed orphan '$orphan' line from CLAUDE.md"
+      fi
+    done
+  done
+fi
+
 write_cm_block() {
   printf '%s\n# bot-horde\n%s\n%s\n' "$CM_MARKER_OPEN" "$IMPORT_LINE" "$CM_MARKER_CLOSE"
 }
