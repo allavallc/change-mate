@@ -504,6 +504,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .b-medium   { color: var(--ink-dim); border-color: var(--line); }
 .b-low      { color: var(--ink-dimmer); border-color: var(--line); }
 .b-effort   { color: var(--ink-dim); border-color: var(--line); }
+.b-userfacing { color: var(--accent); border-color: var(--accent); }
 .card-crab {
   display: inline-flex;
   align-items: center;
@@ -1097,7 +1098,7 @@ function cardHTML(t, isRejected) {
     + fsChip
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
-    + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
+    + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + (t.user_facing === 'yes' ? '<span class="badge b-userfacing" title="User-facing — needs acceptance test">USER-FACING</span>' : '') + '</div>'
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + failChip

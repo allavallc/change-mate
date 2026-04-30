@@ -394,6 +394,7 @@ BH-004-1736847392.md
 - **Completed**: <YYYY-MM-DD or blank>
 - **Verification**: <bot-claimed | tests-passed | bot-reviewed | human-reviewed> (set on `done/` tickets; blank otherwise)
 - **Failure mode**: <failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human> (required when ticket is in `blocked/`, blank otherwise)
+- **User-facing**: yes | no (default `no`; set `yes` when the ticket changes something a user sees or interacts with — UI, copy, a flow, observable behaviour. Triggers the acceptance loop in fs-013.)
 - **Rejected by**: <name or blank>
 - **Rejected**: <YYYY-MM-DD or blank>
 - **Rejection reason**: <reason or blank>

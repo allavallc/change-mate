@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "updated": "2026-04-30T19:30:00Z",
+  "updated": "2026-04-30T19:50:00Z",
   "files": {
-    "bot-horde/BOTHORDE.md": "2026-04-30T19:30:00Z",
+    "bot-horde/BOTHORDE.md": "2026-04-30T19:50:00Z",
     "bot-horde/INSTALL-FAQ.md": "2026-04-30T19:00:00Z",
     "bot-horde/UPDATING.md": "2026-04-29T14:00:00Z",
-    "bot-horde/MANIFEST.json": "2026-04-30T19:30:00Z",
-    "bot-horde/build.sh": "2026-04-30T19:30:00Z",
-    "bot-horde/build_lib.py": "2026-04-30T15:00:00Z",
+    "bot-horde/MANIFEST.json": "2026-04-30T19:50:00Z",
+    "bot-horde/build.sh": "2026-04-30T19:50:00Z",
+    "bot-horde/build_lib.py": "2026-04-30T19:50:00Z",
     "bot-horde/validate.py": "2026-04-30T17:00:00Z",
     "bot-horde/config.json": "2026-04-29T19:00:00Z",
     ".github/workflows/bot-horde-rebuild-board.yml": "2026-04-29T19:00:00Z",
-    "skills/product-manager/SKILL.md": "1.5.0"
+    "skills/product-manager/SKILL.md": "1.6.0"
   }
 }

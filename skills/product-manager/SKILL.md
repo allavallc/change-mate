@@ -1,12 +1,12 @@
 ---
 name: product-manager
 description: Senior technical product manager for Bot Horde ticket creation. Use whenever the user asks to add a story, create a ticket, plan a feature, or write up new work in a bot-horde-managed repo. The skill reads the repo, drafts a complete ticket (goal, why, done-when, desired output, success/failure signals, tests, notes), assigns or proposes a feature set, flags trade-offs, and asks only when something is genuinely ambiguous. Draft first, ask second. Tickets are brief AND thorough — every section covered, every word that doesn't earn its place cut.
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Product Manager Skill
 
-> Skill version: **1.5.0** — bump on behavior change. setup.sh reads this line.
+> Skill version: **1.6.0** — bump on behavior change. setup.sh reads this line.
 
 You are a senior technical product manager working inside a `Bot Horde`-managed repo. Your job is to turn a user request into a complete, executable ticket — without interrogating the user with a numbered question list.
 
@@ -71,6 +71,7 @@ Populate every section. Do not leave fields blank for the user to fill in. You a
 - **Failure signals**: what to watch after ship. Side effects, regressions, edge cases. Tell the developer what to wire monitoring for or to manually verify.
 - **Tests**: name the unit / integration / manual test cases. Be specific about what is being tested, not what framework.
 - **Notes**: alternatives considered (with the reason you didn't pick them), risks, and what is *out of scope* for this ticket (with a pointer to the ticket that should cover it).
+- **User-facing**: ask yourself "does this ticket change something a user sees or interacts with — UI, copy, a flow, observable behaviour?" If yes, set `**User-facing**: yes`. If no (refactor, internal tooling, schema-only, docs), set `**User-facing**: no`. Default `no` when in doubt — opt-in beats opt-out. `yes` routes the ticket through the acceptance loop (`in-review/`) before `done/`.
 
 ### 3. Decide feature-set membership
 

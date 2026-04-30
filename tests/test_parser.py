@@ -177,6 +177,53 @@ g
     assert t["status"] == "in-review"
 
 
+def test_parse_user_facing_yes(tmp_path):
+    body = """# [BH-301] UF yes
+
+- **Status**: open
+- **Priority**: Medium
+- **Effort**: S
+- **User-facing**: yes
+
+## Goal
+g
+"""
+    p = write(tmp_path, "BH-301-1000.md", body)
+    t = parse_ticket(p, "open", prefix="BH")
+    assert t["user_facing"] == "yes"
+
+
+def test_parse_user_facing_no(tmp_path):
+    body = """# [BH-302] UF no
+
+- **Status**: open
+- **Priority**: Medium
+- **Effort**: S
+- **User-facing**: no
+
+## Goal
+g
+"""
+    p = write(tmp_path, "BH-302-1000.md", body)
+    t = parse_ticket(p, "open", prefix="BH")
+    assert t["user_facing"] == "no"
+
+
+def test_parse_user_facing_default_when_missing(tmp_path):
+    body = """# [BH-303] UF missing
+
+- **Status**: open
+- **Priority**: Medium
+- **Effort**: S
+
+## Goal
+g
+"""
+    p = write(tmp_path, "BH-303-1000.md", body)
+    t = parse_ticket(p, "open", prefix="BH")
+    assert t["user_facing"] == "no"
+
+
 # ---------- parse_feature_set ----------
 
 
