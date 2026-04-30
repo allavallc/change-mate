@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 supabase/.temp/
+
+# Claude Code local state
+.claude/
+
+# v3 spec — user keeps this untracked
+plan/horde-of-bots-v3-spec.md
