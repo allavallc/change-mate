@@ -161,6 +161,22 @@ g
     assert t["status"] == "blocked"
 
 
+def test_parse_ticket_in_review_status(tmp_path):
+    body = """# [BH-300] In review
+
+- **Status**: in-review
+- **Priority**: Medium
+- **Effort**: S
+
+## Goal
+g
+"""
+    p = write(tmp_path, "BH-300-1000.md", body)
+    t = parse_ticket(p, "in-review", prefix="BH")
+    assert t["id"] == "BH-300"
+    assert t["status"] == "in-review"
+
+
 # ---------- parse_feature_set ----------
 
 

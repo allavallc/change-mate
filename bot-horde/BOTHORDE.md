@@ -381,7 +381,7 @@ BH-004-1736847392.md
 ```markdown
 # [BH-XXX] Title
 
-- **Status**: open | in-progress | done | blocked | not-doing
+- **Status**: open | in-progress | in-review | done | blocked | not-doing
 - **Priority**: Low | Medium | High | Critical
 - **Effort**: XS | S | M | L | XL
 - **Feature set**: feature-set-XXX-<slug> (or blank for standalone)

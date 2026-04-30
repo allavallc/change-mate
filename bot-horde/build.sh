@@ -69,6 +69,7 @@ else:
     for folder, default_status in [
         ("backlog", "open"),
         ("in-progress", "in-progress"),
+        ("in-review", "in-review"),
         ("done", "done"),
         ("blocked", "blocked"),
         ("not-doing", "not-doing"),
@@ -314,7 +315,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .view.active { display: block; }
 .board {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
@@ -325,7 +326,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   padding: 24px;
   min-width: 0;
 }
-.board.show-rejected { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.board.show-rejected { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .col-rejected { display: none; }
 .board.show-rejected .col-rejected { display: block; }
 .card.not-doing { opacity: 0.4; }
@@ -887,6 +888,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
         <div class="cards" id="c-inprogress"></div>
       </div>
       <div>
+        <div class="col-head"><span class="col-name">In Review</span><span class="col-count" id="n-inreview">0</span></div>
+        <div class="cards" id="c-inreview"></div>
+      </div>
+      <div>
         <div class="col-head"><span class="col-name">Done</span><span class="col-count" id="n-done">0</span></div>
         <div class="cards" id="c-done"></div>
       </div>
@@ -1125,9 +1130,9 @@ function render() {
   var gen = D.generated ? new Date(D.generated).toLocaleString() : '';
   if (gen) document.getElementById('gen-time').textContent = 'generated ' + gen;
 
-  var buckets = {open:[], 'in-progress':[], done:[], blocked:[], 'not-doing':[]};
+  var buckets = {open:[], 'in-progress':[], 'in-review':[], done:[], blocked:[], 'not-doing':[]};
   D.tickets.forEach(function(t) { if (buckets[t.status]) buckets[t.status].push(t); });
-  var colKeys = {open:'backlog','in-progress':'inprogress',done:'done',blocked:'blocked'};
+  var colKeys = {open:'backlog','in-progress':'inprogress','in-review':'inreview',done:'done',blocked:'blocked'};
   Object.keys(colKeys).forEach(function(status) {
     var list = (typeof filterAndSort === 'function') ? filterAndSort(buckets[status]) : buckets[status];
     var k = colKeys[status];
