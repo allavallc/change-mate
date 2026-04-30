@@ -2634,9 +2634,26 @@ var D = {
       "tickets": [
         "BH-079"
       ]
+    },
+    {
+      "id": "feature-set-013-acceptance-loop",
+      "name": "[feature-set-013] Acceptance loop",
+      "goal": "Close the dev \u2192 done loop with a tester signoff on user-facing tickets. Today the dev bot self-grades: it moves work from `in-progress/` to `done/` and sets `**Verification**` to whatever it picked. There is no folder, no field, and no required artifact representing \"this needs a separate eyes-on pass before it ships.\" This feature set adds one new state, one new schema field, one new ticket section, and a tester role \u2014 and wires them to the existing `Verification` field, which until now has been orphaned.",
+      "rationale": "Feature-set-010 introduced `**Verification**` with values `bot-claimed | tests-passed | bot-reviewed | human-reviewed`, but nothing in the workflow produces the last two \u2014 they're set passively. A unit test passing isn't the same as a human (or a tester-role bot) confirming a UI change is acceptable. This feature set adds the missing stage: user-facing tickets pause in `in-review/`, a separate tester reads `## How to test`, executes, and either approves (\u2192 `done/`, Verification upgraded) or rejects (\u2192 `in-progress/` with the existing `Rejected by` / `Rejection reason` fields).\n\nGranularity is per-ticket, not per-feature-set: a feature set bundles tickets of mixed user-facing-ness (fs-010 had schema + validator + docs). `blocked/` is not reused \u2014 that means \"stuck on something broken,\" not \"complete pending external check.\"\n\nPlatform-scale review-queue features (assignment routing, SLA tracking, capability matching) stay out of scope. This is files-and-git: tickets sit in `in-review/`; any tester picks one up by reading the folder.",
+      "status": "Backlog",
+      "tickets": [
+        "BH-080",
+        "BH-081",
+        "BH-082",
+        "BH-083",
+        "BH-084",
+        "BH-085",
+        "BH-086",
+        "BH-087"
+      ]
     }
   ],
-  "generated": "2026-04-30T17:33:02.889607+00:00",
+  "generated": "2026-04-30T20:40:28.265768+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3252,7 +3269,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "901d3d9fcf279f0d89c16decb585ab76df62ca76", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "a8205977365e15bf5d193e6fdfdbdac05681bd43", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
