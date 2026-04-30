@@ -700,52 +700,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-085",
-      "title": "`acceptance-tester` skill",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "L",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [
-        "BH-083"
-      ],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "user_facing": "no",
-      "goal": "Create a new Claude Code skill `acceptance-tester` (sibling to `product-manager`) that walks a bot through the tester role: pick a ticket from `in-review/`, read `## How to test`, execute the steps, decide approve or reject, and write the outcome back to the ticket. The skill enforces tester \u2260 dev bot \u2014 it refuses to act on a ticket where the current bot identity matches the `Assigned to` of the dev work.",
-      "why": "Without a skill, \"bot plays tester\" is a vague instruction. The skill turns it into a repeatable procedure with the same shape as `product-manager`: read context, execute, write artifact, commit with provenance. Self-approval prevention is the load-bearing part \u2014 without it, the loop is theatre.",
-      "done_when": [
-        "New file `skills/acceptance-tester/SKILL.md` with `version: 1.0.0` in frontmatter (mirrors product-manager versioning)",
-        "Skill contents:",
-        "When to invoke: bot picks up an `in-review/` ticket",
-        "Pre-check: read the most recent commit on the ticket \u2014 if its `Trigger:` line author matches the current bot's identity (or commit author email), refuse with a message and stop",
-        "Execute: read `## How to test`, run/observe the steps, decide",
-        "Approve path: move file to `done/`, set `Status: done`, set `Verification: bot-reviewed` (or `human-reviewed` if the user is driving), set `Completed`, commit with `Trigger: BH-XXX accepted`",
-        "Reject path: move file to `in-progress/`, set `Status: in-progress`, populate `Rejected by` / `Rejected` / `Rejection reason`, commit with `Trigger: BH-XXX rejected`",
-        "Reference the workflow in BOTHORDE.md \"Acceptance loop\" rather than re-stating it",
-        "`setup.sh` installs `skills/acceptance-tester/` to `~/.claude/skills/acceptance-tester/` alongside `product-manager`",
-        "`MANIFEST.json` includes the new skill file with version `1.0.0`",
-        "BOTHORDE.md \"Acceptance loop\" section references the skill as the bot-tester entry point",
-        "Tests: skill file parses (frontmatter valid, version present); setup.sh test confirms it installs"
-      ],
-      "desired_output": "A bot says \"test BH-090\" and the skill takes over: identity check, read `## How to test`, execute, write outcome. Output is one commit with proper provenance trailers.",
-      "success_signals": "- Bot testers consistently use the skill rather than freelancing the workflow.\n- No commit ever shows the same bot author on both the dev `Trigger: BH-XXX done` (or in-review handoff) and the `Trigger: BH-XXX accepted` line for the same ticket.",
-      "failure_signals": "- Identity check fails open \u2014 bot self-approves because the `Trigger:` author check is bypassable. Hardening: also check git config `user.email` against the dev commit's author email.\n- Skill is bypassed entirely; bots write the loop transitions by hand. Detect via commits missing `Trigger: .* accepted|rejected` trailers in the in-review \u2192 done path.",
-      "tests": "- `tests/test_setup.py` \u2014 skill installs to `~/.claude/skills/acceptance-tester/` when setup.sh runs\n- Skill markdown parses without errors (frontmatter, version line)\n- Manual: invoke the skill on a fixture ticket, confirm refusal when same-bot, confirm accept/reject paths produce the right file moves and commits",
-      "how_to_test": "",
-      "notes": "- Keep the skill terse \u2014 match `product-manager`'s length and voice. Resist enumerating every edge case.\n- Out of scope: a separate skill for human testers. The skill is for bots; humans following the same workflow read BOTHORDE.md directly.\n- The \"tester \u2260 dev bot\" check uses commit-author identity, which is project-configurable. Document the assumption in the skill.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-086",
       "title": "Provenance trailers: accepted / rejected",
       "status": "open",
@@ -829,6 +783,53 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "BH-085",
+      "title": "`acceptance-tester` skill",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "L",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [
+        "BH-083"
+      ],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 20:45",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "user_facing": "no",
+      "goal": "Create a new Claude Code skill `acceptance-tester` (sibling to `product-manager`) that walks a bot through the tester role: pick a ticket from `in-review/`, read `## How to test`, execute the steps, decide approve or reject, and write the outcome back to the ticket. The skill enforces tester \u2260 dev bot \u2014 it refuses to act on a ticket where the current bot identity matches the `Assigned to` of the dev work.",
+      "why": "Without a skill, \"bot plays tester\" is a vague instruction. The skill turns it into a repeatable procedure with the same shape as `product-manager`: read context, execute, write artifact, commit with provenance. Self-approval prevention is the load-bearing part \u2014 without it, the loop is theatre.",
+      "done_when": [
+        "New file `skills/acceptance-tester/SKILL.md` with `version: 1.0.0` in frontmatter (mirrors product-manager versioning)",
+        "Skill contents:",
+        "When to invoke: bot picks up an `in-review/` ticket",
+        "Pre-check: read the most recent commit on the ticket \u2014 if its `Trigger:` line author matches the current bot's identity (or commit author email), refuse with a message and stop",
+        "Execute: read `## How to test`, run/observe the steps, decide",
+        "Approve path: move file to `done/`, set `Status: done`, set `Verification: bot-reviewed` (or `human-reviewed` if the user is driving), set `Completed`, commit with `Trigger: BH-XXX accepted`",
+        "Reject path: move file to `in-progress/`, set `Status: in-progress`, populate `Rejected by` / `Rejected` / `Rejection reason`, commit with `Trigger: BH-XXX rejected`",
+        "Reference the workflow in BOTHORDE.md \"Acceptance loop\" rather than re-stating it",
+        "`setup.sh` installs `skills/acceptance-tester/` to `~/.claude/skills/acceptance-tester/` alongside `product-manager`",
+        "`MANIFEST.json` includes the new skill file with version `1.0.0`",
+        "BOTHORDE.md \"Acceptance loop\" section references the skill as the bot-tester entry point",
+        "Tests: skill file parses (frontmatter valid, version present); setup.sh test confirms it installs"
+      ],
+      "desired_output": "A bot says \"test BH-090\" and the skill takes over: identity check, read `## How to test`, execute, write outcome. Output is one commit with proper provenance trailers.",
+      "success_signals": "- Bot testers consistently use the skill rather than freelancing the workflow.\n- No commit ever shows the same bot author on both the dev `Trigger: BH-XXX done` (or in-review handoff) and the `Trigger: BH-XXX accepted` line for the same ticket.",
+      "failure_signals": "- Identity check fails open \u2014 bot self-approves because the `Trigger:` author check is bypassable. Hardening: also check git config `user.email` against the dev commit's author email.\n- Skill is bypassed entirely; bots write the loop transitions by hand. Detect via commits missing `Trigger: .* accepted|rejected` trailers in the in-review \u2192 done path.",
+      "tests": "- `tests/test_setup.py` \u2014 skill installs to `~/.claude/skills/acceptance-tester/` when setup.sh runs\n- Skill markdown parses without errors (frontmatter, version line)\n- Manual: invoke the skill on a fixture ticket, confirm refusal when same-bot, confirm accept/reject paths produce the right file moves and commits",
+      "how_to_test": "",
+      "notes": "- Keep the skill terse \u2014 match `product-manager`'s length and voice. Resist enumerating every edge case.\n- Out of scope: a separate skill for human testers. The skill is for bots; humans following the same workflow read BOTHORDE.md directly.\n- The \"tester \u2260 dev bot\" check uses commit-author identity, which is project-configurable. Document the assumption in the skill.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "last_commit_ct": 1777586027,
       "blocked_by_inferred": []
     },
     {
@@ -3087,7 +3088,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T21:44:48.318641+00:00",
+  "generated": "2026-04-30T21:54:04.279739+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3704,7 +3705,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "827cf785b3680b3457da1502b2f4ee0a2855393d", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "ac9eee2ed23926310388e305ba1fce80494a46fc", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
