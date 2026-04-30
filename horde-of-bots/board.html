@@ -892,7 +892,7 @@ var D = {
     {
       "id": "HB-079",
       "title": "Post-rename test infrastructure cleanup",
-      "status": "backlog",
+      "status": "in-progress",
       "priority": "Medium",
       "effort": "S",
       "feature_set": "feature-set-012-test-infrastructure",
@@ -900,8 +900,8 @@ var D = {
       "blocks": [],
       "blocked_by": [],
       "split_from": [],
-      "assigned_to": "",
-      "started": "",
+      "assigned_to": "claude",
+      "started": "2026-04-30 09:00",
       "completed": "",
       "goal": "Fix two pre-existing test-infrastructure bugs that survived the change-mate \u2192 horde-of-bots rename: the repo-root `conftest.py` adds the wrong path (so `py -m pytest <specific-test>` fails); and the regression test that walks every committed ticket globs `CM-*.md`, so post-rename it walks zero files.",
       "why": "Both bugs make the test setup pretend to work. Standalone path invocations fail with `ModuleNotFoundError: build_lib`, hiding why CI passes but local runs of a single file don't. The regression test claims to verify every committed ticket parses \u2014 but currently walks zero files, catching nothing. As fs-010 adds new schema fields (Verification, Failure-mode), that regression test is exactly what we need to catch breakage on real tickets.",
@@ -2513,7 +2513,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T13:32:29.447350+00:00",
+  "generated": "2026-04-30T14:20:11.002996+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -3047,7 +3047,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "a5f0d0bf4137553125498d53601912d9dbe4a56f"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "3b709219e88d514f8fa6bc92f253d377090e6619"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
