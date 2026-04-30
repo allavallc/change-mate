@@ -662,43 +662,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "HB-075",
-      "title": "Dependency enforcement: render + filter",
-      "status": "backlog",
-      "priority": "Medium",
-      "effort": "M",
-      "feature_set": "feature-set-010-bot-native-schema",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "goal": "Existing `Blocked-by:` field is already parsed and rendered. Add: (a) a \"Ready only\" filter toggle on the board that hides backlog/in-progress tickets whose `Blocked-by:` references a ticket not yet in `done/`; (b) validator rule (HB-076) refusing `done/` placement while `Blocked-by:` references unfinished tickets.",
-      "why": "Today nothing prevents a bot from claiming a ticket whose dependencies aren't met. If HB-005 is `Blocked-by: HB-003` and HB-003 is in `backlog/`, a bot can grab HB-005 and burn cycles. The schema already encodes the dependency; we're not adding a feature, we're enforcing the field that already exists. The board filter helps humans + bots see only ready work; the validator catches premature done-transitions in CI.",
-      "done_when": [
-        "Board filter bar gains a \"Ready only\" toggle (single checkbox, persists in `localStorage` under existing `hb_board_filters_v1` key)",
-        "When toggle is on: tickets with at least one `Blocked-by:` reference that is **not** in `done/` are hidden from `backlog/` and `in-progress/` columns. `done/`, `blocked/`, and `not-doing/` columns are unaffected (they always show).",
-        "Default toggle state: **off** \u2014 preserves current behavior for existing adopters; users opt in.",
-        "Validator (HB-076) refuses `done/` placement if any `Blocked-by:` reference points to a ticket not in `done/`. Error message lists the unmet deps.",
-        "HORDEOFBOTS.md updated: agents check `Blocked-by:` before claiming; the validator will catch errors at build time",
-        "`tests/test_build.py` covers: ready-only filter HTML output (toggle off \u2192 all visible; toggle on \u2192 blocked-by-unmet hidden)",
-        "Validator test (in HB-076): done-transition with unmet deps fails"
-      ],
-      "desired_output": "User toggles \"Ready only\" on the board. The backlog column shrinks to actionable work. CI catches accidental done-transitions of dependency-unmet tickets at PR time.",
-      "success_signals": "- \"Ready only\" becomes a default-on view for active contributors (their preference stored in localStorage).\n- The validator rule catches at least one bad transition during the rollout period.",
-      "failure_signals": "- \"Ready only\" filter logic conflicts with the existing single-select Priority/Effort/Feature-set filters in the bar. Mitigation: the new toggle is a checkbox alongside the dropdowns, not in the dropdown \u2014 independent filter axis.\n- Bots claim tickets via raw filesystem moves and bypass the filter view entirely. The filter is for humans; the validator is the enforcement.",
-      "tests": "- `tests/test_build.py` \u2014 render board with mixed deps, assert that `Ready only` mode hides the right cards\n- Validator test (in HB-076) \u2014 done ticket with unmet `Blocked-by:` fails with a clear error listing the unmet deps",
-      "notes": "- **`Related:` is not a hard dependency** \u2014 the filter only acts on `Blocked-by:`. `Related:` continues to be informational.\n- **Default off** is a deliberate gentle rollout; can be flipped later if adopters prefer ready-only as the default.\n- The filter logic ('referenced ticket is not in `done/`') treats `not-doing/` as not-done. If a `Blocked-by:` reference is in `not-doing/`, the dependent ticket stays hidden when \"Ready only\" is on. This is correct: the dependency was abandoned, not satisfied.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-076",
       "title": "`validate.py` enforcing the schema in CI",
       "status": "backlog",
@@ -822,6 +785,43 @@ var D = {
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
       "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "HB-075",
+      "title": "Dependency enforcement: render + filter",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-010-bot-native-schema",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 10:30",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "goal": "Existing `Blocked-by:` field is already parsed and rendered. Add: (a) a \"Ready only\" filter toggle on the board that hides backlog/in-progress tickets whose `Blocked-by:` references a ticket not yet in `done/`; (b) validator rule (HB-076) refusing `done/` placement while `Blocked-by:` references unfinished tickets.",
+      "why": "Today nothing prevents a bot from claiming a ticket whose dependencies aren't met. If HB-005 is `Blocked-by: HB-003` and HB-003 is in `backlog/`, a bot can grab HB-005 and burn cycles. The schema already encodes the dependency; we're not adding a feature, we're enforcing the field that already exists. The board filter helps humans + bots see only ready work; the validator catches premature done-transitions in CI.",
+      "done_when": [
+        "Board filter bar gains a \"Ready only\" toggle (single checkbox, persists in `localStorage` under existing `hb_board_filters_v1` key)",
+        "When toggle is on: tickets with at least one `Blocked-by:` reference that is **not** in `done/` are hidden from `backlog/` and `in-progress/` columns. `done/`, `blocked/`, and `not-doing/` columns are unaffected (they always show).",
+        "Default toggle state: **off** \u2014 preserves current behavior for existing adopters; users opt in.",
+        "Validator (HB-076) refuses `done/` placement if any `Blocked-by:` reference points to a ticket not in `done/`. Error message lists the unmet deps.",
+        "HORDEOFBOTS.md updated: agents check `Blocked-by:` before claiming; the validator will catch errors at build time",
+        "`tests/test_build.py` covers: ready-only filter HTML output (toggle off \u2192 all visible; toggle on \u2192 blocked-by-unmet hidden)",
+        "Validator test (in HB-076): done-transition with unmet deps fails"
+      ],
+      "desired_output": "User toggles \"Ready only\" on the board. The backlog column shrinks to actionable work. CI catches accidental done-transitions of dependency-unmet tickets at PR time.",
+      "success_signals": "- \"Ready only\" becomes a default-on view for active contributors (their preference stored in localStorage).\n- The validator rule catches at least one bad transition during the rollout period.",
+      "failure_signals": "- \"Ready only\" filter logic conflicts with the existing single-select Priority/Effort/Feature-set filters in the bar. Mitigation: the new toggle is a checkbox alongside the dropdowns, not in the dropdown \u2014 independent filter axis.\n- Bots claim tickets via raw filesystem moves and bypass the filter view entirely. The filter is for humans; the validator is the enforcement.",
+      "tests": "- `tests/test_build.py` \u2014 render board with mixed deps, assert that `Ready only` mode hides the right cards\n- Validator test (in HB-076) \u2014 done ticket with unmet `Blocked-by:` fails with a clear error listing the unmet deps",
+      "notes": "- **`Related:` is not a hard dependency** \u2014 the filter only acts on `Blocked-by:`. `Related:` continues to be informational.\n- **Default off** is a deliberate gentle rollout; can be flipped later if adopters prefer ready-only as the default.\n- The filter logic ('referenced ticket is not in `done/`') treats `not-doing/` as not-done. If a `Blocked-by:` reference is in `not-doing/`, the dependent ticket stays hidden when \"Ready only\" is on. This is correct: the dependency was abandoned, not satisfied.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2607,7 +2607,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T14:28:04.892104+00:00",
+  "generated": "2026-04-30T15:51:30.647493+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -3155,7 +3155,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "d06d5222a75f9f76de64e3409bb09c92b7a658d2"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "4939264c19f8555f1cb167c90e65e09a95c1a6d8"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
