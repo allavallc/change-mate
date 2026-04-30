@@ -890,6 +890,38 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "HB-079",
+      "title": "Post-rename test infrastructure cleanup",
+      "status": "backlog",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-012-test-infrastructure",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Fix two pre-existing test-infrastructure bugs that survived the change-mate \u2192 horde-of-bots rename: the repo-root `conftest.py` adds the wrong path (so `py -m pytest <specific-test>` fails); and the regression test that walks every committed ticket globs `CM-*.md`, so post-rename it walks zero files.",
+      "why": "Both bugs make the test setup pretend to work. Standalone path invocations fail with `ModuleNotFoundError: build_lib`, hiding why CI passes but local runs of a single file don't. The regression test claims to verify every committed ticket parses \u2014 but currently walks zero files, catching nothing. As fs-010 adds new schema fields (Verification, Failure-mode), that regression test is exactly what we need to catch breakage on real tickets.",
+      "done_when": [
+        "`conftest.py` at repo root adds `horde-of-bots/` to `sys.path` (not just repo root) so `from build_lib import ...` resolves regardless of pytest invocation form",
+        "`tests/test_parser.py::test_every_committed_ticket_parses_without_error` globs `HB-*.md` and asserts a non-zero ticket count walked (so an empty walk is caught)",
+        "`py -m pytest tests/test_parser.py` passes standalone (currently fails)",
+        "Full `py -m pytest` continues to pass"
+      ],
+      "desired_output": "A contributor running pytest with any invocation form succeeds. The regression test actually verifies the committed ticket tree.",
+      "success_signals": "- `py -m pytest tests/test_parser.py` passes \u2014 local debugging works\n- Schema breakage from fs-010 work (new Verification/Failure-mode field handling) gets caught against real tickets, not just synthetic fixtures",
+      "failure_signals": "- conftest path fix breaks unrelated Python module resolution \u2014 unlikely (no name collisions in `horde-of-bots/`)",
+      "tests": "- `py -m pytest tests/test_parser.py` standalone \u2192 passes\n- `py -m pytest` from repo root \u2192 all tests pass (count grows by 0 or 1)\n- Verify empty-walk assertion fires: temporarily change glob back to `CM-*.md`; the count assertion should fail",
+      "notes": "- Surfaced during HB-071 build. The conftest bug predates the rename (path was always wrong); the glob bug was introduced by the Phase 3 rename when prefix flipped CM \u2192 HB but the test wasn't updated.\n- **Out of scope**: broader test refactors (no parametrize sweep, no fixture dir reorg). Just the two specific fixes.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "HB-001",
       "title": "Test ticket",
       "status": "done",
@@ -2469,9 +2501,19 @@ var D = {
         "HB-077",
         "HB-078"
       ]
+    },
+    {
+      "id": "feature-set-012-test-infrastructure",
+      "name": "[feature-set-012] Test infrastructure",
+      "goal": "Test infrastructure that actually works \u2014 pytest invocation forms all succeed, regression tests verify real state, no silent passes.",
+      "rationale": "Two pre-existing bugs surfaced during the fs-010 build (HB-071): the repo-root `conftest.py` adds the wrong path so specific-test pytest invocations fail, and a regression test still globs the pre-rename ticket prefix so it walks zero files. Bundled because both are \"the test setup pretends to work but doesn't\" \u2014 same shape at different layers. One-ticket feature set today; if similar rot surfaces, add to it.",
+      "status": "Backlog",
+      "tickets": [
+        "HB-079"
+      ]
     }
   ],
-  "generated": "2026-04-30T13:17:42.217795+00:00",
+  "generated": "2026-04-30T13:32:29.447350+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -3005,7 +3047,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "177cb829cb7dcd39ff333b7018b70e41a09cd15f"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "a5f0d0bf4137553125498d53601912d9dbe4a56f"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
