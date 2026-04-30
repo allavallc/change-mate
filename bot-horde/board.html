@@ -695,42 +695,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-081",
-      "title": "`User-facing:` field on tickets",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "goal": "Add a `**User-facing**: yes | no` field to the ticket schema. Default `no`. PM sets it at creation time on tickets that change something a user touches (UI, a flow, copy, behaviour visible to end users). The field is what triggers the acceptance loop \u2014 `yes` routes the ticket through `in-review/` before `done/`.",
-      "why": "The acceptance loop has to know which tickets need a tester pass. Inferring from feature set is too coarse (a feature set bundles tickets of mixed user-facing-ness). A binary per-ticket flag is the simplest opt-in. Default `no` keeps internal/refactor work moving without friction.",
-      "done_when": [
-        "BOTHORDE.md \"Ticket file format\" adds `**User-facing**: yes | no` between `Failure mode` and `Rejected by`",
-        "`build_lib.parse_ticket` recognizes `**User-facing**:` and returns `user_facing` (string `\"yes\"` / `\"no\"`) on the ticket dict",
-        "Default when field is missing or blank: treated as `\"no\"`",
-        "Board renders a small `USER-FACING` badge on cards where `User-facing: yes` \u2014 distinct from priority/effort badges",
-        "PM skill prompt updated: when drafting a ticket, ask \"does this change something a user sees or interacts with?\" \u2192 set `User-facing: yes` if so, else `no`",
-        "BH-087 validator requires the field be one of `yes | no` if present"
-      ],
-      "desired_output": "A ticket file containing `**User-facing**: yes` renders a visible badge on the board card. Bots reading the file get an unambiguous flag they can act on.",
-      "success_signals": "- New tickets land with the field set explicitly (yes or no), not blank.\n- Most tickets are `no`; a meaningful subset is `yes`. If everything is `no`, the field is dead weight.",
-      "failure_signals": "- Bots default everything to `yes` to be safe \u2192 loop becomes mandatory and slow. Watch for >70% `yes` rate.\n- Bots default everything to `no` to avoid the loop \u2192 field is decorative. Watch for <5% `yes` rate after the loop ships.",
-      "tests": "- `tests/test_parser.py` \u2014 parse `User-facing: yes`, `User-facing: no`, missing field (defaults to `\"no\"`), invalid value (e.g. `\"true\"`) raises\n- Validator test (in BH-087): ticket with `User-facing: maybe` fails",
-      "notes": "- Field name is `User-facing`, not `Needs-acceptance` or `Reviewed`. Names what the work *is*, not what process it triggers.\n- Out of scope: auto-detection of user-facing changes from the diff. Could come later as a v3.0 enhancement.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-082",
       "title": "`## How to test` section in ticket format",
       "status": "open",
@@ -971,6 +935,43 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "BH-081",
+      "title": "`User-facing:` field on tickets",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 19:45",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "goal": "Add a `**User-facing**: yes | no` field to the ticket schema. Default `no`. PM sets it at creation time on tickets that change something a user touches (UI, a flow, copy, behaviour visible to end users). The field is what triggers the acceptance loop \u2014 `yes` routes the ticket through `in-review/` before `done/`.",
+      "why": "The acceptance loop has to know which tickets need a tester pass. Inferring from feature set is too coarse (a feature set bundles tickets of mixed user-facing-ness). A binary per-ticket flag is the simplest opt-in. Default `no` keeps internal/refactor work moving without friction.",
+      "done_when": [
+        "BOTHORDE.md \"Ticket file format\" adds `**User-facing**: yes | no` between `Failure mode` and `Rejected by`",
+        "`build_lib.parse_ticket` recognizes `**User-facing**:` and returns `user_facing` (string `\"yes\"` / `\"no\"`) on the ticket dict",
+        "Default when field is missing or blank: treated as `\"no\"`",
+        "Board renders a small `USER-FACING` badge on cards where `User-facing: yes` \u2014 distinct from priority/effort badges",
+        "PM skill prompt updated: when drafting a ticket, ask \"does this change something a user sees or interacts with?\" \u2192 set `User-facing: yes` if so, else `no`",
+        "BH-087 validator requires the field be one of `yes | no` if present"
+      ],
+      "desired_output": "A ticket file containing `**User-facing**: yes` renders a visible badge on the board card. Bots reading the file get an unambiguous flag they can act on.",
+      "success_signals": "- New tickets land with the field set explicitly (yes or no), not blank.\n- Most tickets are `no`; a meaningful subset is `yes`. If everything is `no`, the field is dead weight.",
+      "failure_signals": "- Bots default everything to `yes` to be safe \u2192 loop becomes mandatory and slow. Watch for >70% `yes` rate.\n- Bots default everything to `no` to avoid the loop \u2192 field is decorative. Watch for <5% `yes` rate after the loop ships.",
+      "tests": "- `tests/test_parser.py` \u2014 parse `User-facing: yes`, `User-facing: no`, missing field (defaults to `\"no\"`), invalid value (e.g. `\"true\"`) raises\n- Validator test (in BH-087): ticket with `User-facing: maybe` fails",
+      "notes": "- Field name is `User-facing`, not `Needs-acceptance` or `Reviewed`. Names what the work *is*, not what process it triggers.\n- Out of scope: auto-detection of user-facing changes from the diff. Could come later as a v3.0 enhancement.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "last_commit_ct": 1777582455,
       "blocked_by_inferred": []
     },
     {
@@ -2972,7 +2973,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T20:51:21.854595+00:00",
+  "generated": "2026-04-30T20:54:24.217020+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3588,7 +3589,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "33912c372cacd3e4b6903f4b4d800b50731440bb", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "b6de02709f44e083d3f2890ef23deed72d87b1a4", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
