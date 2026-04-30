@@ -1113,7 +1113,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T21:33:14.542346+00:00",
+  "generated": "2026-04-30T21:34:52.440912+00:00",
   "demo_mode": true,
   "stale_after_hours": 4
 };
@@ -1291,12 +1291,13 @@ function cardHTML(t, isRejected) {
   var success = detailRow('Success signals', bulletOrProse(t.success_signals));
   var failure = detailRow('Failure signals', bulletOrProse(t.failure_signals));
   var tests   = detailRow('Tests', bulletOrProse(t.tests));
+  var howToTest = t.how_to_test ? '<div><div class="dl-label">How to test</div><div class="dl-val pre">' + esc(t.how_to_test) + '</div></div>' : '';
   var notes = t.notes ? '<div><div class="dl-label">Notes</div><div class="dl-val pre">' + esc(t.notes) + '</div></div>' : '';
   var rejection = (t.rejection_reason && t.rejection_reason.toLowerCase() !== 'n/a')
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + howToTest + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + staleClass + '" onclick="toggleCard(this)">'
     + robot
@@ -1729,7 +1730,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "50dcffeaba7a1df630912107020aad676f3df92d", "poll_source": "none"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "ec7699ec33e09def6f904199c6c99969521c6927", "poll_source": "none"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
