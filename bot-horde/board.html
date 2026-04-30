@@ -696,43 +696,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-082",
-      "title": "`## How to test` section in ticket format",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "user_facing": "no",
-      "goal": "Add a `## How to test` section to the ticket markdown format. Sibling to the existing `## Tests` section (which describes unit/integration scope). The dev bot populates this when handing a `User-facing: yes` ticket off to `in-review/`. Required content: concrete reproducible steps a human or tester-role bot can execute against the running app.",
-      "why": "A tester opening a ticket from `in-review/` needs to know what to actually do \u2014 what URL to open, what to click, what to type, what to verify. Without a structured handoff field, that information lives in the dev bot's commit message or, worse, nowhere. A named section makes it a contract.",
-      "done_when": [
-        "BOTHORDE.md \"Ticket file format\" documents the section, positioned after `## Tests` and before `## Notes`",
-        "`build_lib.parse_ticket` recognizes the section and returns `how_to_test` (string, raw section body) on the ticket dict",
-        "Section is **optional** when `User-facing: no`; **required** (non-empty) when `User-facing: yes` and ticket is in `in-review/` or `done/`",
-        "Section may include URLs, shell commands, click-paths, or expected observations \u2014 free-form markdown",
-        "BH-087 validator enforces the required-when-User-facing rule",
-        "PM skill prompt updated: when drafting a `User-facing: yes` ticket, draft a placeholder `## How to test` body the dev bot will fill in at handoff time"
-      ],
-      "desired_output": "A tester opens a ticket in `in-review/`, scrolls to `## How to test`, and finds a steps list they can execute without guessing. Approve or reject decision can be made from the ticket alone.",
-      "success_signals": "- Tickets in `in-review/` consistently have non-trivial `## How to test` content (not \"test it\" placeholders).\n- Testers don't have to ask the dev bot follow-up questions to know what to verify.",
-      "failure_signals": "- Section bloats \u2014 every ticket carries a 50-line test plan. Cap is implicit; if it happens, add guidance to the PM skill.\n- Section gets boilerplate copy-pasted across tickets. Watch for identical text across multiple tickets.",
-      "tests": "- `tests/test_parser.py` \u2014 parse a ticket with `## How to test`, verify body returned; parse without; verify field is empty string\n- Validator test (in BH-087): `User-facing: yes` ticket in `in-review/` with empty `## How to test` fails",
-      "notes": "- Free-form by design. The bot writing it knows the shape; the bot reading it knows the shape. Schema-level structure (a steps list, expected results) would be premature.\n- Out of scope: rendering the section as a checklist on the board card. The section is for testers reading the ticket, not casual board scanners.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-083",
       "title": "Workflow: handoff, acceptance, rejection",
       "status": "open",
@@ -942,6 +905,44 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "BH-082",
+      "title": "`## How to test` section in ticket format",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 20:00",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "user_facing": "no",
+      "goal": "Add a `## How to test` section to the ticket markdown format. Sibling to the existing `## Tests` section (which describes unit/integration scope). The dev bot populates this when handing a `User-facing: yes` ticket off to `in-review/`. Required content: concrete reproducible steps a human or tester-role bot can execute against the running app.",
+      "why": "A tester opening a ticket from `in-review/` needs to know what to actually do \u2014 what URL to open, what to click, what to type, what to verify. Without a structured handoff field, that information lives in the dev bot's commit message or, worse, nowhere. A named section makes it a contract.",
+      "done_when": [
+        "BOTHORDE.md \"Ticket file format\" documents the section, positioned after `## Tests` and before `## Notes`",
+        "`build_lib.parse_ticket` recognizes the section and returns `how_to_test` (string, raw section body) on the ticket dict",
+        "Section is **optional** when `User-facing: no`; **required** (non-empty) when `User-facing: yes` and ticket is in `in-review/` or `done/`",
+        "Section may include URLs, shell commands, click-paths, or expected observations \u2014 free-form markdown",
+        "BH-087 validator enforces the required-when-User-facing rule",
+        "PM skill prompt updated: when drafting a `User-facing: yes` ticket, draft a placeholder `## How to test` body the dev bot will fill in at handoff time"
+      ],
+      "desired_output": "A tester opens a ticket in `in-review/`, scrolls to `## How to test`, and finds a steps list they can execute without guessing. Approve or reject decision can be made from the ticket alone.",
+      "success_signals": "- Tickets in `in-review/` consistently have non-trivial `## How to test` content (not \"test it\" placeholders).\n- Testers don't have to ask the dev bot follow-up questions to know what to verify.",
+      "failure_signals": "- Section bloats \u2014 every ticket carries a 50-line test plan. Cap is implicit; if it happens, add guidance to the PM skill.\n- Section gets boilerplate copy-pasted across tickets. Watch for identical text across multiple tickets.",
+      "tests": "- `tests/test_parser.py` \u2014 parse a ticket with `## How to test`, verify body returned; parse without; verify field is empty string\n- Validator test (in BH-087): `User-facing: yes` ticket in `in-review/` with empty `## How to test` fails",
+      "notes": "- Free-form by design. The bot writing it knows the shape; the bot reading it knows the shape. Schema-level structure (a steps list, expected results) would be premature.\n- Out of scope: rendering the section as a checklist on the board card. The section is for testers reading the ticket, not casual board scanners.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "last_commit_ct": 1777584778,
       "blocked_by_inferred": []
     },
     {
@@ -3028,7 +3029,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T20:56:26.914244+00:00",
+  "generated": "2026-04-30T21:33:14.386364+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3644,7 +3645,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "0584239534c842ca985b90cb9a9fce219faba99c", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "50dcffeaba7a1df630912107020aad676f3df92d", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
