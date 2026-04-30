@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -400,11 +401,24 @@ def test_every_committed_ticket_parses_without_error():
     base = repo_root / "horde-of-bots"
     if not base.exists():
         pytest.skip("horde-of-bots directory not present")
+
+    prefix = "HB"
+    config_path = base / "config.json"
+    if config_path.exists():
+        prefix = json.loads(config_path.read_text(encoding="utf-8")).get("ticket_prefix", "HB")
+
+    count = 0
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing"):
         d = base / folder
         if not d.exists():
             continue
-        for f in sorted(d.glob("CM-*.md")):
-            t = parse_ticket(f, folder)
+        for f in sorted(d.glob(f"{prefix}-*.md")):
+            t = parse_ticket(f, folder, prefix=prefix)
             assert t["id"], f"empty id for {f.name}"
             assert t["status"], f"empty status for {f.name}"
+            count += 1
+
+    assert count > 0, (
+        f"regression walked zero {prefix}-*.md tickets — glob/prefix mismatch "
+        "means this test silently passes on an empty tree"
+    )
