@@ -7,12 +7,12 @@ Address the gaps a careful first-time adopter hit while reading `setup.sh` + `SE
 A user reviewing the install before running it found a real install-blocker (build.sh + workflow not actually downloaded by setup.sh), several non-interactive-install hazards, and a long list of clarifying questions about behavior. Most of the clarifications are answerable but live nowhere in the repo today; they get asked over and over. This feature set turns the answers into either code (when there's a fix) or a single FAQ file the agent + adopter read at install time.
 
 ## Tickets
-- HB-061 — setup.sh actually installs the runtime files (build.sh, build_lib.py, workflow, config.json)
-- HB-062 — Non-interactive install path (`HORDEOFBOTS_AUTO_MIGRATE=yes` env / piped-stdin support)
-- HB-063 — "Do not edit" markers around the CLAUDE.md import block
-- HB-064 — README + docs honesty pass (Python 3 dep, no "zero deps" claim, Pages caveats)
-- HB-065 — Version pin + upgrade path for the product-manager skill
-- HB-066 — `bot-horde/INSTALL-FAQ.md` covering the questions setup.sh can't answer in code
+- BH-061 — setup.sh actually installs the runtime files (build.sh, build_lib.py, workflow, config.json)
+- BH-062 — Non-interactive install path (`HORDEOFBOTS_AUTO_MIGRATE=yes` env / piped-stdin support)
+- BH-063 — "Do not edit" markers around the CLAUDE.md import block
+- BH-064 — README + docs honesty pass (Python 3 dep, no "zero deps" claim, Pages caveats)
+- BH-065 — Version pin + upgrade path for the product-manager skill
+- BH-066 — `bot-horde/INSTALL-FAQ.md` covering the questions setup.sh can't answer in code
 
 ## Status
 Done — 2026-04-27

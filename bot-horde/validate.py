@@ -2,7 +2,7 @@
 """Validate every committed ticket against the schema.
 
 Wired into build.sh so CI fails on malformed tickets. Catches the class of
-bugs where a ticket's frontmatter disagrees with its folder (e.g. HB-060
+bugs where a ticket's frontmatter disagrees with its folder (e.g. BH-060
 sat in backlog/ for two days with Status: in-progress because nothing
 checked).
 
@@ -149,7 +149,7 @@ def validate(repo_root):
                         f"{prefix_msg} {field} references '{ref}' but no such ticket exists"
                     )
 
-        # Done with unmet deps (HB-075)
+        # Done with unmet deps (BH-075)
         if folder == "done":
             for ref in t.get("blocked_by", []):
                 ref_info = by_id.get(ref)

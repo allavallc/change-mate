@@ -79,18 +79,18 @@ Output is grouped by feature set, as markdown tables:
 ### feature-set-001 — Auth
 | ID | Title | What it does |
 |---|---|---|
-| HB-003 | Add user authentication | Email + password login with reset flow. |
-| HB-005 | Fix pagination bug | Last page sometimes returns duplicate rows. |
+| BH-003 | Add user authentication | Email + password login with reset flow. |
+| BH-005 | Fix pagination bug | Last page sometimes returns duplicate rows. |
 
 **In progress (by others)**
 | ID | Title | Owner | Started |
 |---|---|---|---|
-| HB-002 | Refactor data layer | sarah-bot | 2h ago |
+| BH-002 | Refactor data layer | sarah-bot | 2h ago |
 ```
 
 **The agent drafts a ticket before starting work**
 ```
-[HB-003] Add user authentication
+[BH-003] Add user authentication
 ───────────────────────────────
 Goal:      Add login with email and password
 Why:       Users can't save anything without an account
@@ -105,21 +105,21 @@ Draft looks good? (yes / edit N / reject)
 
 **Checkout — the agent moves the file and pushes**
 ```
-[HB-003 checked out by agent: alex-bot]
+[BH-003 checked out by agent: alex-bot]
 ```
 
 **If two agents grab the same ticket simultaneously**
 ```
-⚠️  HB-003 was just picked up by someone else.
+⚠️  BH-003 was just picked up by someone else.
 
 Remaining backlog:
-  HB-005 — Fix pagination bug
-  HB-007 — Add export feature
+  BH-005 — Fix pagination bug
+  BH-007 — Add export feature
 ```
 
 **When done — the agent updates the ticket and pushes**
 ```
-HB-003 is complete and logged.
+BH-003 is complete and logged.
 ```
 
 Humans watching the board see every move in near real-time.
@@ -131,7 +131,7 @@ Humans watching the board see every move in near real-time.
 Each ticket is a plain markdown file:
 
 ```markdown
-# [HB-003] Add user authentication
+# [BH-003] Add user authentication
 
 - **Status**: done
 - **Priority**: High
@@ -153,7 +153,7 @@ Users can't save anything without an account.
 
 ## Notes
 Went with JWT over sessions for stateless API compatibility.
-Decided against OAuth for now — adding in HB-008.
+Decided against OAuth for now — adding in BH-008.
 ```
 
 ---
@@ -184,7 +184,7 @@ When served via GitHub Pages (or any HTTP host), the board polls the GitHub comm
 
 ## Auditability
 
-Bot commits to ticket-lifecycle actions carry `Model:` and `Trigger:` trailers in the commit body, so `git log` is a complete audit trail of which model did what to which ticket. See [`bot-horde/BOTHORDE.md`](bot-horde/BOTHORDE.md) → "Provenance trailers" for the convention and example queries (`git log --grep "Trigger: HB-074"`).
+Bot commits to ticket-lifecycle actions carry `Model:` and `Trigger:` trailers in the commit body, so `git log` is a complete audit trail of which model did what to which ticket. See [`bot-horde/BOTHORDE.md`](bot-horde/BOTHORDE.md) → "Provenance trailers" for the convention and example queries (`git log --grep "Trigger: BH-074"`).
 
 ---
 
@@ -204,7 +204,7 @@ The ticket format maps cleanly to both:
 
 | Horde of Bots | Jira | Trello |
 |---|---|---|
-| HB-XXX | Issue key | Card |
+| BH-XXX | Issue key | Card |
 | Goal | Summary | Card title |
 | Why | Description | Card description |
 | Done when | Acceptance criteria | Checklist |

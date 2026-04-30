@@ -1,6 +1,6 @@
 # Migrating from change-mate to Horde of Bots
 
-The project formerly known as `change-mate` is now **Horde of Bots**. Tickets use the `HB-` prefix instead of `CM-`. The install command, ticket format, board UI, and workflow are unchanged — only names changed. This note tells your bot (or you) how to migrate an existing repo.
+The project formerly known as `change-mate` is now **Horde of Bots**. Tickets use the `BH-` prefix instead of `CM-`. The install command, ticket format, board UI, and workflow are unchanged — only names changed. This note tells your bot (or you) how to migrate an existing repo.
 
 The repo URL `github.com/allavallc/change-mate` auto-redirects to `github.com/allavallc/bot-horde`, so existing clones still pull and push. Update remotes when convenient.
 
@@ -10,7 +10,7 @@ The repo URL `github.com/allavallc/change-mate` auto-redirects to `github.com/al
 |---|---|
 | `change-mate/` directory | `bot-horde/` |
 | `CHANGEMATE.md` | `BOTHORDE.md` |
-| `CM-NNN` ticket IDs | `HB-NNN` (numbers preserved) |
+| `CM-NNN` ticket IDs | `BH-NNN` (numbers preserved) |
 | `.github/workflows/change-mate-rebuild-board.yml` | `bot-horde-rebuild-board.yml` |
 | `CHANGEMATE_*` env vars (UPGRADE_DOCS, REMOVE_WORKFLOW, etc.) | `HORDEOFBOTS_*` |
 | `localStorage` keys (`cm_github_token`, etc.) | `hb_*` (one-time re-auth in browser) |
@@ -35,17 +35,17 @@ set -e
 [ -f .github/workflows/change-mate-rebuild-board.yml ] && \
   git mv .github/workflows/change-mate-rebuild-board.yml .github/workflows/bot-horde-rebuild-board.yml
 
-# 2. Rename ticket files CM-NNN → HB-NNN (numbers preserved)
+# 2. Rename ticket files CM-NNN → BH-NNN (numbers preserved)
 for d in backlog in-progress done blocked not-doing; do
   for f in bot-horde/$d/CM-*.md; do
     [ -f "$f" ] || continue
-    git mv "$f" "$(echo "$f" | sed 's|/CM-|/HB-|')"
+    git mv "$f" "$(echo "$f" | sed 's|/CM-|/BH-|')"
   done
 done
 
 # 3. Rewrite CM-NNN references inside every markdown file
 find horde-of-bots -name '*.md' -exec \
-  sed -i 's/\bCM-\([0-9][0-9]*\)\b/HB-\1/g' {} +
+  sed -i 's/\bCM-\([0-9][0-9]*\)\b/BH-\1/g' {} +
 
 # 4. Update CLAUDE.md import line (if present)
 [ -f CLAUDE.md ] && \

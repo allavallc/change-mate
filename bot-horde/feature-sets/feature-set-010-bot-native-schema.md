@@ -9,15 +9,15 @@ Feedback ("v3.0") proposed a category-redefining bot-native tracker. Most of the
 The platform-scale items (capability matching, scheduling, cross-repo coordination, lease daemons) are deferred to a separate exploration doc and are not work in this repo.
 
 ## Tickets
-- HB-071 — `Split-from:` field for ticket decomposition
-- HB-072 — `Verification:` field separate from `Status:`
-- HB-073 — `Failure-mode:` field on blocked tickets
-- HB-074 — Commit-message provenance convention
-- HB-075 — Dependency enforcement: render + filter
-- HB-076 — `validate.py` enforcing the schema in CI (depends on the four field tickets and the dependency-enforcement ticket)
+- BH-071 — `Split-from:` field for ticket decomposition
+- BH-072 — `Verification:` field separate from `Status:`
+- BH-073 — `Failure-mode:` field on blocked tickets
+- BH-074 — Commit-message provenance convention
+- BH-075 — Dependency enforcement: render + filter
+- BH-076 — `validate.py` enforcing the schema in CI (depends on the four field tickets and the dependency-enforcement ticket)
 
 ## Build order
-HB-071, HB-072, HB-073, HB-075 land first in any order — each is independent. HB-074 can land any time (pure docs). HB-076 lands last because it enforces the fields the others introduce.
+BH-071, BH-072, BH-073, BH-075 land first in any order — each is independent. BH-074 can land any time (pure docs). BH-076 lands last because it enforces the fields the others introduce.
 
 ## Status
 Backlog

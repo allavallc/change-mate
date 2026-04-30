@@ -103,7 +103,7 @@ Scan the backlog for tickets that:
 - Have to land before this one can start → this ticket is **Blocked by** them
 - Are the parent ticket whose scope this one carved out from → set **Split from**
 
-**Write only one side of each edge.** The board renderer infers the inverse automatically. If HB-A blocks HB-B, write `Blocks: HB-B` on HB-A's file only — do not also write `Blocked by: HB-A` on HB-B's file. Writing both creates maintenance drift.
+**Write only one side of each edge.** The board renderer infers the inverse automatically. If BH-A blocks BH-B, write `Blocks: BH-B` on BH-A's file only — do not also write `Blocked by: BH-A` on BH-B's file. Writing both creates maintenance drift.
 
 **Prefer the upstream side.** When an edge exists, write it as `Blocks` on the ticket that must finish first. That ticket's author is closest to knowing what depends on it.
 
@@ -133,7 +133,7 @@ Before presenting, do one cut pass per the Brevity rule above. Then present the 
 
 > Does this land? (yes / edit N / reject)
 
-- `yes` → create the file in `bot-horde/backlog/HB-XXX-<timestamp>.md`, scaffold the new feature set file if proposed, say "On it."
+- `yes` → create the file in `bot-horde/backlog/BH-XXX-<timestamp>.md`, scaffold the new feature set file if proposed, say "On it."
 - `edit N` → revise that section, re-show
 - `reject` → ask why, then stop
 
@@ -158,11 +158,11 @@ A clear "no" with reasoning is more respectful than a vague "yes, eventually."
 
 Example PM voice:
 
-> I'd recommend we ship v1 without the bulk-edit feature. Here's why: the backlog already has HB-027 covering bulk operations and it's slated for the next feature set. Bundling it here doubles scope and pushes ship by ~2 weeks for one user request. I'd rather ship the core fast, see if bulk-edit is actually pulled for, and let HB-027 carry it. ~70% confidence — happy to be convinced if you've heard a stronger pull from users.
+> I'd recommend we ship v1 without the bulk-edit feature. Here's why: the backlog already has BH-027 covering bulk operations and it's slated for the next feature set. Bundling it here doubles scope and pushes ship by ~2 weeks for one user request. I'd rather ship the core fast, see if bulk-edit is actually pulled for, and let BH-027 carry it. ~70% confidence — happy to be convinced if you've heard a stronger pull from users.
 
 ## Reference: ticket file format
 
-See `BOTHORDE.md` → "Ticket file format" for the exact markdown structure your draft must produce. The file name format is `HB-XXX-<unix-timestamp>.md`. The display ID inside is `# [HB-XXX] Title`.
+See `BOTHORDE.md` → "Ticket file format" for the exact markdown structure your draft must produce. The file name format is `BH-XXX-<unix-timestamp>.md`. The display ID inside is `# [BH-XXX] Title`.
 
 ## Reference: feature set file format
 
@@ -173,7 +173,7 @@ See `BOTHORDE.md` → "Feature set rules" for the exact markdown structure for n
 When you commit a ticket-lifecycle action (claim, done, edit-while-in-progress, blocked, reclaim), follow the **Provenance trailers** convention in `BOTHORDE.md`. Every such commit body carries:
 
 - `Model: <model-id>` — your model identifier (e.g. `claude-opus-4-7`)
-- `Trigger: HB-XXX <action>` — the ticket and the lifecycle action
+- `Trigger: BH-XXX <action>` — the ticket and the lifecycle action
 
 These are how `git log` becomes a real audit trail of which model did what to which ticket. The PM skill produces commit messages with the trailers populated by default; if you bypass the skill and commit directly, append them yourself.
 

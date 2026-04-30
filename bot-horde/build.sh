@@ -86,7 +86,7 @@ else:
         for f in sorted(sd.glob("feature-set-*.md")):
             feature_sets.append(parse_feature_set(f, prefix=TICKET_PREFIX))
 
-# HB-077: stale-claim rendering. For each in-progress ticket, find the timestamp
+# BH-077: stale-claim rendering. For each in-progress ticket, find the timestamp
 # of the last commit that touched its file. JS uses this to render
 # "last commit Yh ago" and apply stale styling when both timestamps exceed
 # stale_after_hours. None when git lookup fails (fresh untracked tickets).
@@ -193,7 +193,7 @@ def detect_head_sha():
 POLL_SECONDS = _cfg.get("poll_seconds", 30)
 HEAD_SHA = detect_head_sha()
 
-# HB-078: pollSource config field. "github" = existing behavior; "none" = bail
+# BH-078: pollSource config field. "github" = existing behavior; "none" = bail
 # in JS, show "static — refresh manually" indicator. Unknown values warn and
 # fall back to "github" so misconfig doesn't silently kill polling.
 _RAW_POLL_SOURCE = str(_cfg.get("pollSource", "github")).lower()
@@ -1526,7 +1526,7 @@ document.addEventListener('keydown', function(e) {
   var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
   var indicator = document.getElementById('hb-live-indicator');
 
-  // HB-078: pollSource: "none" — board is served somewhere off-GitHub (or
+  // BH-078: pollSource: "none" — board is served somewhere off-GitHub (or
   // bundled offline). Surface that explicitly instead of attempting fetches
   // that will fail.
   if (cfg.poll_source === 'none') {

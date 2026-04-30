@@ -12,8 +12,8 @@ Two small fixes surfaced during the v3.0 feedback evaluation but didn't fit the 
 Bundled because they're the same shape of fix at different layers (render + config). Independent on their own; together they're a coherent "honest presentation" pass.
 
 ## Tickets
-- HB-077 — Stale-claim render on in-progress cards
-- HB-078 — Polling source honesty + README update
+- BH-077 — Stale-claim render on in-progress cards
+- BH-078 — Polling source honesty + README update
 
 ## Status
 Backlog

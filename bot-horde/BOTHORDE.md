@@ -40,7 +40,7 @@ If you need any of the above, build it as a **layer on top** — reading the tic
 - Treat Horde of Bots files as coordination metadata, not code. Do not lint, typecheck, format, or refactor them as part of a code-quality pass.
 - When summarizing repo changes, exclude Horde of Bots file changes by default unless the user explicitly asks about workflow.
 - When writing tests, CI config, or deploy scripts, assume `bot-horde/` does not exist at build time.
-- Never wire a Horde of Bots ticket ID (e.g. `// see HB-042`) into product source. Ticket IDs must not survive into shipped code.
+- Never wire a Horde of Bots ticket ID (e.g. `// see BH-042`) into product source. Ticket IDs must not survive into shipped code.
 
 ---
 
@@ -117,18 +117,18 @@ When the user asks "what's next?", "what's in the backlog?", "what should I work
 ### feature-set-010 — Bot-native schema additions
 | ID | Title | What it does |
 |---|---|---|
-| HB-071 | Split-from field | Records lineage when one ticket becomes many. |
-| HB-072 | Verification field | Trust level separate from Status. |
+| BH-071 | Split-from field | Records lineage when one ticket becomes many. |
+| BH-072 | Verification field | Trust level separate from Status. |
 
 ### Standalone (no feature set)
 | ID | Title | What it does |
 |---|---|---|
-| HB-XXX | ... | ... |
+| BH-XXX | ... | ... |
 
 **In progress (by others)**
 | ID | Title | Owner | Started |
 |---|---|---|---|
-| HB-002 | Refactor data layer | sarah-bot | 2h ago |
+| BH-002 | Refactor data layer | sarah-bot | 2h ago |
 ```
 
 Format rules:
@@ -141,7 +141,7 @@ Format rules:
 - Empty backlog: render `_Backlog is empty._` instead of empty tables.
 - No in-progress tickets: omit that table entirely.
 
-If the user asks "what should I work on?", prepend a one-line recommendation before the tables — e.g., "If picking one, I'd suggest **HB-072** because [reason]." Then the tables.
+If the user asks "what should I work on?", prepend a one-line recommendation before the tables — e.g., "If picking one, I'd suggest **BH-072** because [reason]." Then the tables.
 
 ---
 
@@ -179,7 +179,7 @@ The flow is **draft first, ask second**:
 
 Once the user says yes:
 
-1. Create the ticket file in `bot-horde/backlog/HB-XXX-<timestamp>.md` using the ticket format below
+1. Create the ticket file in `bot-horde/backlog/BH-XXX-<timestamp>.md` using the ticket format below
 2. If a new feature set was proposed, create `bot-horde/feature-sets/feature-set-XXX-<slug>.md`
 3. Say "On it." and start the work
 
@@ -196,19 +196,19 @@ There is no separate lock registry. The git push *is* the lock: the agent that s
 Bot commits for ticket-lifecycle actions carry two trailers in the commit message body so the audit trail lives in `git log` without any new infrastructure:
 
 ```
-HB-XXX: <action>
+BH-XXX: <action>
 
 <short body explaining what changed>
 
 Model: claude-opus-4-7
-Trigger: HB-XXX <action>
+Trigger: BH-XXX <action>
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 ```
 
 **Trailer format:**
 
 - `Model:` — the model identifier of the agent that made the commit (e.g. `claude-opus-4-7`, `claude-sonnet-4-6`, `gpt-5-codex`).
-- `Trigger:` — `HB-XXX <action>` where action ∈ `claim | done | edit | blocked | reclaim`.
+- `Trigger:` — `BH-XXX <action>` where action ∈ `claim | done | edit | blocked | reclaim`.
 - `Co-Authored-By:` — existing convention, unchanged.
 
 **When trailers apply:**
@@ -223,7 +223,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 **Querying the audit:**
 
 ```bash
-git log --grep "Trigger: HB-074"   # full lifecycle of one ticket
+git log --grep "Trigger: BH-074"   # full lifecycle of one ticket
 git log --grep "Model: claude-"    # everything done by Claude models
 git log --grep "Trigger: .* done"  # all completion events
 ```
@@ -234,23 +234,23 @@ git log --grep "Trigger: .* done"  # all completion events
 
 When the user picks a ticket from the backlog:
 
-1. **Check `Blocked by` first.** If the ticket lists any IDs in `**Blocked by**`, verify each is in `bot-horde/done/`. If any blocker is unfinished, do not claim — surface the dependency to the user instead. (The board's "Ready only" filter does this same check on the rendering side; the validator in HB-076 enforces it at done-transition time.)
+1. **Check `Blocked by` first.** If the ticket lists any IDs in `**Blocked by**`, verify each is in `bot-horde/done/`. If any blocker is unfinished, do not claim — surface the dependency to the user instead. (The board's "Ready only" filter does this same check on the rendering side; the validator in BH-076 enforces it at done-transition time.)
 2. Move the file from `bot-horde/backlog/` to `bot-horde/in-progress/` (keep the full filename including timestamp)
 4. Add `assigned_to` and `started` fields at the top of the file
 5. Run:
    ```
    git add bot-horde/
-   git commit -m "HB-XXX: in progress"
+   git commit -m "BH-XXX: in progress"
    git push
    ```
 6. If the push fails with a conflict, do not show raw git output. Instead say:
 
 ```
-⚠️  HB-XXX was just picked up by someone else.
+⚠️  BH-XXX was just picked up by someone else.
 
 Remaining backlog:
-  HB-005 — Fix pagination bug
-  HB-007 — Add export feature
+  BH-005 — Fix pagination bug
+  BH-007 — Add export feature
 
 Want to pick one of these instead?
 ```
@@ -268,7 +268,7 @@ Want to pick one of these instead?
 
 ## Blocking a ticket
 
-When a ticket cannot proceed, move it to `bot-horde/blocked/` and set both the `**Blocked by**` field (which HB-IDs are preventing progress) and the `**Failure mode**` field (the *category* of blocker). Both are **required** for tickets in the blocked folder — a blocked ticket with no explanation of what's blocking it is just an orphan.
+When a ticket cannot proceed, move it to `bot-horde/blocked/` and set both the `**Blocked by**` field (which BH-IDs are preventing progress) and the `**Failure mode**` field (the *category* of blocker). Both are **required** for tickets in the blocked folder — a blocked ticket with no explanation of what's blocking it is just an orphan.
 
 `**Failure mode**` allowed values:
 
@@ -280,12 +280,12 @@ When a ticket cannot proceed, move it to `bot-horde/blocked/` and set both the `
 
 Steps:
 
-1. Update the file: set status to `blocked`, set `**Blocked by**: HB-XXX[, HB-YYY]`, set `**Failure mode**: <one of the values above>`
+1. Update the file: set status to `blocked`, set `**Blocked by**: BH-XXX[, BH-YYY]`, set `**Failure mode**: <one of the values above>`
 2. Move the file from its current folder to `bot-horde/blocked/`
 3. Run:
    ```
    git add bot-horde/
-   git commit -m "HB-XXX: blocked"
+   git commit -m "BH-XXX: blocked"
    git push
    ```
 
@@ -295,7 +295,7 @@ When the blocker is resolved, move the ticket back to `in-progress/` (or `backlo
 
 ## Rejecting a ticket
 
-When the user says "reject HB-XXX", "not doing HB-XXX", or "kill HB-XXX":
+When the user says "reject BH-XXX", "not doing BH-XXX", or "kill BH-XXX":
 
 1. Ask: "Why is this being rejected? (type n/a to skip)"
 2. Wait for the answer
@@ -309,10 +309,10 @@ When the user says "reject HB-XXX", "not doing HB-XXX", or "kill HB-XXX":
 5. Run:
    ```
    git add bot-horde/
-   git commit -m "HB-XXX: not doing"
+   git commit -m "BH-XXX: not doing"
    git push
    ```
-6. Confirm: "HB-XXX marked as not doing."
+6. Confirm: "BH-XXX marked as not doing."
 
 Tickets in `not-doing/` are **never shown at session start** — they are dead. They are visible on the board only when the user clicks "Show rejected".
 
@@ -325,13 +325,13 @@ Works from any folder: `backlog/`, `in-progress/`, or `blocked/`.
 When two (or more) existing tickets cover the same work and should be merged:
 
 1. **Create a new ticket** with the consolidated scope. Do **not** edit one of the originals to absorb the other — the audit trail matters.
-2. **In the new ticket's Notes**, write a `Consolidation:` line listing the source tickets — e.g. `Consolidation of HB-012 and HB-024`. Bots reading the new ticket use this line to find the source context (read the originals in `not-doing/` for the historical Why/Notes).
-3. **Move each source ticket to `bot-horde/not-doing/`** with `**Rejection reason**: consolidated into HB-XXX` (substitute the new ticket's ID).
+2. **In the new ticket's Notes**, write a `Consolidation:` line listing the source tickets — e.g. `Consolidation of BH-012 and BH-024`. Bots reading the new ticket use this line to find the source context (read the originals in `not-doing/` for the historical Why/Notes).
+3. **Move each source ticket to `bot-horde/not-doing/`** with `**Rejection reason**: consolidated into BH-XXX` (substitute the new ticket's ID).
 4. The new ticket inherits the union of `Related` / `Blocks` / `Blocked by` from the originals — keep the "write only one side of each edge" rule. De-dupe.
 5. Commit + push:
    ```
    git add bot-horde/
-   git commit -m "HB-XXX: consolidates HB-A and HB-B"
+   git commit -m "BH-XXX: consolidates BH-A and BH-B"
    git push
    ```
 
@@ -347,7 +347,7 @@ Why a new ticket rather than picking one of the originals? Two reasons: it surfa
 4. Run:
    ```
    git add bot-horde/
-   git commit -m "HB-XXX: done"
+   git commit -m "BH-XXX: done"
    git push
    ```
 
@@ -367,11 +367,11 @@ The field is orthogonal to status: status describes workflow stage; verification
 Ticket filenames include a Unix timestamp suffix to prevent conflicts between agents working in parallel:
 
 ```
-HB-004-1736847392.md
+BH-004-1736847392.md
 ```
 
 - The timestamp is generated at creation time: `date +%s` (shell) or `Math.floor(Date.now()/1000)` (JS)
-- The display ID inside the file and on the board is always clean: `# [HB-004] Title`
+- The display ID inside the file and on the board is always clean: `# [BH-004] Title`
 - The timestamp is only in the filename — never shown to users
 
 ---
@@ -379,16 +379,16 @@ HB-004-1736847392.md
 ## Ticket file format
 
 ```markdown
-# [HB-XXX] Title
+# [BH-XXX] Title
 
 - **Status**: open | in-progress | done | blocked | not-doing
 - **Priority**: Low | Medium | High | Critical
 - **Effort**: XS | S | M | L | XL
 - **Feature set**: feature-set-XXX-<slug> (or blank for standalone)
-- **Related**: HB-XXX, HB-YYY (comma-separated, or blank)
-- **Blocks**: HB-XXX, HB-YYY (comma-separated, or blank)
-- **Blocked by**: HB-XXX, HB-YYY (comma-separated, or blank)
-- **Split from**: HB-XXX, HB-YYY (comma-separated, or blank — set when this ticket was decomposed from another)
+- **Related**: BH-XXX, BH-YYY (comma-separated, or blank)
+- **Blocks**: BH-XXX, BH-YYY (comma-separated, or blank)
+- **Blocked by**: BH-XXX, BH-YYY (comma-separated, or blank)
+- **Split from**: BH-XXX, BH-YYY (comma-separated, or blank — set when this ticket was decomposed from another)
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
@@ -445,7 +445,7 @@ CI runs `python3 bot-horde/validate.py` on every push (via `build.sh`). The vali
 - `Verification` present and one of the four allowed values iff in `done/`
 - `Failure mode` present and one of the five allowed values iff in `blocked/`
 - Every ID in `Related` / `Blocks` / `Blocked by` / `Split from` resolves to a real ticket
-- A `done/` ticket cannot have `Blocked by` references that aren't themselves `done/` (HB-075 enforcement)
+- A `done/` ticket cannot have `Blocked by` references that aren't themselves `done/` (BH-075 enforcement)
 
 If any rule fails, the build exits non-zero and CI fails. Fix the ticket; do not bypass the validator.
 
@@ -458,9 +458,9 @@ Four optional fields express how tickets relate to each other:
 - **Blocked by**: this ticket cannot start or complete until the listed tickets are done.
 - **Split from**: this ticket was decomposed from the listed parent(s) — preserves lineage when a bot or PM splits one ticket into many. Pure provenance; no scheduling implication.
 
-Values are comma-separated `HB-XXX` IDs. Whitespace is tolerated. Entries that don't match `HB-\d+` are ignored silently.
+Values are comma-separated `BH-XXX` IDs. Whitespace is tolerated. Entries that don't match `BH-\d+` are ignored silently.
 
-**Write only one side of each edge.** If HB-005 declares `Blocks: HB-006`, do not also add `Blocked by: HB-005` on HB-006 — the renderer infers the inverse at build time and shows it on the counterpart card automatically. Writing both sides creates maintenance drift.
+**Write only one side of each edge.** If BH-005 declares `Blocks: BH-006`, do not also add `Blocked by: BH-005` on BH-006 — the renderer infers the inverse at build time and shows it on the counterpart card automatically. Writing both sides creates maintenance drift.
 
 Convention: prefer the upstream side. Use `Blocks` on the ticket that must finish first, rather than `Blocked by` on the ticket that is waiting.
 
@@ -468,7 +468,7 @@ Convention: prefer the upstream side. Use `Blocks` on the ticket that must finis
 
 ## Ticket ID format
 
-Read all files across all folders in `bot-horde/` including `not-doing/`. Find the highest existing HB-XXX number and increment by 1. Start at HB-001 if no tickets exist.
+Read all files across all folders in `bot-horde/` including `not-doing/`. Find the highest existing BH-XXX number and increment by 1. Start at BH-001 if no tickets exist.
 
 ---
 
@@ -513,8 +513,8 @@ One sentence on what this feature set delivers when complete.
 Why these tickets belong together. What ties them into a coherent unit of work.
 
 ## Tickets
-- HB-XXX — short title
-- HB-YYY — short title
+- BH-XXX — short title
+- BH-YYY — short title
 
 ## Status
 In progress | Complete | Paused

@@ -28,7 +28,7 @@ Authoritative workflow spec: `bot-horde/BOTHORDE.md`. Read it before touching ti
 - `skills/product-manager/SKILL.md` — PM skill (source; `setup.sh` installs to `~/.claude/skills/product-manager/`). Has a `version:` line in frontmatter; bump on behavior change.
 - `bot-horde/build.sh` — generates `bot-horde/board.html` (detects GitHub repo, embeds head SHA + poll config, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles). Includes the `hb-poll` script (polls GitHub commits API for live board updates; **disabled on `file://`** because the local file isn't auto-updated, so reload would just re-render the same stale snapshot), the per-agent walking-robot animation, and the filter/sort bar (single-select Priority/Effort/Feature-set + Sort dropdowns, state in `localStorage` under `hb_board_filters_v1`, applied per-column inside `render()` via `filterAndSort` — stable sort with original-index tie-break). Also: **`HORDEOFBOTS_DEMO=1` flag** — skips directory walk, loads tickets + feature_sets from `demo/data.json`, forces `demo_mode=true` (empty repo config so polling is off, hides the Add Story button), writes output to `demo/index.html`. Used to build the showcase demo at `<pages>/demo/`.
 - `bot-horde/build_lib.py` — `parse_ticket` + `parse_feature_set`
-- `bot-horde/backlog/|in-progress/|done/|blocked/|not-doing/` — ticket files (markdown, `HB-XXX-<timestamp>.md`)
+- `bot-horde/backlog/|in-progress/|done/|blocked/|not-doing/` — ticket files (markdown, `BH-XXX-<timestamp>.md`)
 - `bot-horde/feature-sets/` — feature set files (`feature-set-XXX-<slug>.md`)
 - `tests/` — pytest suite (`test_parser.py` unit + `test_build.py` subprocess integration + `test_setup.py` setup.sh tests). No Supabase tests — that whole layer is gone.
 - `demo/data.json` — single fixture file holding all showcase content (16 tickets + 2 feature sets). Source for the public demo board. **Upstream-only — not in MANIFEST**, adopters never get this file.
@@ -36,7 +36,7 @@ Authoritative workflow spec: `bot-horde/BOTHORDE.md`. Read it before touching ti
 
 ## Ticket format — quick reference
 
-Every ticket has: `**Status**`, `**Priority**`, `**Effort**`, `**Feature set**`, optional `**Related**` / `**Blocks**` / `**Blocked by**` (comma-separated HB-IDs), assignee + dates, then `## Goal`, `## Why`, `## Done when`, `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `## Notes`. Legacy tickets without new sections still parse — do not backfill unless asked.
+Every ticket has: `**Status**`, `**Priority**`, `**Effort**`, `**Feature set**`, optional `**Related**` / `**Blocks**` / `**Blocked by**` (comma-separated BH-IDs), assignee + dates, then `## Goal`, `## Why`, `## Done when`, `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `## Notes`. Legacy tickets without new sections still parse — do not backfill unless asked.
 
 Relationships: **write only one side of each edge.** The renderer infers the inverse at build time.
 
@@ -55,8 +55,8 @@ Relationships: **write only one side of each edge.** The renderer infers the inv
 - Feature set IDs must be unique — two files both starting `feature-set-001-` will collide.
 - When you edit any file in `MANIFEST.json`'s `files` map, bump that file's value (ISO 8601 timestamp like `2026-04-27T19:35:00Z`) and update the top-level `updated`. Otherwise existing adopters won't detect the change.
 - `bot-horde/BOTHORDE.md` is loaded by every Claude Code session via `@-import` — keep it lean. New verbose docs go in `INSTALL-FAQ.md` or `UPDATING.md` and get referenced from BOTHORDE.md.
-- The board is brutalist-styled per `plan/style-guide.md` (SimplifyOps system). Single rust accent (`#c4724a`); status uses dash patterns, not colors. Per-agent crab + robot colors are an intentional styleguide deviation documented in HB-060.
-- Card titles + feature-set chip + modal titles use `--read` (Atkinson Hyperlegible) — chosen for legibility over Big Shoulders' display-display weight. The masthead logo keeps Big Shoulders. Card layout (post-HB-069): feature-set chip top, HB-ID + Priority/Effort badges row, title, relationship chips, expanded body, crab worker in a bottom-left `card-footer`. The duplicate `.card-assignee` text is gone.
+- The board is brutalist-styled per `plan/style-guide.md` (SimplifyOps system). Single rust accent (`#c4724a`); status uses dash patterns, not colors. Per-agent crab + robot colors are an intentional styleguide deviation documented in BH-060.
+- Card titles + feature-set chip + modal titles use `--read` (Atkinson Hyperlegible) — chosen for legibility over Big Shoulders' display-display weight. The masthead logo keeps Big Shoulders. Card layout (post-BH-069): feature-set chip top, BH-ID + Priority/Effort badges row, title, relationship chips, expanded body, crab worker in a bottom-left `card-footer`. The duplicate `.card-assignee` text is gone.
 - `setup.sh` detects local-only mode via `is_local_only_mode()` (checks `.gitignore` for an exact `horde-of-bots` / `bot-horde/` line). In that mode the rebuild-board workflow is skipped on install, prompted-for-removal if already present (`HORDEOFBOTS_REMOVE_WORKFLOW=yes|no`), and filtered out of the `HORDEOFBOTS_UPGRADE_DOCS` flow. The workflow itself is also self-defending: if `bot-horde/build.sh` is absent at run time it short-circuits cleanly instead of failing every push.
 
 ## Direction
