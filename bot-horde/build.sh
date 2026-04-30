@@ -587,6 +587,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   white-space: nowrap;
 }
 .card-rel-more { color: var(--ink-dimmer); }
+.card-rel-verif-bot-claimed    { opacity: 0.55; font-weight: 400; }
+.card-rel-verif-tests-passed   { opacity: 0.8;  font-weight: 500; }
+.card-rel-verif-bot-reviewed   { opacity: 1;    font-weight: 600; color: var(--ink); }
+.card-rel-verif-human-reviewed { opacity: 1;    font-weight: 700; color: var(--ink); border-color: var(--ink); }
 .dl-val.pre { white-space: pre-line; }
 .card-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
 .card.open .card-detail { max-height: 800px; }
