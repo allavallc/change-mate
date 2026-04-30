@@ -696,49 +696,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-083",
-      "title": "Workflow: handoff, acceptance, rejection",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "M",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [
-        "BH-080",
-        "BH-081",
-        "BH-082"
-      ],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "user_facing": "no",
-      "goal": "Document the three new workflow transitions in BOTHORDE.md: handoff (in-progress \u2192 in-review when `User-facing: yes`), acceptance (in-review \u2192 done), rejection (in-review \u2192 in-progress). Rejection reuses the existing `**Rejected by**` / `**Rejected**` / `**Rejection reason**` fields \u2014 no new schema.",
-      "why": "The schema additions in BH-080/081/082 are inert without workflow guidance. Bots need to know *when* to move a ticket where, *who* writes what, and *how* approve/reject is recorded. Without the doc, the loop is theoretical.",
-      "done_when": [
-        "BOTHORDE.md gains a new section \"Acceptance loop\" after \"When work is complete\"",
-        "Section documents three transitions:",
-        "**Handoff (dev bot)**: when finishing a `User-facing: yes` ticket, instead of moving directly to `done/`, populate `## How to test`, move the file to `in-review/`, set `Status: in-review`, commit with `Trigger: BH-XXX in-review`",
-        "**Acceptance (tester, \u2260 dev bot)**: read `## How to test`, execute, on pass move to `done/`, set `Status: done`, set `Verification: human-reviewed` (if human) or `bot-reviewed` (if bot), populate `Completed`, commit with `Trigger: BH-XXX accepted`",
-        "**Rejection (tester, \u2260 dev bot)**: on fail move back to `in-progress/`, set `Status: in-progress`, populate `Rejected by` / `Rejected` / `Rejection reason`, commit with `Trigger: BH-XXX rejected`",
-        "The non-user-facing path is unchanged: `User-facing: no` tickets go in-progress \u2192 done as today, dev bot self-sets `Verification: bot-claimed` or `tests-passed`",
-        "\"When work is complete\" section gets a one-line note pointing to the new section for `User-facing: yes` tickets"
-      ],
-      "desired_output": "A bot picking up an `in-review/` ticket finds clear instructions: how to identify it, what to read, what to write back, where to move the file. Same for a dev bot deciding whether to skip or enter the loop.",
-      "success_signals": "- New tickets follow the documented transitions without a session needing to ask \"where does this go?\"\n- Rejection records carry enough information that the dev bot can fix without follow-up.",
-      "failure_signals": "- Dev bots skip `in-review/` and go straight to `done/` on user-facing tickets. Validator (BH-087) catches this.\n- Tester bots approve their own work. BH-085 enforces the separation; this ticket only documents it.",
-      "tests": "- No code in this ticket; it's pure docs. Verification is a docs review.\n- BH-087 picks up the runtime enforcement of the rules described here.",
-      "how_to_test": "",
-      "notes": "- The decision to reuse `Rejected by` / `Rejection reason` instead of inventing acceptance-specific fields keeps the schema flat. Rejection is rejection regardless of source.\n- Out of scope: a `Reviewed by` field naming the tester on accepted tickets. Provenance trailers (BH-086) carry that information in the commit log; adding a ticket field would duplicate it.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-084",
       "title": "`Verification` becomes loop output",
       "status": "open",
@@ -910,6 +867,50 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "BH-083",
+      "title": "Workflow: handoff, acceptance, rejection",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [
+        "BH-080",
+        "BH-081",
+        "BH-082"
+      ],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 20:15",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "user_facing": "no",
+      "goal": "Document the three new workflow transitions in BOTHORDE.md: handoff (in-progress \u2192 in-review when `User-facing: yes`), acceptance (in-review \u2192 done), rejection (in-review \u2192 in-progress). Rejection reuses the existing `**Rejected by**` / `**Rejected**` / `**Rejection reason**` fields \u2014 no new schema.",
+      "why": "The schema additions in BH-080/081/082 are inert without workflow guidance. Bots need to know *when* to move a ticket where, *who* writes what, and *how* approve/reject is recorded. Without the doc, the loop is theoretical.",
+      "done_when": [
+        "BOTHORDE.md gains a new section \"Acceptance loop\" after \"When work is complete\"",
+        "Section documents three transitions:",
+        "**Handoff (dev bot)**: when finishing a `User-facing: yes` ticket, instead of moving directly to `done/`, populate `## How to test`, move the file to `in-review/`, set `Status: in-review`, commit with `Trigger: BH-XXX in-review`",
+        "**Acceptance (tester, \u2260 dev bot)**: read `## How to test`, execute, on pass move to `done/`, set `Status: done`, set `Verification: human-reviewed` (if human) or `bot-reviewed` (if bot), populate `Completed`, commit with `Trigger: BH-XXX accepted`",
+        "**Rejection (tester, \u2260 dev bot)**: on fail move back to `in-progress/`, set `Status: in-progress`, populate `Rejected by` / `Rejected` / `Rejection reason`, commit with `Trigger: BH-XXX rejected`",
+        "The non-user-facing path is unchanged: `User-facing: no` tickets go in-progress \u2192 done as today, dev bot self-sets `Verification: bot-claimed` or `tests-passed`",
+        "\"When work is complete\" section gets a one-line note pointing to the new section for `User-facing: yes` tickets"
+      ],
+      "desired_output": "A bot picking up an `in-review/` ticket finds clear instructions: how to identify it, what to read, what to write back, where to move the file. Same for a dev bot deciding whether to skip or enter the loop.",
+      "success_signals": "- New tickets follow the documented transitions without a session needing to ask \"where does this go?\"\n- Rejection records carry enough information that the dev bot can fix without follow-up.",
+      "failure_signals": "- Dev bots skip `in-review/` and go straight to `done/` on user-facing tickets. Validator (BH-087) catches this.\n- Tester bots approve their own work. BH-085 enforces the separation; this ticket only documents it.",
+      "tests": "- No code in this ticket; it's pure docs. Verification is a docs review.\n- BH-087 picks up the runtime enforcement of the rules described here.",
+      "how_to_test": "",
+      "notes": "- The decision to reuse `Rejected by` / `Rejection reason` instead of inventing acceptance-specific fields keeps the schema flat. Rejection is rejection regardless of source.\n- Out of scope: a `Reviewed by` field naming the tester on accepted tickets. Provenance trailers (BH-086) carry that information in the commit log; adding a ticket field would duplicate it.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "last_commit_ct": 1777584985,
       "blocked_by_inferred": []
     },
     {
@@ -3083,7 +3084,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T21:34:52.281495+00:00",
+  "generated": "2026-04-30T21:36:40.148032+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3700,7 +3701,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "ec7699ec33e09def6f904199c6c99969521c6927", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "6c626adaf9fac6944af8d9ea696ad55a3556e858", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
