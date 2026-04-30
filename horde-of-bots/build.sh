@@ -76,13 +76,41 @@ else:
         d = CM / folder
         if d.exists():
             for f in sorted(d.glob(f"{TICKET_PREFIX}-*.md")):
-                tickets.append(parse_ticket(f, default_status, prefix=TICKET_PREFIX))
+                t = parse_ticket(f, default_status, prefix=TICKET_PREFIX)
+                t["_file_path"] = str(f.relative_to(ROOT)).replace("\\", "/")
+                tickets.append(t)
 
     feature_sets = []
     sd = CM / "feature-sets"
     if sd.exists():
         for f in sorted(sd.glob("feature-set-*.md")):
             feature_sets.append(parse_feature_set(f, prefix=TICKET_PREFIX))
+
+# HB-077: stale-claim rendering. For each in-progress ticket, find the timestamp
+# of the last commit that touched its file. JS uses this to render
+# "last commit Yh ago" and apply stale styling when both timestamps exceed
+# stale_after_hours. None when git lookup fails (fresh untracked tickets).
+def _last_commit_ct(rel_path):
+    try:
+        res = subprocess.run(
+            ["git", "log", "-1", "--format=%ct", "--", rel_path],
+            capture_output=True, text=True, timeout=5,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return int(res.stdout.strip())
+    except Exception:
+        pass
+    return None
+
+for t in tickets:
+    if t.get("status") == "in-progress" and t.get("_file_path"):
+        ct = _last_commit_ct(t["_file_path"])
+        if ct is not None:
+            t["last_commit_ct"] = ct
+
+# Strip internal-only fields before serializing to JS
+for t in tickets:
+    t.pop("_file_path", None)
 
 # Relationship analysis: inverse edge inference + orphan + cycle detection
 valid_ids = {t["id"] for t in tickets}
@@ -138,12 +166,15 @@ for _cycle in cycles_found:
         _chain = " -> ".join(_norm) + f" -> {_norm[0]}"
         print(f"[warn] cycle detected in blocks graph: {_chain}", file=sys.stderr)
 
+STALE_AFTER_HOURS = _cfg.get("stale_after_hours", 4)
+
 data_json = json.dumps(
     {
         "tickets": tickets,
         "feature_sets": feature_sets,
         "generated": datetime.now(UTC).isoformat(),
         "demo_mode": DEMO_MODE,
+        "stale_after_hours": STALE_AFTER_HOURS,
     },
     indent=2
 )
@@ -419,6 +450,17 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .card.status-done       { border: 2px solid var(--accent); }
 .card.status-inprogress { position: relative; border: 1px dashed var(--accent); }
 .card.status-blocked    { border: 1px dotted var(--accent); }
+.card.stale-claim { outline: 1px dotted var(--accent); outline-offset: 2px; }
+.card-stale-meta {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  margin-left: auto;
+  text-align: right;
+  text-transform: uppercase;
+}
+.card.stale-claim .card-stale-meta { color: var(--accent); }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .card-id {
   font-family: var(--read);
@@ -904,6 +946,30 @@ function detailRow(label, content) {
   return '<div><div class="dl-label">' + label + '</div>' + content + '</div>';
 }
 
+function parseStartedDate(s) {
+  if (!s) return null;
+  var trimmed = String(s).trim();
+  if (!trimmed) return null;
+  var bits = trimmed.split(/\\s+/);
+  var datePart = bits[0];
+  var timePart = bits[1] || '00:00';
+  var iso = datePart + 'T' + (timePart.length === 5 ? timePart : '00:00') + ':00';
+  var dt = new Date(iso);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function relativeAgo(date) {
+  if (!date) return '';
+  var diffMs = Date.now() - date.getTime();
+  if (diffMs < 60 * 1000) return 'just now';
+  var mins = Math.floor(diffMs / (60 * 1000));
+  if (mins < 60) return mins + 'm ago';
+  var hours = Math.floor(mins / 60);
+  if (hours < 48) return hours + 'h ago';
+  var days = Math.floor(hours / 24);
+  return days + 'd ago';
+}
+
 function buildRelChips(t) {
   var all = [];
   (t.related || []).forEach(function(id) { all.push({kind:'related', id:id, prefix:'\\u2194'}); });
@@ -960,10 +1026,32 @@ function cardHTML(t, isRejected) {
   var verifRow = (t.status === 'done' && t.verification)
     ? '<div><div class="dl-label">Verification</div><div class="dl-val">' + esc(t.verification) + '</div></div>'
     : '';
+  var staleMeta = '';
+  var staleClass = '';
+  if (t.status === 'in-progress') {
+    var claimedDate = parseStartedDate(t.started);
+    var lastCommitDate = t.last_commit_ct ? new Date(t.last_commit_ct * 1000) : null;
+    var thresholdMs = (D.stale_after_hours || 4) * 60 * 60 * 1000;
+    var nowMs = Date.now();
+    var parts = [];
+    if (claimedDate) parts.push('claimed ' + relativeAgo(claimedDate));
+    if (lastCommitDate) parts.push('last commit ' + relativeAgo(lastCommitDate));
+    if (parts.length) {
+      staleMeta = '<div class="card-stale-meta">' + parts.join(' \\u00b7 ') + '</div>';
+    }
+    if (claimedDate && lastCommitDate
+        && (nowMs - claimedDate.getTime()) > thresholdMs
+        && (nowMs - lastCommitDate.getTime()) > thresholdMs) {
+      staleClass = ' stale-claim';
+    }
+  }
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
   var relDetail = relDetailHTML(relChips);
-  var footer = t.assigned_to ? '<div class="card-footer">' + crabBadge(t.assigned_to) + '</div>' : '';
+  var footerInner = '';
+  if (t.assigned_to) footerInner += crabBadge(t.assigned_to);
+  if (staleMeta) footerInner += staleMeta;
+  var footer = footerInner ? '<div class="card-footer">' + footerInner + '</div>' : '';
 
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
   var why   = t.why   ? '<div><div class="dl-label">Why</div><div class="dl-val">'   + esc(t.why)   + '</div></div>' : '';
@@ -984,7 +1072,7 @@ function cardHTML(t, isRejected) {
 
   var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
-  return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
+  return '<div class="card' + rejClass + statusClass + staleClass + '" onclick="toggleCard(this)">'
     + robot
     + fsChip
     + '<div class="card-top">'
