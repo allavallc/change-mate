@@ -431,7 +431,23 @@ Unit tests, integration tests, or manual QA the developer should produce before 
 Decisions made, alternatives considered and rejected (with reasons), gotchas, out-of-scope items pushed to other tickets.
 ```
 
-**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`), `**Verification**`, or `**Failure mode**` must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
+**Backward compatibility**: the parser tolerates legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`), `**Verification**`, or `**Failure mode**` — they still render. CI validation (see "Validation" below) is stricter for *new* fields though: tickets in `done/` must carry `**Verification**`; tickets in `blocked/` must carry `**Failure mode**`. Existing done/blocked tickets were backfilled to satisfy this in the same PR that introduced the validator.
+
+## Validation
+
+CI runs `python3 horde-of-bots/validate.py` on every push (via `build.sh`). The validator walks every ticket and checks:
+
+- Required fields (`Status`, `Priority`, `Effort`) present
+- `Status` matches the folder the file lives in (`open` for `backlog/`, `in-progress` for `in-progress/`, etc.)
+- Dates parse as `YYYY-MM-DD` or `YYYY-MM-DD HH:MM`
+- `Assigned to` present iff in `in-progress/` or `done/`
+- `Completed` present iff in `done/`
+- `Verification` present and one of the four allowed values iff in `done/`
+- `Failure mode` present and one of the five allowed values iff in `blocked/`
+- Every ID in `Related` / `Blocks` / `Blocked by` / `Split from` resolves to a real ticket
+- A `done/` ticket cannot have `Blocked by` references that aren't themselves `done/` (HB-075 enforcement)
+
+If any rule fails, the build exits non-zero and CI fails. Fix the ticket; do not bypass the validator.
 
 ## Relationship fields
 

@@ -14,6 +14,8 @@ if [ -z "$PYTHON" ]; then
   exit 1
 fi
 
+"$PYTHON" "$(dirname "$0")/validate.py"
+
 "$PYTHON" - << 'PYEOF'
 import re, json, subprocess, sys, os
 from pathlib import Path

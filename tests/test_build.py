@@ -222,6 +222,7 @@ def test_build_generates_html(tmp_path):
 
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
 
     result = subprocess.run(
         ["bash", "horde-of-bots/build.sh"],
@@ -262,6 +263,7 @@ def test_build_renders_ready_only_filter_toggle(tmp_path):
 
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
 
     result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -284,6 +286,7 @@ def test_build_hides_rejected_button_when_no_not_doing_tickets(tmp_path):
 
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
 
     result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -311,6 +314,7 @@ def _stage_repo(tmp_path):
         (tmp_path / "horde-of-bots" / folder).mkdir(parents=True, exist_ok=True)
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
     shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
 
 
 def test_build_warns_on_orphan_reference_and_still_exits_zero(tmp_path):
