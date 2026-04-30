@@ -698,40 +698,6 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-073",
-      "title": "`Failure-mode:` field on blocked tickets",
-      "status": "backlog",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-010-bot-native-schema",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Add a `**Failure-mode**:` field that is required when a ticket is in `blocked/` and absent/empty otherwise. Allowed values: `failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human`. Renderer shows the failure mode as a chip on blocked cards.",
-      "why": "Today a ticket sitting in `blocked/` says nothing about *why* it's blocked. A reclaiming bot has to read Notes (which may not exist) to figure out if the blocker is \"tests failing\" (re-runnable), \"context exceeded\" (different bot can take it), or \"needs a human decision\" (action item for the user). Different blockers imply different next moves; making the mode explicit lets bots and humans triage at a glance.",
-      "done_when": [
-        "Schema docs list the five allowed values with a one-line description of each",
-        "`build_lib.parse_ticket` recognizes `**Failure-mode**:` and returns `failure_mode` on the ticket dict",
-        "Board renders the failure mode as a chip on blocked cards \u2014 accent-bordered, mono uppercase",
-        "HORDEOFBOTS.md guidance: when a bot moves a ticket to `blocked/`, it must set `Failure-mode:`. Reclaiming bots read the field first to decide whether to take it.",
-        "HB-076 validator requires `Failure-mode:` to be set when a ticket is in `blocked/`, and rejects invalid values",
-        "`tests/test_parser.py` covers each value + a blocked ticket missing the field (validator test)"
-      ],
-      "desired_output": "User glances at the blocked column. `needs-human` chips show what's waiting on them. `context-exceeded` and `failed-tests` chips show what another bot could pick up.",
-      "success_signals": "- Over time, the distribution of failure modes guides where to invest (lots of `context-exceeded` \u2192 smaller tickets; lots of `needs-human` \u2192 unclear specs).\n- Reclaiming bots filter blocked tickets by failure mode.",
-      "failure_signals": "- Every blocked ticket gets `needs-human` because bots default to that. The field becomes useless.\n- Mitigation: HORDEOFBOTS.md documents specific guidance per mode so bots can pick correctly.",
-      "tests": "- `tests/test_parser.py` \u2014 parse each of the five values\n- Validator test (in HB-076): blocked ticket without `Failure-mode:` fails; blocked ticket with invalid value fails",
-      "notes": "- **Out of scope**: introducing distinct folders per failure mode (e.g., `failed-tests/`, `merge-conflict/`). Field-on-card is the lightweight version; folders create mental + filesystem overhead and humans have to maintain them.\n- Allowed values are deliberately small (5) and cover the actual failure shapes we've seen. Adding values later is cheap; removing them later is hard.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-075",
       "title": "Dependency enforcement: render + filter",
       "status": "backlog",
@@ -884,6 +850,40 @@ var D = {
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
       "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "HB-073",
+      "title": "`Failure-mode:` field on blocked tickets",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-010-bot-native-schema",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 09:30",
+      "completed": "",
+      "goal": "Add a `**Failure-mode**:` field that is required when a ticket is in `blocked/` and absent/empty otherwise. Allowed values: `failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human`. Renderer shows the failure mode as a chip on blocked cards.",
+      "why": "Today a ticket sitting in `blocked/` says nothing about *why* it's blocked. A reclaiming bot has to read Notes (which may not exist) to figure out if the blocker is \"tests failing\" (re-runnable), \"context exceeded\" (different bot can take it), or \"needs a human decision\" (action item for the user). Different blockers imply different next moves; making the mode explicit lets bots and humans triage at a glance.",
+      "done_when": [
+        "Schema docs list the five allowed values with a one-line description of each",
+        "`build_lib.parse_ticket` recognizes `**Failure-mode**:` and returns `failure_mode` on the ticket dict",
+        "Board renders the failure mode as a chip on blocked cards \u2014 accent-bordered, mono uppercase",
+        "HORDEOFBOTS.md guidance: when a bot moves a ticket to `blocked/`, it must set `Failure-mode:`. Reclaiming bots read the field first to decide whether to take it.",
+        "HB-076 validator requires `Failure-mode:` to be set when a ticket is in `blocked/`, and rejects invalid values",
+        "`tests/test_parser.py` covers each value + a blocked ticket missing the field (validator test)"
+      ],
+      "desired_output": "User glances at the blocked column. `needs-human` chips show what's waiting on them. `context-exceeded` and `failed-tests` chips show what another bot could pick up.",
+      "success_signals": "- Over time, the distribution of failure modes guides where to invest (lots of `context-exceeded` \u2192 smaller tickets; lots of `needs-human` \u2192 unclear specs).\n- Reclaiming bots filter blocked tickets by failure mode.",
+      "failure_signals": "- Every blocked ticket gets `needs-human` because bots default to that. The field becomes useless.\n- Mitigation: HORDEOFBOTS.md documents specific guidance per mode so bots can pick correctly.",
+      "tests": "- `tests/test_parser.py` \u2014 parse each of the five values\n- Validator test (in HB-076): blocked ticket without `Failure-mode:` fails; blocked ticket with invalid value fails",
+      "notes": "- **Out of scope**: introducing distinct folders per failure mode (e.g., `failed-tests/`, `merge-conflict/`). Field-on-card is the lightweight version; folders create mental + filesystem overhead and humans have to maintain them.\n- Allowed values are deliberately small (5) and cover the actual failure shapes we've seen. Adding values later is cheap; removing them later is hard.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2513,7 +2513,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T14:21:09.175260+00:00",
+  "generated": "2026-04-30T14:23:41.764763+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -3047,7 +3047,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "c9600e273e2af4ab67533d1432e2740b1d45a8e6"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "0f235306e483524f7c232c94e058fa3284db102e"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
