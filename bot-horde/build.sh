@@ -22,17 +22,17 @@ from pathlib import Path
 from datetime import datetime, timezone
 UTC = timezone.utc
 
-# HORDEOFBOTS_DEMO=1 builds a static showcase board (see CM-070). Demo content
+# BOTHORDE_DEMO=1 builds a static showcase board (see CM-070). Demo content
 # lives in a single JSON data file at demo/data.json (no parallel ticket tree).
 # Output goes to demo/index.html so GitHub Pages serves it cleanly at /demo/.
-DEMO_BUILD = os.environ.get("HORDEOFBOTS_DEMO", "").lower() in ("1", "true", "yes")
+DEMO_BUILD = os.environ.get("BOTHORDE_DEMO", "").lower() in ("1", "true", "yes")
 
 ROOT = Path.cwd()
 CM = ROOT / "bot-horde"
 sys.path.insert(0, str(CM))
 from build_lib import parse_ticket, parse_feature_set
 
-# Read horde-of-bots config (project_name, ticket_prefix, poll_seconds, auto_commit_board, demo_mode, etc.)
+# Read bot-horde config (project_name, ticket_prefix, poll_seconds, auto_commit_board, demo_mode, etc.)
 _cfg_path = CM / "config.json"
 _cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
 PROJECT_NAME = _cfg.get('project_name', '')
@@ -220,7 +220,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horde of Bots board</title>
+<title>Bot Horde board</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='3' r='2' fill='%23c4724a'/><rect x='15' y='4' width='2' height='5' fill='%23c4724a'/><rect x='4' y='9' width='24' height='20' rx='4' fill='%23c4724a'/><circle cx='12' cy='19' r='3' fill='%230a0a0a'/><circle cx='20' cy='19' r='3' fill='%230a0a0a'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -521,15 +521,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.hb-robot {
+.bh-robot {
   position: absolute;
   width: 18px;
   height: 18px;
   pointer-events: none;
   z-index: 1;
-  animation: hb-robot-walk 12s linear infinite;
+  animation: bh-robot-walk 12s linear infinite;
 }
-@keyframes hb-robot-walk {
+@keyframes bh-robot-walk {
   0%   { top: -10px;             left: -10px; }
   25%  { top: -10px;             left: calc(100% - 8px); }
   50%  { top: calc(100% - 8px);  left: calc(100% - 8px); }
@@ -797,21 +797,21 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   z-index: 100;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-@keyframes hb-pulse {
+@keyframes bh-pulse {
   0%   { background: transparent; }
   30%  { background: rgba(196, 114, 74, 0.18); }
   100% { background: transparent; }
 }
-@keyframes hb-fadein {
+@keyframes bh-fadein {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.hb-moving { animation: hb-pulse 600ms ease; }
-.hb-new { animation: hb-fadein 300ms ease; }
+.bh-moving { animation: bh-pulse 600ms ease; }
+.bh-new { animation: bh-fadein 300ms ease; }
 #setup-modal .modal { max-width: 420px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-  .hb-robot { display: none; }
+  .bh-robot { display: none; }
 }
 </style>
 </head>
@@ -819,9 +819,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 <header>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="logo">horde of <span>bots</span></span>
-    <span id="hb-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
-      <span class="hb-live-dot" style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
-      <span class="hb-live-label">polling</span>
+    <span id="bh-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
+      <span class="bh-live-dot" style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+      <span class="bh-live-label">polling</span>
     </span>
   </div>
   <div class="header-right">
@@ -928,7 +928,7 @@ function robotSvg(name) {
   var c = name ? crabColor(name) : '#22c55e';
   var d = -Math.random() * 12;
   var style = 'color:' + c + ';filter:drop-shadow(0 0 3px ' + c + '99);animation-delay:' + d + 's';
-  return '<svg class="hb-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
+  return '<svg class="bh-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
     + '<circle cx="9" cy="1" r="1" fill="currentColor"/>'
     + '<line x1="9" y1="1.5" x2="9" y2="3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
     + '<rect x="3" y="3.5" width="12" height="10.5" rx="2" fill="currentColor"/>'
@@ -1178,7 +1178,7 @@ function render() {
 }
 
 // --- filter/sort (CM-069) ---
-var FILTER_KEY = 'hb_board_filters_v1';
+var FILTER_KEY = 'bh_board_filters_v1';
 var FILTER_DEFAULT = { priority: '', effort: '', featureset: '', sort: 'default', readyOnly: false };
 var FILTER_STATE = Object.assign({}, FILTER_DEFAULT);
 var PRIO_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -1320,11 +1320,11 @@ function closeModal() {
   document.getElementById('f-featureset').value = '';
 }
 
-function getGithubToken() { return localStorage.getItem('hb_github_token') || ''; }
-function setGithubToken(t) { localStorage.setItem('hb_github_token', t); }
-function clearGithubToken() { localStorage.removeItem('hb_github_token'); }
-function getAgentName() { return localStorage.getItem('hb_agent_name') || ''; }
-function setAgentName(n) { localStorage.setItem('hb_agent_name', n); }
+function getGithubToken() { return localStorage.getItem('bh_github_token') || ''; }
+function setGithubToken(t) { localStorage.setItem('bh_github_token', t); }
+function clearGithubToken() { localStorage.removeItem('bh_github_token'); }
+function getAgentName() { return localStorage.getItem('bh_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('bh_agent_name', n); }
 
 function promptSetup(onSuccess, errorMsg) {
   var modal = document.getElementById('setup-modal');
@@ -1518,13 +1518,13 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">PLACEHOLDER_POLL_CONFIG</script>
+<script id="bh-poll-config" type="application/json">PLACEHOLDER_POLL_CONFIG</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
   // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
-  var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
-  var indicator = document.getElementById('hb-live-indicator');
+  var cfg = JSON.parse(document.getElementById('bh-poll-config').textContent);
+  var indicator = document.getElementById('bh-live-indicator');
 
   // BH-078: pollSource: "none" — board is served somewhere off-GitHub (or
   // bundled offline). Surface that explicitly instead of attempting fetches
@@ -1532,8 +1532,8 @@ document.addEventListener('keydown', function(e) {
   if (cfg.poll_source === 'none') {
     if (indicator) {
       indicator.style.display = 'flex';
-      var nDot = indicator.querySelector('.hb-live-dot');
-      var nLabel = indicator.querySelector('.hb-live-label');
+      var nDot = indicator.querySelector('.bh-live-dot');
+      var nLabel = indicator.querySelector('.bh-live-label');
       if (nDot) nDot.style.background = 'var(--ink-dim)';
       if (nLabel) nLabel.textContent = 'static \\u2014 refresh manually';
     }
@@ -1541,27 +1541,27 @@ document.addEventListener('keydown', function(e) {
   }
 
   if (!cfg.repo) {
-    console.warn('[hb-poll] no repo detected, polling disabled');
+    console.warn('[bh-poll] no repo detected, polling disabled');
     return;
   }
   // file:// views are local snapshots — reloading just re-loads the same stale
   // file. Only useful when served over http(s) (GitHub Pages / a live server).
   if (location.protocol === 'file:') {
-    console.info('[hb-poll] file:// detected — polling disabled (open via http(s) for live updates)');
+    console.info('[bh-poll] file:// detected — polling disabled (open via http(s) for live updates)');
     return;
   }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
   if (indicator) {
     indicator.style.display = 'flex';
-    var label = indicator.querySelector('.hb-live-label');
+    var label = indicator.querySelector('.bh-live-label');
     if (label) label.textContent = 'polling';
   }
 
   var lastSha = cfg.head_sha || null;
   var consecutiveFailures = 0;
 
-  function getToken() { return localStorage.getItem('hb_github_token') || ''; }
+  function getToken() { return localStorage.getItem('bh_github_token') || ''; }
 
   async function pollOnce() {
     if (document.hidden) return;
@@ -1571,12 +1571,12 @@ document.addEventListener('keydown', function(e) {
       if (token) headers['Authorization'] = 'Bearer ' + token;
       var res = await fetch('https://api.github.com/repos/' + cfg.repo + '/commits/main', { headers: headers });
       if (res.status === 403) {
-        console.warn('[hb-poll] rate limited, backing off');
+        console.warn('[bh-poll] rate limited, backing off');
         consecutiveFailures++;
         return;
       }
       if (!res.ok) {
-        console.warn('[hb-poll] HTTP', res.status);
+        console.warn('[bh-poll] HTTP', res.status);
         consecutiveFailures++;
         return;
       }
@@ -1585,13 +1585,13 @@ document.addEventListener('keydown', function(e) {
       var sha = body && body.sha;
       if (!sha) return;
       if (lastSha && sha !== lastSha) {
-        console.log('[hb-poll] HEAD changed', lastSha, '->', sha, '— reloading');
+        console.log('[bh-poll] HEAD changed', lastSha, '->', sha, '— reloading');
         location.reload();
         return;
       }
       lastSha = sha;
     } catch (e) {
-      console.warn('[hb-poll] error', e);
+      console.warn('[bh-poll] error', e);
       consecutiveFailures++;
     }
   }

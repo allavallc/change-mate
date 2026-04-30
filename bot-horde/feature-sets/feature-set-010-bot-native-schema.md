@@ -1,10 +1,10 @@
 # [feature-set-010] Bot-native schema additions
 
 ## Goal
-Extend the Horde of Bots ticket format with structured fields and conventions that express bot-era concerns — decomposition lineage, verification level, failure mode, dependency readiness, model provenance — and add CI validation to enforce them. The whole change ships as additions to existing markdown plus one validator script. No daemon, no scheduler, no new runtime.
+Extend the Bot Horde ticket format with structured fields and conventions that express bot-era concerns — decomposition lineage, verification level, failure mode, dependency readiness, model provenance — and add CI validation to enforce them. The whole change ships as additions to existing markdown plus one validator script. No daemon, no scheduler, no new runtime.
 
 ## Rationale
-Feedback ("v3.0") proposed a category-redefining bot-native tracker. Most of the proposal required infrastructure and broke the files-and-git contract that makes Horde of Bots small. A subset — the schema-only items — is implementable as additions to the existing markdown format with no platform jump. This feature set ships exactly that subset, plus a validator that makes the new fields trustworthy.
+Feedback ("v3.0") proposed a category-redefining bot-native tracker. Most of the proposal required infrastructure and broke the files-and-git contract that makes Bot Horde small. A subset — the schema-only items — is implementable as additions to the existing markdown format with no platform jump. This feature set ships exactly that subset, plus a validator that makes the new fields trustworthy.
 
 The platform-scale items (capability matching, scheduling, cross-repo coordination, lease daemons) are deferred to a separate exploration doc and are not work in this repo.
 

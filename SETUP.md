@@ -1,13 +1,13 @@
-# Setting up Horde of Bots
+# Setting up Bot Horde
 
 One path. ~2 minutes.
 
-## Step 1 — Install Horde of Bots
+## Step 1 — Install Bot Horde
 
 From an agent session (any AI agent or bot that can run shell commands), say:
 
 ```
-I want to use horde-of-bots. Set it up from https://github.com/allavallc/bot-horde
+I want to use bot-horde. Set it up from https://github.com/allavallc/bot-horde
 ```
 
 Or run it manually:
@@ -20,7 +20,7 @@ Save it to your repo:
 
 ```bash
 git add bot-horde/ CLAUDE.md
-git commit -m "add Horde of Bots"
+git commit -m "add Bot Horde"
 git push
 ```
 
@@ -40,7 +40,7 @@ You can edit markdown files in the repo, or click **+ Add story** in the browser
 **To use the Add story button**, the board needs to write to your repo. Create a fine-grained PAT once:
 
 1. Go to **[github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta)**.
-2. Click **Generate new token**. Name it `Horde of Bots`.
+2. Click **Generate new token**. Name it `Bot Horde`.
 3. **Repository access:** Only select repositories → pick this repo.
 4. **Permissions → Repository permissions → Contents:** Read and write.
 5. Click **Generate token**, copy it, save it in your password manager.

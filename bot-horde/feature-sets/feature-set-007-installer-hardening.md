@@ -8,7 +8,7 @@ A user reviewing the install before running it found a real install-blocker (bui
 
 ## Tickets
 - BH-061 — setup.sh actually installs the runtime files (build.sh, build_lib.py, workflow, config.json)
-- BH-062 — Non-interactive install path (`HORDEOFBOTS_AUTO_MIGRATE=yes` env / piped-stdin support)
+- BH-062 — Non-interactive install path (`BOTHORDE_AUTO_MIGRATE=yes` env / piped-stdin support)
 - BH-063 — "Do not edit" markers around the CLAUDE.md import block
 - BH-064 — README + docs honesty pass (Python 3 dep, no "zero deps" claim, Pages caveats)
 - BH-065 — Version pin + upgrade path for the product-manager skill
@@ -18,4 +18,4 @@ A user reviewing the install before running it found a real install-blocker (bui
 Done — 2026-04-27
 
 ## Outcome
-Shipped. setup.sh now installs the runtime files (build.sh, build_lib.py, workflow YAML, config, INSTALL-FAQ.md) — no more "build.sh not found" after install. Non-interactive installs work via `HORDEOFBOTS_AUTO_MIGRATE=yes` and `HORDEOFBOTS_UPGRADE_SKILL=yes` env vars + TTY detection. The CLAUDE.md import is now wrapped in `<!-- Horde of Bots import block -->` markers and idempotently re-applied. README + SETUP no longer claim "zero deps" (Python 3 stated up front) and warn about public-board exposure on Pages. The PM skill has a `version: 1.0.0` line; setup.sh diffs local vs upstream and prompts for upgrade. New `bot-horde/INSTALL-FAQ.md` answers the 10 install-time questions adopters keep asking and is downloaded automatically. 35 tests pass.
+Shipped. setup.sh now installs the runtime files (build.sh, build_lib.py, workflow YAML, config, INSTALL-FAQ.md) — no more "build.sh not found" after install. Non-interactive installs work via `BOTHORDE_AUTO_MIGRATE=yes` and `BOTHORDE_UPGRADE_SKILL=yes` env vars + TTY detection. The CLAUDE.md import is now wrapped in `<!-- Bot Horde import block -->` markers and idempotently re-applied. README + SETUP no longer claim "zero deps" (Python 3 stated up front) and warn about public-board exposure on Pages. The PM skill has a `version: 1.0.0` line; setup.sh diffs local vs upstream and prompts for upgrade. New `bot-horde/INSTALL-FAQ.md` answers the 10 install-time questions adopters keep asking and is downloaded automatically. 35 tests pass.

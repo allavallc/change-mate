@@ -1,4 +1,4 @@
-# How to update Horde of Bots
+# How to update Bot Horde
 
 This is the canonical update procedure for both bots and humans. This file is referenced from `bot-horde/BOTHORDE.md` and from `bot-horde/INSTALL-FAQ.md`.
 
@@ -7,7 +7,7 @@ This is the canonical update procedure for both bots and humans. This file is re
 **Check** (read-only — safe to run any time, including from CI):
 
 ```bash
-HORDEOFBOTS_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
+BOTHORDE_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
 ```
 
 - **Exit code 0** → up to date. Nothing to do.
@@ -16,24 +16,24 @@ HORDEOFBOTS_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.co
 **Upgrade** (writes — re-fetches every stale file and updates the local `MANIFEST.json`):
 
 ```bash
-HORDEOFBOTS_UPGRADE_DOCS=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
+BOTHORDE_UPGRADE_DOCS=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
 ```
 
 **After upgrade** — commit the result:
 
 ```bash
 git add bot-horde/ .github/workflows/bot-horde-rebuild-board.yml
-git commit -m "chore: update Horde of Bots"
+git commit -m "chore: update Bot Horde"
 git push
 ```
 
 ## How the manifest works
 
-`bot-horde/MANIFEST.json` lists every file Horde of Bots manages and the version of each. The "version" is an ISO date for docs/scripts and a semver string for the PM skill. Local copy reflects what `setup.sh` last installed; the upstream copy at `https://raw.githubusercontent.com/allavallc/bot-horde/main/bot-horde/MANIFEST.json` always reflects the current canonical versions.
+`bot-horde/MANIFEST.json` lists every file Bot Horde manages and the version of each. The "version" is an ISO date for docs/scripts and a semver string for the PM skill. Local copy reflects what `setup.sh` last installed; the upstream copy at `https://raw.githubusercontent.com/allavallc/bot-horde/main/bot-horde/MANIFEST.json` always reflects the current canonical versions.
 
-`HORDEOFBOTS_CHECK_UPDATES=yes` fetches the upstream manifest, parses both with Python 3, and prints any file whose version differs.
+`BOTHORDE_CHECK_UPDATES=yes` fetches the upstream manifest, parses both with Python 3, and prints any file whose version differs.
 
-`HORDEOFBOTS_UPGRADE_DOCS=yes` does the same diff and re-fetches every stale file, then writes the upstream manifest as the new local manifest.
+`BOTHORDE_UPGRADE_DOCS=yes` does the same diff and re-fetches every stale file, then writes the upstream manifest as the new local manifest.
 
 ## What gets fetched on upgrade
 
@@ -54,7 +54,7 @@ The list lives in `bot-horde/MANIFEST.json` under `files`. As of this writing:
 - **Run the check freely.** It's a network read-only call; no risk.
 - **Do not auto-upgrade.** Surface stale files to the user and ask first. Upgrade overwrites local edits to managed files.
 - If the user approves, run the upgrade command, then commit + push the result. The agent's normal "no-secrets-in-commit-messages" rule still applies.
-- For CI / non-interactive runs, the upgrade command honors `HORDEOFBOTS_AUTO_MIGRATE=yes` and `HORDEOFBOTS_UPGRADE_SKILL=yes` to skip prompts that would otherwise hang.
+- For CI / non-interactive runs, the upgrade command honors `BOTHORDE_AUTO_MIGRATE=yes` and `BOTHORDE_UPGRADE_SKILL=yes` to skip prompts that would otherwise hang.
 
 ## Edge cases
 

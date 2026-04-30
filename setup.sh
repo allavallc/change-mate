@@ -65,7 +65,7 @@ py_cmd() {
 }
 
 # Returns 0 (true) if bot-horde/ is excluded from the repo (local-only mode).
-# Matches: horde-of-bots, bot-horde/, /horde-of-bots, /bot-horde/ (with optional trailing whitespace).
+# Matches: bot-horde, bot-horde/, /bot-horde, /bot-horde/ (with optional trailing whitespace).
 # Lines starting with # are ignored. .gitignore must already exist.
 is_local_only_mode() {
   [ -f .gitignore ] || return 1
@@ -106,7 +106,7 @@ run_check_mode() {
   stale=$(manifest_diff "$tmp_manifest" "bot-horde/MANIFEST.json")
   rm -f "$tmp_manifest"
   if [ -z "$stale" ]; then
-    echo -e "${GREEN}✓${NC} all horde-of-bots files are up to date"
+    echo -e "${GREEN}✓${NC} all bot-horde files are up to date"
     return 0
   fi
   echo "stale files:"
@@ -114,7 +114,7 @@ run_check_mode() {
     echo "  • $path: local=${loc:-MISSING} → upstream=$up"
   done
   echo ""
-  echo "to upgrade: HORDEOFBOTS_UPGRADE_DOCS=yes bash setup.sh"
+  echo "to upgrade: BOTHORDE_UPGRADE_DOCS=yes bash setup.sh"
   return 1
 }
 
@@ -164,18 +164,18 @@ run_upgrade_mode() {
 
 # --- early dispatch: check / upgrade modes --------------------------------
 
-if [ "${HORDEOFBOTS_CHECK_UPDATES:-}" = "yes" ]; then
+if [ "${BOTHORDE_CHECK_UPDATES:-}" = "yes" ]; then
   run_check_mode
   exit $?
 fi
 
-if [ "${HORDEOFBOTS_UPGRADE_DOCS:-}" = "yes" ]; then
+if [ "${BOTHORDE_UPGRADE_DOCS:-}" = "yes" ]; then
   run_upgrade_mode
   exit $?
 fi
 
 echo ""
-echo "setting up horde-of-bots..."
+echo "setting up bot-horde..."
 echo ""
 
 # --- folder structure -----------------------------------------------------
@@ -208,7 +208,7 @@ if is_local_only_mode; then
     echo ""
     echo -e "${YELLOW}!${NC} an existing $WORKFLOW_PATH was found"
     echo "  in local-only mode it will fail on every push (build.sh isn't tracked)."
-    if prompt_yn "remove it now? [y/N]" HORDEOFBOTS_REMOVE_WORKFLOW no; then
+    if prompt_yn "remove it now? [y/N]" BOTHORDE_REMOVE_WORKFLOW no; then
       rm -f "$WORKFLOW_PATH"
       echo -e "${GREEN}✓${NC} removed $WORKFLOW_PATH"
     else
@@ -242,11 +242,11 @@ if curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$TMP_SKILL" 2>/dev
       UPSTREAM_LABEL="${UPSTREAM_VERSION:-untagged}"
       echo ""
       echo -e "${YELLOW}skill upgrade available:${NC} local v$LOCAL_LABEL → upstream v$UPSTREAM_LABEL"
-      if prompt_yn "upgrade now? [y/N]" HORDEOFBOTS_UPGRADE_SKILL no; then
+      if prompt_yn "upgrade now? [y/N]" BOTHORDE_UPGRADE_SKILL no; then
         cp "$TMP_SKILL" "$SKILL_FILE"
         echo -e "${GREEN}✓${NC} upgraded product-manager skill to v$UPSTREAM_LABEL"
       else
-        echo "kept v$LOCAL_LABEL — re-run setup.sh or set HORDEOFBOTS_UPGRADE_SKILL=yes to upgrade"
+        echo "kept v$LOCAL_LABEL — re-run setup.sh or set BOTHORDE_UPGRADE_SKILL=yes to upgrade"
       fi
     fi
   else
@@ -260,21 +260,21 @@ fi
 
 # --- CLAUDE.md import (wrapped in markers) --------------------------------
 
-CM_MARKER_OPEN="<!-- horde-of-bots import block — managed by setup.sh; remove the block to disable horde-of-bots -->"
-CM_MARKER_CLOSE="<!-- /horde-of-bots import block -->"
+CM_MARKER_OPEN="<!-- bot-horde import block — managed by setup.sh; remove the block to disable bot-horde -->"
+CM_MARKER_CLOSE="<!-- /bot-horde import block -->"
 IMPORT_LINE="@bot-horde/BOTHORDE.md"
 
 write_cm_block() {
-  printf '%s\n# horde-of-bots\n%s\n%s\n' "$CM_MARKER_OPEN" "$IMPORT_LINE" "$CM_MARKER_CLOSE"
+  printf '%s\n# bot-horde\n%s\n%s\n' "$CM_MARKER_OPEN" "$IMPORT_LINE" "$CM_MARKER_CLOSE"
 }
 
 if [ -f "CLAUDE.md" ]; then
   if grep -qF "$CM_MARKER_OPEN" CLAUDE.md; then
-    echo -e "${YELLOW}~${NC} CLAUDE.md already has horde-of-bots import block, skipping"
+    echo -e "${YELLOW}~${NC} CLAUDE.md already has bot-horde import block, skipping"
   elif grep -qF "$IMPORT_LINE" CLAUDE.md; then
     # Existing un-wrapped import — wrap it idempotently using a temp file.
     awk -v open="$CM_MARKER_OPEN" -v close="$CM_MARKER_CLOSE" -v line="$IMPORT_LINE" '
-      $0 ~ "^# horde-of-bots$" && getline next_line && next_line == line {
+      $0 ~ "^# bot-horde$" && getline next_line && next_line == line {
         print open
         print $0
         print next_line
@@ -284,17 +284,17 @@ if [ -f "CLAUDE.md" ]; then
       { print }
     ' CLAUDE.md > CLAUDE.md.cmtmp && mv CLAUDE.md.cmtmp CLAUDE.md
     if grep -qF "$CM_MARKER_OPEN" CLAUDE.md; then
-      echo -e "${GREEN}✓${NC} wrapped existing horde-of-bots import in CLAUDE.md with managed markers"
+      echo -e "${GREEN}✓${NC} wrapped existing bot-horde import in CLAUDE.md with managed markers"
     else
       # awk pattern didn't match (different layout); append a fresh wrapped block.
       printf '\n' >> CLAUDE.md
       write_cm_block >> CLAUDE.md
-      echo -e "${GREEN}✓${NC} appended managed horde-of-bots import block to CLAUDE.md"
+      echo -e "${GREEN}✓${NC} appended managed bot-horde import block to CLAUDE.md"
     fi
   else
     printf '\n' >> CLAUDE.md
     write_cm_block >> CLAUDE.md
-    echo -e "${GREEN}✓${NC} added horde-of-bots import block to existing CLAUDE.md"
+    echo -e "${GREEN}✓${NC} added bot-horde import block to existing CLAUDE.md"
   fi
 else
   write_cm_block > CLAUDE.md
@@ -325,7 +325,7 @@ if [ -f ".gitignore" ]; then
     echo "   To switch to git-sync mode, remove the bot-horde/ line from .gitignore"
     echo "   and re-run setup.sh."
     echo ""
-    LOCAL_ONLY_MARKER="# horde-of-bots: local-only mode (rebuild-board workflow intentionally not installed)"
+    LOCAL_ONLY_MARKER="# bot-horde: local-only mode (rebuild-board workflow intentionally not installed)"
     if ! grep -qF "$LOCAL_ONLY_MARKER" .gitignore; then
       [ -s ".gitignore" ] && [ "$(tail -c1 .gitignore 2>/dev/null | wc -l)" = "0" ] && echo "" >> .gitignore
       echo "$LOCAL_ONLY_MARKER" >> .gitignore
@@ -358,7 +358,7 @@ fi
 # --- final message --------------------------------------------------------
 
 echo ""
-echo -e "${GREEN}horde-of-bots is ready.${NC}"
+echo -e "${GREEN}bot-horde is ready.${NC}"
 echo ""
 echo "next steps:"
 echo "  1. read bot-horde/INSTALL-FAQ.md if you have questions"

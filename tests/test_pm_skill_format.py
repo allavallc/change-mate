@@ -5,7 +5,7 @@ import os
 SKILL_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'skills', 'product-manager', 'SKILL.md'
 )
-HORDEOFBOTS_PATH = os.path.join(
+BOTHORDE_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'bot-horde', 'BOTHORDE.md'
 )
 
@@ -34,7 +34,7 @@ def test_skill_points_to_hordeofbots_for_provenance():
 
 
 def test_hordeofbots_documents_full_trailer_format():
-    content = _read(HORDEOFBOTS_PATH)
+    content = _read(BOTHORDE_PATH)
     assert 'Provenance trailers' in content, \
         "BOTHORDE.md must have a 'Provenance trailers' section"
     assert 'Model:' in content and 'Trigger:' in content, \

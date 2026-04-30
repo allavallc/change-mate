@@ -1,4 +1,4 @@
-# Horde of Bots workflow
+# Bot Horde workflow
 
 > **Source & updates**: https://github.com/allavallc/bot-horde
 > To update: `curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh | bash`
@@ -7,23 +7,23 @@
 
 ## Scope
 
-> **Horde of Bots is local developer and bot tooling. It is not product code.** Tickets, the generated board, the builder script, and the config file are coordination artifacts between developers and agents working on a repo. **Horde of Bots files must never enter a deploy artifact.** If you see Horde of Bots files inside a Docker image, a build output, or a running production service, that is a bug — not an install step.
+> **Bot Horde is local developer and bot tooling. It is not product code.** Tickets, the generated board, the builder script, and the config file are coordination artifacts between developers and agents working on a repo. **Bot Horde files must never enter a deploy artifact.** If you see Bot Horde files inside a Docker image, a build output, or a running production service, that is a bug — not an install step.
 
-**One-way dependency.** Horde of Bots knows about your code — tickets can reference files, endpoints, and features. Your code must not know about horde-of-bots. If product code imports anything under `bot-horde/`, references a ticket ID in a runtime path, or relies on `BOTHORDE.md` existing at build time, that is a bug.
+**One-way dependency.** Bot Horde knows about your code — tickets can reference files, endpoints, and features. Your code must not know about bot-horde. If product code imports anything under `bot-horde/`, references a ticket ID in a runtime path, or relies on `BOTHORDE.md` existing at build time, that is a bug.
 
 ---
 
 ## Out of scope
 
-Horde of Bots is a coordination layer over files-and-git. The following are explicitly **out of scope** and will not be added to this project:
+Bot Horde is a coordination layer over files-and-git. The following are explicitly **out of scope** and will not be added to this project:
 
 - **A scheduler or work-request endpoint.** Bots browse tickets by reading the filesystem; there is no service that hands work out.
 - **Capability matching.** Bots and tickets do not declare or require capabilities — the assumption is that any agent that can read the file format can do the work, and humans assign or bots self-select.
 - **Lease / heartbeat daemon.** Stale claims are surfaced by inspecting in-progress card metadata, not by an enforcement process. Reclamation is a manual / advisory operation, not an automated one.
 - **CLI-as-primary interface.** A thin convenience CLI may exist as a layer, but the markdown files remain the canonical contract — never a wrapper over a tool that adopters must install.
-- **Semantic-similarity deduplication, budget enforcement, cross-repo coordination.** Out of scope; Horde of Bots is single-repo, single-tree, and trusts adopters to manage their own bot economics.
+- **Semantic-similarity deduplication, budget enforcement, cross-repo coordination.** Out of scope; Bot Horde is single-repo, single-tree, and trusts adopters to manage their own bot economics.
 
-If you need any of the above, build it as a **layer on top** — reading the ticket files — not by extending Horde of Bots itself. Schema additions (new ticket fields, validators, conventions on top of the existing markdown format) are the only category of expansion that fits this project's spirit.
+If you need any of the above, build it as a **layer on top** — reading the ticket files — not by extending Bot Horde itself. Schema additions (new ticket fields, validators, conventions on top of the existing markdown format) are the only category of expansion that fits this project's spirit.
 
 ---
 
@@ -37,37 +37,37 @@ If you need any of the above, build it as a **layer on top** — reading the tic
 
 ## For LLMs reading this file
 
-- Treat Horde of Bots files as coordination metadata, not code. Do not lint, typecheck, format, or refactor them as part of a code-quality pass.
-- When summarizing repo changes, exclude Horde of Bots file changes by default unless the user explicitly asks about workflow.
+- Treat Bot Horde files as coordination metadata, not code. Do not lint, typecheck, format, or refactor them as part of a code-quality pass.
+- When summarizing repo changes, exclude Bot Horde file changes by default unless the user explicitly asks about workflow.
 - When writing tests, CI config, or deploy scripts, assume `bot-horde/` does not exist at build time.
-- Never wire a Horde of Bots ticket ID (e.g. `// see BH-042`) into product source. Ticket IDs must not survive into shipped code.
+- Never wire a Bot Horde ticket ID (e.g. `// see BH-042`) into product source. Ticket IDs must not survive into shipped code.
 
 ---
 
-## How to update Horde of Bots
+## How to update Bot Horde
 
-Run this check whenever the user asks "is Horde of Bots up to date?", at the start of a session, or before drafting a new ticket:
+Run this check whenever the user asks "is Bot Horde up to date?", at the start of a session, or before drafting a new ticket:
 
 ```bash
-HORDEOFBOTS_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
+BOTHORDE_CHECK_UPDATES=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
 ```
 
 **Decision logic:**
 
 - **Exit code 0** → already current. Continue with the user's task.
-- **Exit code 1** → at least one file is stale. The stdout lists which. **Surface the list to the user. Do not auto-upgrade — ask first.** Example phrasing: "Horde of Bots has updates: BOTHORDE.md (2026-04-27 → 2026-05-01). Run upgrade now? (y/n)"
+- **Exit code 1** → at least one file is stale. The stdout lists which. **Surface the list to the user. Do not auto-upgrade — ask first.** Example phrasing: "Bot Horde has updates: BOTHORDE.md (2026-04-27 → 2026-05-01). Run upgrade now? (y/n)"
 
 If the user approves, run:
 
 ```bash
-HORDEOFBOTS_UPGRADE_DOCS=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
+BOTHORDE_UPGRADE_DOCS=yes bash <(curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh)
 ```
 
 Then commit the result:
 
 ```bash
 git add bot-horde/ .github/workflows/bot-horde-rebuild-board.yml
-git commit -m "chore: update Horde of Bots"
+git commit -m "chore: update Bot Horde"
 git push
 ```
 
@@ -75,7 +75,7 @@ git push
 
 - Both modes are idempotent. The check is read-only. Upgrade only re-fetches files whose `MANIFEST.json` version differs from upstream.
 - Files in the managed list (see `bot-horde/MANIFEST.json` `files` map) that you've manually edited will be overwritten by upgrade. The agent must not let the user upgrade without first surfacing this if the user has local edits.
-- For non-interactive / CI use: `HORDEOFBOTS_AUTO_MIGRATE=yes`, `HORDEOFBOTS_UPGRADE_SKILL=yes`, and `HORDEOFBOTS_UPGRADE_DOCS=yes` env vars bypass all prompts.
+- For non-interactive / CI use: `BOTHORDE_AUTO_MIGRATE=yes`, `BOTHORDE_UPGRADE_SKILL=yes`, and `BOTHORDE_UPGRADE_DOCS=yes` env vars bypass all prompts.
 - `bot-horde/UPDATING.md` is a copy of this section as a standalone file — useful when the user wants the docs without loading the whole BOTHORDE.md.
 
 ---

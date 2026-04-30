@@ -78,10 +78,10 @@ def test_local_only_mode_skips_workflow_install(tmp_path):
 
 def test_local_only_mode_offers_to_remove_existing_workflow(tmp_path):
     """An adopter who installed before the fix has a stale workflow. Re-running
-    setup.sh in local-only mode with HORDEOFBOTS_REMOVE_WORKFLOW=yes removes it."""
+    setup.sh in local-only mode with BOTHORDE_REMOVE_WORKFLOW=yes removes it."""
     _stage_repo(tmp_path, "bot-horde/\n", with_workflow=True)
 
-    result = _run_setup(tmp_path, {"HORDEOFBOTS_REMOVE_WORKFLOW": "yes"})
+    result = _run_setup(tmp_path, {"BOTHORDE_REMOVE_WORKFLOW": "yes"})
 
     assert result.returncode == 0, \
         f"setup.sh failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
@@ -92,7 +92,7 @@ def test_local_only_mode_keeps_workflow_when_removal_declined(tmp_path):
     """If the user declines removal, the workflow stays (with a warning)."""
     _stage_repo(tmp_path, "bot-horde/\n", with_workflow=True)
 
-    result = _run_setup(tmp_path, {"HORDEOFBOTS_REMOVE_WORKFLOW": "no"})
+    result = _run_setup(tmp_path, {"BOTHORDE_REMOVE_WORKFLOW": "no"})
 
     assert result.returncode == 0
     assert (tmp_path / WORKFLOW_REL).exists(), "workflow should be kept when user declines"

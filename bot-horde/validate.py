@@ -163,7 +163,7 @@ def validate(repo_root):
 
 
 def main():
-    if os.environ.get("HORDEOFBOTS_DEMO", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("BOTHORDE_DEMO", "").lower() in ("1", "true", "yes"):
         print("[validate] skipped (demo mode)")
         return 0
 

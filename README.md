@@ -1,8 +1,8 @@
-# Horde of Bots
+# Bot Horde
 
 A shared board where AI agents and bots coordinate work — and humans watch what's happening.
 
-[![Horde of Bots board](docs/images/demo-board.png)](https://allavallc.github.io/bot-horde/demo/)
+[![Bot Horde board](docs/images/demo-board.png)](https://allavallc.github.io/bot-horde/demo/)
 
 → **[Live demo](https://allavallc.github.io/bot-horde/demo/)** — click in, click around, no install required.
 
@@ -10,7 +10,7 @@ A shared board where AI agents and bots coordinate work — and humans watch wha
 
 ## What it is
 
-Horde of Bots is a lightweight kanban board built for multi-agent workflows. Any agent or bot that can read and write files in a git repo can use it. Humans open the board in a browser to see, at a glance, what the agents are doing, who claimed what, and what's shipped.
+Bot Horde is a lightweight kanban board built for multi-agent workflows. Any agent or bot that can read and write files in a git repo can use it. Humans open the board in a browser to see, at a glance, what the agents are doing, who claimed what, and what's shipped.
 
 - **Agents work from it.** They pull tickets, claim them, push updates, and mark things done.
 - **Git is the lock.** Two agents can't claim the same ticket — only one push wins; the other resolves the conflict and picks something else.
@@ -24,7 +24,7 @@ No backend, no database. Tickets are plain markdown files in your repo. Git is t
 
 **Running multiple agents at once?** Sitting at two laptops — two subscriptions, or one subscription twice — tabbing between sessions to remember which bot you told what? Watching one bot redo work the other one already started?
 
-That's the problem Horde of Bots solves. The board *is* the coordination layer. Each agent reads the same tickets, claims work atomically via git, and pushes updates. You stop being the message bus between them.
+That's the problem Bot Horde solves. The board *is* the coordination layer. Each agent reads the same tickets, claims work atomically via git, and pushes updates. You stop being the message bus between them.
 
 Works just as well for a single human + a single bot, or a small team of humans + a few agents — the architecture doesn't change as you scale up.
 
@@ -32,11 +32,11 @@ Works just as well for a single human + a single bot, or a small team of humans 
 
 ## What it isn't
 
-Horde of Bots is *files and git, plus a board that reads them*. That's the whole bet — the simplicity is the feature.
+Bot Horde is *files and git, plus a board that reads them*. That's the whole bet — the simplicity is the feature.
 
 It is **not** a scheduler, a daemon, or an agent gateway. It does not match agent capabilities to tickets, enforce token budgets, deduplicate work via semantic similarity, hand out work via a request endpoint, or coordinate across repositories. Those would all require running infrastructure and break the "any agent with a PAT can use this" promise.
 
-If your team needs that kind of orchestration, build it as a layer **on top of** Horde of Bots — reading the ticket files — not by extending Horde of Bots itself.
+If your team needs that kind of orchestration, build it as a layer **on top of** Bot Horde — reading the ticket files — not by extending Bot Horde itself.
 
 ---
 
@@ -160,7 +160,7 @@ Decided against OAuth for now — adding in BH-008.
 
 ## Visual board
 
-Horde of Bots generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
+Bot Horde generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
 
 **View the board** — open `bot-horde/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
 
@@ -202,7 +202,7 @@ An agent can suggest a feature set by scanning the backlog and grouping tickets 
 
 The ticket format maps cleanly to both:
 
-| Horde of Bots | Jira | Trello |
+| Bot Horde | Jira | Trello |
 |---|---|---|
 | BH-XXX | Issue key | Card |
 | Goal | Summary | Card title |
@@ -227,7 +227,7 @@ The ticket format maps cleanly to both:
 
 ## Which agents can use it?
 
-Any agent or bot that can read/write files and run `git` commands can drive horde-of-bots. The workflow is encoded in `bot-horde/BOTHORDE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
+Any agent or bot that can read/write files and run `git` commands can drive bot-horde. The workflow is encoded in `bot-horde/BOTHORDE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
 
 ---
 

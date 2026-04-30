@@ -1,6 +1,6 @@
-# Migrating from change-mate to Horde of Bots
+# Migrating from change-mate to Bot Horde
 
-The project formerly known as `change-mate` is now **Horde of Bots**. Tickets use the `BH-` prefix instead of `CM-`. The install command, ticket format, board UI, and workflow are unchanged — only names changed. This note tells your bot (or you) how to migrate an existing repo.
+The project formerly known as `change-mate` is now **Bot Horde**. Tickets use the `BH-` prefix instead of `CM-`. The install command, ticket format, board UI, and workflow are unchanged — only names changed. This note tells your bot (or you) how to migrate an existing repo.
 
 The repo URL `github.com/allavallc/change-mate` auto-redirects to `github.com/allavallc/bot-horde`, so existing clones still pull and push. Update remotes when convenient.
 
@@ -12,7 +12,7 @@ The repo URL `github.com/allavallc/change-mate` auto-redirects to `github.com/al
 | `CHANGEMATE.md` | `BOTHORDE.md` |
 | `CM-NNN` ticket IDs | `BH-NNN` (numbers preserved) |
 | `.github/workflows/change-mate-rebuild-board.yml` | `bot-horde-rebuild-board.yml` |
-| `CHANGEMATE_*` env vars (UPGRADE_DOCS, REMOVE_WORKFLOW, etc.) | `HORDEOFBOTS_*` |
+| `CHANGEMATE_*` env vars (UPGRADE_DOCS, REMOVE_WORKFLOW, etc.) | `BOTHORDE_*` |
 | `localStorage` keys (`cm_github_token`, etc.) | `hb_*` (one-time re-auth in browser) |
 
 ## What didn't change
@@ -30,7 +30,7 @@ Run from your repo root. Safe to re-run; idempotent.
 set -e
 
 # 1. Rename directory + managed filenames
-[ -d change-mate ] && git mv change-mate horde-of-bots
+[ -d change-mate ] && git mv change-mate bot-horde
 [ -f bot-horde/CHANGEMATE.md ] && git mv bot-horde/CHANGEMATE.md bot-horde/BOTHORDE.md
 [ -f .github/workflows/change-mate-rebuild-board.yml ] && \
   git mv .github/workflows/change-mate-rebuild-board.yml .github/workflows/bot-horde-rebuild-board.yml
@@ -44,7 +44,7 @@ for d in backlog in-progress done blocked not-doing; do
 done
 
 # 3. Rewrite CM-NNN references inside every markdown file
-find horde-of-bots -name '*.md' -exec \
+find bot-horde -name '*.md' -exec \
   sed -i 's/\bCM-\([0-9][0-9]*\)\b/BH-\1/g' {} +
 
 # 4. Update CLAUDE.md import line (if present)
@@ -88,7 +88,7 @@ py -m pytest tests/ -v
 
 ```bash
 git add -A
-git commit -m "chore: migrate from change-mate to Horde of Bots"
+git commit -m "chore: migrate from change-mate to Bot Horde"
 git push
 ```
 
@@ -96,7 +96,7 @@ CI rebuilds the board on push.
 
 ## After migration
 
-- **Browser**: open the board, click "+ Add story". You'll be re-prompted for your GitHub PAT once (storage key renamed `cm_github_token` → `hb_github_token`). Saved filter state also resets once.
+- **Browser**: open the board, click "+ Add story". You'll be re-prompted for your GitHub PAT once (storage key renamed `cm_github_token` → `bh_github_token`). Saved filter state also resets once.
 - **Custom `config.json`**: if you had customized `project_name` in `bot-horde/config.json`, step 6 above overwrote it. Re-set your value:
   ```json
   {
