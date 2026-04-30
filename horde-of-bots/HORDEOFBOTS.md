@@ -13,6 +13,20 @@
 
 ---
 
+## Out of scope
+
+Horde of Bots is a coordination layer over files-and-git. The following are explicitly **out of scope** and will not be added to this project:
+
+- **A scheduler or work-request endpoint.** Bots browse tickets by reading the filesystem; there is no service that hands work out.
+- **Capability matching.** Bots and tickets do not declare or require capabilities — the assumption is that any agent that can read the file format can do the work, and humans assign or bots self-select.
+- **Lease / heartbeat daemon.** Stale claims are surfaced by inspecting in-progress card metadata, not by an enforcement process. Reclamation is a manual / advisory operation, not an automated one.
+- **CLI-as-primary interface.** A thin convenience CLI may exist as a layer, but the markdown files remain the canonical contract — never a wrapper over a tool that adopters must install.
+- **Semantic-similarity deduplication, budget enforcement, cross-repo coordination.** Out of scope; Horde of Bots is single-repo, single-tree, and trusts adopters to manage their own bot economics.
+
+If you need any of the above, build it as a **layer on top** — reading the ticket files — not by extending Horde of Bots itself. Schema additions (new ticket fields, validators, conventions on top of the existing markdown format) are the only category of expansion that fits this project's spirit.
+
+---
+
 ## Sync modes
 
 **Git sync (default).** Tickets live in the repo. `git pull` before reading the backlog, `git push` after moving a ticket. All agents and developers see the same board. `setup.sh` installs `.github/workflows/horde-of-bots-rebuild-board.yml`, which rebuilds the board on every push to `main`.
@@ -146,7 +160,7 @@ The flow is **draft first, ask second**:
 
 Once the user says yes:
 
-1. Create the ticket file in `horde-of-bots/backlog/CM-XXX-<timestamp>.md` using the ticket format below
+1. Create the ticket file in `horde-of-bots/backlog/HB-XXX-<timestamp>.md` using the ticket format below
 2. If a new feature set was proposed, create `horde-of-bots/feature-sets/feature-set-XXX-<slug>.md`
 3. Say "On it." and start the work
 
@@ -167,13 +181,13 @@ When the user picks a ticket from the backlog:
 4. Run:
    ```
    git add horde-of-bots/
-   git commit -m "CM-XXX: in progress"
+   git commit -m "HB-XXX: in progress"
    git push
    ```
 5. If the push fails with a conflict, do not show raw git output. Instead say:
 
 ```
-⚠️  CM-XXX was just picked up by someone else.
+⚠️  HB-XXX was just picked up by someone else.
 
 Remaining backlog:
   HB-005 — Fix pagination bug
@@ -195,14 +209,14 @@ Want to pick one of these instead?
 
 ## Blocking a ticket
 
-When a ticket cannot proceed, move it to `horde-of-bots/blocked/` and set the `**Blocked by**` field to the CM-IDs preventing progress. The `Blocked by` value is **required** for tickets in the blocked folder — a blocked ticket with no explanation of what is blocking it is just an orphan.
+When a ticket cannot proceed, move it to `horde-of-bots/blocked/` and set the `**Blocked by**` field to the HB-IDs preventing progress. The `Blocked by` value is **required** for tickets in the blocked folder — a blocked ticket with no explanation of what is blocking it is just an orphan.
 
-1. Update the file: set status to `blocked`, set `**Blocked by**: CM-XXX[, CM-YYY]`
+1. Update the file: set status to `blocked`, set `**Blocked by**: HB-XXX[, HB-YYY]`
 2. Move the file from its current folder to `horde-of-bots/blocked/`
 3. Run:
    ```
    git add horde-of-bots/
-   git commit -m "CM-XXX: blocked"
+   git commit -m "HB-XXX: blocked"
    git push
    ```
 
@@ -212,7 +226,7 @@ When the blocker is resolved, move the ticket back to `in-progress/` (or `backlo
 
 ## Rejecting a ticket
 
-When the user says "reject CM-XXX", "not doing CM-XXX", or "kill CM-XXX":
+When the user says "reject HB-XXX", "not doing HB-XXX", or "kill HB-XXX":
 
 1. Ask: "Why is this being rejected? (type n/a to skip)"
 2. Wait for the answer
@@ -226,10 +240,10 @@ When the user says "reject CM-XXX", "not doing CM-XXX", or "kill CM-XXX":
 5. Run:
    ```
    git add horde-of-bots/
-   git commit -m "CM-XXX: not doing"
+   git commit -m "HB-XXX: not doing"
    git push
    ```
-6. Confirm: "CM-XXX marked as not doing."
+6. Confirm: "HB-XXX marked as not doing."
 
 Tickets in `not-doing/` are **never shown at session start** — they are dead. They are visible on the board only when the user clicks "Show rejected".
 
@@ -243,12 +257,12 @@ When two (or more) existing tickets cover the same work and should be merged:
 
 1. **Create a new ticket** with the consolidated scope. Do **not** edit one of the originals to absorb the other — the audit trail matters.
 2. **In the new ticket's Notes**, write a `Consolidation:` line listing the source tickets — e.g. `Consolidation of HB-012 and HB-024`. Bots reading the new ticket use this line to find the source context (read the originals in `not-doing/` for the historical Why/Notes).
-3. **Move each source ticket to `horde-of-bots/not-doing/`** with `**Rejection reason**: consolidated into CM-XXX` (substitute the new ticket's ID).
+3. **Move each source ticket to `horde-of-bots/not-doing/`** with `**Rejection reason**: consolidated into HB-XXX` (substitute the new ticket's ID).
 4. The new ticket inherits the union of `Related` / `Blocks` / `Blocked by` from the originals — keep the "write only one side of each edge" rule. De-dupe.
 5. Commit + push:
    ```
    git add horde-of-bots/
-   git commit -m "CM-XXX: consolidates CM-A and CM-B"
+   git commit -m "HB-XXX: consolidates HB-A and HB-B"
    git push
    ```
 
@@ -264,7 +278,7 @@ Why a new ticket rather than picking one of the originals? Two reasons: it surfa
 4. Run:
    ```
    git add horde-of-bots/
-   git commit -m "CM-XXX: done"
+   git commit -m "HB-XXX: done"
    git push
    ```
 
@@ -287,15 +301,15 @@ HB-004-1736847392.md
 ## Ticket file format
 
 ```markdown
-# [CM-XXX] Title
+# [HB-XXX] Title
 
 - **Status**: open | in-progress | done | blocked | not-doing
 - **Priority**: Low | Medium | High | Critical
 - **Effort**: XS | S | M | L | XL
 - **Feature set**: feature-set-XXX-<slug> (or blank for standalone)
-- **Related**: CM-XXX, CM-YYY (comma-separated, or blank)
-- **Blocks**: CM-XXX, CM-YYY (comma-separated, or blank)
-- **Blocked by**: CM-XXX, CM-YYY (comma-separated, or blank)
+- **Related**: HB-XXX, HB-YYY (comma-separated, or blank)
+- **Blocks**: HB-XXX, HB-YYY (comma-separated, or blank)
+- **Blocked by**: HB-XXX, HB-YYY (comma-separated, or blank)
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
@@ -346,7 +360,7 @@ Three optional fields express how tickets relate to each other:
 - **Blocks**: this ticket prevents the listed tickets from starting or completing.
 - **Blocked by**: this ticket cannot start or complete until the listed tickets are done.
 
-Values are comma-separated `CM-XXX` IDs. Whitespace is tolerated. Entries that don't match `CM-\d+` are ignored silently.
+Values are comma-separated `HB-XXX` IDs. Whitespace is tolerated. Entries that don't match `HB-\d+` are ignored silently.
 
 **Write only one side of each edge.** If HB-005 declares `Blocks: HB-006`, do not also add `Blocked by: HB-005` on HB-006 — the renderer infers the inverse at build time and shows it on the counterpart card automatically. Writing both sides creates maintenance drift.
 
@@ -356,7 +370,7 @@ Convention: prefer the upstream side. Use `Blocks` on the ticket that must finis
 
 ## Ticket ID format
 
-Read all files across all folders in `horde-of-bots/` including `not-doing/`. Find the highest existing CM-XXX number and increment by 1. Start at HB-001 if no tickets exist.
+Read all files across all folders in `horde-of-bots/` including `not-doing/`. Find the highest existing HB-XXX number and increment by 1. Start at HB-001 if no tickets exist.
 
 ---
 
@@ -400,8 +414,8 @@ One sentence on what this feature set delivers when complete.
 Why these tickets belong together. What ties them into a coherent unit of work.
 
 ## Tickets
-- CM-XXX — short title
-- CM-YYY — short title
+- HB-XXX — short title
+- HB-YYY — short title
 
 ## Status
 In progress | Complete | Paused

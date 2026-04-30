@@ -20,6 +20,16 @@ No backend, no database, no vendor lock-in. Tickets are plain markdown files in 
 
 ---
 
+## What it isn't
+
+Horde of Bots is *files and git, plus a board that reads them*. That's the whole bet — the simplicity is the feature.
+
+It is **not** a scheduler, a daemon, or an agent gateway. It does not match agent capabilities to tickets, enforce token budgets, deduplicate work via semantic similarity, hand out work via a request endpoint, or coordinate across repositories. Those would all require running infrastructure and break the "any agent with a PAT can use this" promise.
+
+If your team needs that kind of orchestration, build it as a layer **on top of** Horde of Bots — reading the ticket files — not by extending Horde of Bots itself.
+
+---
+
 ## Setup
 
 ~2 minutes. → [SETUP.md](SETUP.md)
@@ -171,7 +181,7 @@ The ticket format maps cleanly to both:
 
 | Horde of Bots | Jira | Trello |
 |---|---|---|
-| CM-XXX | Issue key | Card |
+| HB-XXX | Issue key | Card |
 | Goal | Summary | Card title |
 | Why | Description | Card description |
 | Done when | Acceptance criteria | Checklist |
