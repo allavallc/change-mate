@@ -700,42 +700,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-086",
-      "title": "Provenance trailers: accepted / rejected",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "user_facing": "no",
-      "goal": "Extend the commit-message provenance convention in BOTHORDE.md with two new `Trigger:` actions: `accepted` and `rejected`. Same shape as the existing `claim`, `done`, `blocked`, etc. Lets `git log` reconstruct the full lifecycle of any user-facing ticket including its acceptance step.",
-      "why": "fs-010 (BH-074) established `Model:` and `Trigger:` trailers as the audit trail. Without naming the new lifecycle actions, acceptance commits look like ordinary edits and the audit gap reopens. Adding two values preserves the contract.",
-      "done_when": [
-        "BOTHORDE.md \"Provenance trailers\" section lists `accepted` and `rejected` alongside the existing actions",
-        "Example commit messages added showing both shapes:",
-        "BH-085 acceptance-tester skill produces these trailers by default",
-        "Audit-query examples added: `git log --grep \"Trigger: .* accepted\"` and `Trigger: .* rejected`"
-      ],
-      "desired_output": "A reader running `git log --grep \"Trigger: BH-090\"` sees the full lifecycle: `claim` \u2192 (work) \u2192 `in-review` \u2192 `accepted` (or `rejected` \u2192 `claim` \u2192 ... \u2192 `accepted`). One ticket, one chronological audit trail.",
-      "success_signals": "- Every accepted user-facing ticket has at least one matching `Trigger: BH-XXX accepted` commit.\n- Rejection commits include a one-line rejection summary in the subject (not just the trailer) for git-log readability.",
-      "failure_signals": "- Trailer drift \u2014 bots use `Trigger: BH-090 reviewed` or `signed-off` instead. Mitigation: BH-085 hardcodes the action strings.\n- Subject and trailer disagree (subject says accepted, trailer says rejected). Watch for this in code review.",
-      "tests": "- Pure docs ticket. No code path; verification is a docs review.\n- BH-085's tests indirectly cover trailer production (the skill writes them).",
-      "how_to_test": "",
-      "notes": "- Two new actions, not four. Consider `in-review` as a separate `Trigger:` action, but reject \u2014 the existing `claim`/`done`/`blocked` set already covers folder transitions; `in-review` would be redundant with the file-move commit. Decide and document one way; current call: `Trigger: BH-XXX in-review` is allowed but optional.\n- Out of scope: changing the trailer format (Key: value remains). Just adding values to an enum.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-087",
       "title": "Validator enforces the acceptance loop",
       "status": "open",
@@ -783,6 +747,43 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "BH-086",
+      "title": "Provenance trailers: accepted / rejected",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 21:30",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "user_facing": "no",
+      "goal": "Extend the commit-message provenance convention in BOTHORDE.md with two new `Trigger:` actions: `accepted` and `rejected`. Same shape as the existing `claim`, `done`, `blocked`, etc. Lets `git log` reconstruct the full lifecycle of any user-facing ticket including its acceptance step.",
+      "why": "fs-010 (BH-074) established `Model:` and `Trigger:` trailers as the audit trail. Without naming the new lifecycle actions, acceptance commits look like ordinary edits and the audit gap reopens. Adding two values preserves the contract.",
+      "done_when": [
+        "BOTHORDE.md \"Provenance trailers\" section lists `accepted` and `rejected` alongside the existing actions",
+        "Example commit messages added showing both shapes:",
+        "BH-085 acceptance-tester skill produces these trailers by default",
+        "Audit-query examples added: `git log --grep \"Trigger: .* accepted\"` and `Trigger: .* rejected`"
+      ],
+      "desired_output": "A reader running `git log --grep \"Trigger: BH-090\"` sees the full lifecycle: `claim` \u2192 (work) \u2192 `in-review` \u2192 `accepted` (or `rejected` \u2192 `claim` \u2192 ... \u2192 `accepted`). One ticket, one chronological audit trail.",
+      "success_signals": "- Every accepted user-facing ticket has at least one matching `Trigger: BH-XXX accepted` commit.\n- Rejection commits include a one-line rejection summary in the subject (not just the trailer) for git-log readability.",
+      "failure_signals": "- Trailer drift \u2014 bots use `Trigger: BH-090 reviewed` or `signed-off` instead. Mitigation: BH-085 hardcodes the action strings.\n- Subject and trailer disagree (subject says accepted, trailer says rejected). Watch for this in code review.",
+      "tests": "- Pure docs ticket. No code path; verification is a docs review.\n- BH-085's tests indirectly cover trailer production (the skill writes them).",
+      "how_to_test": "",
+      "notes": "- Two new actions, not four. Consider `in-review` as a separate `Trigger:` action, but reject \u2014 the existing `claim`/`done`/`blocked` set already covers folder transitions; `in-review` would be redundant with the file-move commit. Decide and document one way; current call: `Trigger: BH-XXX in-review` is allowed but optional.\n- Out of scope: changing the trailer format (Key: value remains). Just adding values to an enum.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "last_commit_ct": 1777587423,
       "blocked_by_inferred": []
     },
     {
@@ -3087,7 +3088,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T22:05:00.297056+00:00",
+  "generated": "2026-04-30T22:17:12.204873+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3704,7 +3705,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "c5cab0df85c0e27d6240232caf0eb940dc38f4d3", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "3a8f9644d2b43d7de747f6fca347f4972aad0ef2", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
