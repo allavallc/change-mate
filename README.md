@@ -182,6 +182,12 @@ When served via GitHub Pages (or any HTTP host), the board polls the GitHub comm
 
 ---
 
+## Auditability
+
+Bot commits to ticket-lifecycle actions carry `Model:` and `Trigger:` trailers in the commit body, so `git log` is a complete audit trail of which model did what to which ticket. See [`horde-of-bots/HORDEOFBOTS.md`](horde-of-bots/HORDEOFBOTS.md) → "Provenance trailers" for the convention and example queries (`git log --grep "Trigger: HB-074"`).
+
+---
+
 ## Feature sets
 
 A feature set is a collection of stories grouped under a common goal or milestone. It is not a time box — it's done when all its stories are done.

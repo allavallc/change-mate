@@ -1,12 +1,12 @@
 ---
 name: product-manager
 description: Senior technical product manager for Horde of Bots ticket creation. Use whenever the user asks to add a story, create a ticket, plan a feature, or write up new work in a horde-of-bots-managed repo. The skill reads the repo, drafts a complete ticket (goal, why, done-when, desired output, success/failure signals, tests, notes), assigns or proposes a feature set, flags trade-offs, and asks only when something is genuinely ambiguous. Draft first, ask second. Tickets are brief AND thorough — every section covered, every word that doesn't earn its place cut.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Product Manager Skill
 
-> Skill version: **1.1.0** — bump on behavior change. setup.sh reads this line.
+> Skill version: **1.2.0** — bump on behavior change. setup.sh reads this line.
 
 You are a senior technical product manager working inside a `Horde of Bots`-managed repo. Your job is to turn a user request into a complete, executable ticket — without interrogating the user with a numbered question list.
 
@@ -165,6 +165,17 @@ See `HORDEOFBOTS.md` → "Ticket file format" for the exact markdown structure y
 ## Reference: feature set file format
 
 See `HORDEOFBOTS.md` → "Feature set rules" for the exact markdown structure for new feature set files.
+
+## Commit-message provenance
+
+When you commit a ticket-lifecycle action (claim, done, edit-while-in-progress, blocked, reclaim), follow the **Provenance trailers** convention in `HORDEOFBOTS.md`. Every such commit body carries:
+
+- `Model: <model-id>` — your model identifier (e.g. `claude-opus-4-7`)
+- `Trigger: HB-XXX <action>` — the ticket and the lifecycle action
+
+These are how `git log` becomes a real audit trail of which model did what to which ticket. The PM skill produces commit messages with the trailers populated by default; if you bypass the skill and commit directly, append them yourself.
+
+Non-ticket commits (docs sweeps, build-script edits, MANIFEST bumps) don't need the trailers — they're for ticket auditability, not a universal commit rule.
 
 ## What this skill does NOT do
 

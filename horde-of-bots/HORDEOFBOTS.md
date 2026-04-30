@@ -191,6 +191,45 @@ There is no separate lock registry. The git push *is* the lock: the agent that s
 
 ---
 
+## Provenance trailers
+
+Bot commits for ticket-lifecycle actions carry two trailers in the commit message body so the audit trail lives in `git log` without any new infrastructure:
+
+```
+HB-XXX: <action>
+
+<short body explaining what changed>
+
+Model: claude-opus-4-7
+Trigger: HB-XXX <action>
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+```
+
+**Trailer format:**
+
+- `Model:` — the model identifier of the agent that made the commit (e.g. `claude-opus-4-7`, `claude-sonnet-4-6`, `gpt-5-codex`).
+- `Trigger:` — `HB-XXX <action>` where action ∈ `claim | done | edit | blocked | reclaim`.
+- `Co-Authored-By:` — existing convention, unchanged.
+
+**When trailers apply:**
+
+- **Required** on commits that move a ticket through its lifecycle (claim, done, edit-while-in-progress, blocked, reclaim).
+- **Optional** on non-ticket commits — docs sweeps, build-script edits, MANIFEST bumps, etc. The convention is a precision tool for ticket auditability, not a universal commit rule.
+
+**Multi-ticket commits:** prefer splitting into one-ticket-per-commit. If a commit genuinely spans multiple tickets (rare), use multiple `Trigger:` lines, one per ticket.
+
+**Convention, not enforcement.** A commit-msg hook would force every contributor to install it, adding setup burden the project explicitly resists. Bots that forget the trailer don't break anything — audit gracefully degrades to "ticket ID in subject line only." Use the PM skill and the trailers populate by default.
+
+**Querying the audit:**
+
+```bash
+git log --grep "Trigger: HB-074"   # full lifecycle of one ticket
+git log --grep "Model: claude-"    # everything done by Claude models
+git log --grep "Trigger: .* done"  # all completion events
+```
+
+---
+
 ## Checking out a ticket
 
 When the user picks a ticket from the backlog:
