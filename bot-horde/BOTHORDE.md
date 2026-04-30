@@ -521,6 +521,11 @@ CI runs `python3 bot-horde/validate.py` on every push (via `build.sh`). The vali
 - `Failure mode` present and one of the five allowed values iff in `blocked/`
 - Every ID in `Related` / `Blocks` / `Blocked by` / `Split from` resolves to a real ticket
 - A `done/` ticket cannot have `Blocked by` references that aren't themselves `done/` (BH-075 enforcement)
+- **Acceptance loop (fs-013):**
+  - `User-facing` value, when set, is one of `yes | no` (parser defaults missing field to `no`, so legacy tickets pass)
+  - Tickets in `in-review/` carry `User-facing: yes` and a non-empty `## How to test`
+  - `done/` tickets with `User-facing: yes` have `Verification` in `{human-reviewed, bot-reviewed}` (loop output, not dev self-set) and a populated `## How to test`
+  - `done/` tickets with `User-facing: no` have `Verification` in `{bot-claimed, tests-passed}` — the loop values are reserved for tickets that came through `in-review/`
 
 If any rule fails, the build exits non-zero and CI fails. Fix the ticket; do not bypass the validator.
 

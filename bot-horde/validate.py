@@ -19,11 +19,15 @@ from build_lib import parse_ticket
 
 
 VERIFICATION_VALUES = {"bot-claimed", "tests-passed", "bot-reviewed", "human-reviewed"}
+VERIFICATION_LOOP_VALUES = {"bot-reviewed", "human-reviewed"}
+VERIFICATION_DEV_VALUES = {"bot-claimed", "tests-passed"}
 FAILURE_MODE_VALUES = {"failed-tests", "merge-conflict", "context-exceeded", "unmet-dep", "needs-human"}
+USER_FACING_VALUES = {"yes", "no"}
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%d %H:%M")
 FOLDER_TO_STATUS = {
     "backlog": "open",
     "in-progress": "in-progress",
+    "in-review": "in-review",
     "done": "done",
     "blocked": "blocked",
     "not-doing": "not-doing",
@@ -126,6 +130,55 @@ def validate(repo_root):
                 errors.append(
                     f"{prefix_msg} Verification='{verif}' is not in allowed set "
                     f"{sorted(VERIFICATION_VALUES)}"
+                )
+
+        # User-facing field — value validation (parser defaults to 'no' when missing,
+        # so blank tickets pass; only explicitly malformed values fail).
+        uf = (t.get("user_facing") or "").strip()
+        if uf and uf not in USER_FACING_VALUES:
+            errors.append(
+                f"{prefix_msg} User-facing='{uf}' is not in allowed set "
+                f"{sorted(USER_FACING_VALUES)}"
+            )
+
+        # Acceptance-loop rules (fs-013):
+        # - in-review/ tickets must carry User-facing: yes and a non-empty ## How to test
+        # - done/ tickets where User-facing: yes must have a loop-output Verification
+        #   (human-reviewed or bot-reviewed) AND a populated ## How to test
+        # - done/ tickets where User-facing: no must have a dev-set Verification
+        #   (bot-claimed or tests-passed); the loop values are reserved for the loop
+        if folder == "in-review":
+            if uf != "yes":
+                errors.append(
+                    f"{prefix_msg} tickets in 'in-review/' must have User-facing: yes "
+                    f"(got '{uf}')"
+                )
+            if not (t.get("how_to_test") or "").strip():
+                errors.append(
+                    f"{prefix_msg} '## How to test' must be non-empty for tickets in 'in-review/'"
+                )
+
+        if folder == "done" and uf == "yes":
+            verif_now = (t.get("verification") or "").strip()
+            if verif_now and verif_now not in VERIFICATION_LOOP_VALUES:
+                errors.append(
+                    f"{prefix_msg} User-facing: yes done/ tickets must have Verification "
+                    f"in {sorted(VERIFICATION_LOOP_VALUES)} (loop output, not dev self-set); "
+                    f"got '{verif_now}'"
+                )
+            if not (t.get("how_to_test") or "").strip():
+                errors.append(
+                    f"{prefix_msg} '## How to test' must be non-empty for User-facing: yes "
+                    f"tickets in 'done/'"
+                )
+
+        if folder == "done" and uf == "no":
+            verif_now = (t.get("verification") or "").strip()
+            if verif_now and verif_now not in VERIFICATION_DEV_VALUES:
+                errors.append(
+                    f"{prefix_msg} User-facing: no done/ tickets must have Verification "
+                    f"in {sorted(VERIFICATION_DEV_VALUES)} (loop values are reserved for "
+                    f"User-facing: yes work); got '{verif_now}'"
                 )
 
         if folder == "blocked":

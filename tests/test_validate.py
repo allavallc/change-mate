@@ -10,7 +10,7 @@ from validate import validate
 
 REPO_ROOT = Path(__file__).parent.parent
 
-FOLDERS = ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets")
+FOLDERS = ("backlog", "in-progress", "in-review", "done", "blocked", "not-doing", "feature-sets")
 
 
 def make_repo(tmp_path, prefix="HB"):
@@ -311,3 +311,171 @@ def test_no_horde_of_bots_dir_returns_empty(tmp_path):
     errors, count = validate(tmp_path)
     assert errors == []
     assert count == 0
+
+
+# ---------- fs-013 acceptance loop rules ----------
+
+
+def test_user_facing_invalid_value(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] Bad UF
+
+- **Status**: open
+- **Priority**: Medium
+- **Effort**: S
+- **User-facing**: maybe
+
+## Goal
+g
+"""
+    write_ticket(base, "backlog", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert any("User-facing='maybe'" in e for e in errors)
+
+
+def test_in_review_requires_user_facing_yes(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] In review without UF
+
+- **Status**: in-review
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **User-facing**: no
+
+## Goal
+g
+
+## How to test
+- step
+"""
+    write_ticket(base, "in-review", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert any("'in-review/' must have User-facing: yes" in e for e in errors)
+
+
+def test_in_review_requires_how_to_test(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] No HTT
+
+- **Status**: in-review
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **User-facing**: yes
+
+## Goal
+g
+"""
+    write_ticket(base, "in-review", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert any("'## How to test' must be non-empty" in e and "'in-review/'" in e for e in errors)
+
+
+def test_done_user_facing_yes_rejects_self_set_verification(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] Self-graded UF
+
+- **Status**: done
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **Completed**: 2026-04-30
+- **Verification**: bot-claimed
+- **User-facing**: yes
+
+## Goal
+g
+
+## How to test
+- step
+"""
+    write_ticket(base, "done", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert any("loop output, not dev self-set" in e for e in errors)
+
+
+def test_done_user_facing_yes_requires_how_to_test(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] Done UF without HTT
+
+- **Status**: done
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **Completed**: 2026-04-30
+- **Verification**: human-reviewed
+- **User-facing**: yes
+
+## Goal
+g
+"""
+    write_ticket(base, "done", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert any("must be non-empty for User-facing: yes" in e for e in errors)
+
+
+def test_done_user_facing_no_rejects_loop_verification(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] Internal work claimed loop value
+
+- **Status**: done
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **Completed**: 2026-04-30
+- **Verification**: human-reviewed
+- **User-facing**: no
+
+## Goal
+g
+"""
+    write_ticket(base, "done", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert any("loop values are reserved for User-facing: yes" in e for e in errors)
+
+
+def test_done_user_facing_yes_with_loop_verification_passes(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] Properly accepted
+
+- **Status**: done
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **Completed**: 2026-04-30
+- **Verification**: human-reviewed
+- **User-facing**: yes
+
+## Goal
+g
+
+## How to test
+- step
+"""
+    write_ticket(base, "done", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert errors == []
+
+
+def test_in_review_with_user_facing_yes_and_htt_passes(tmp_path):
+    base = make_repo(tmp_path)
+    body = """# [HB-001] Awaiting review
+
+- **Status**: in-review
+- **Priority**: Medium
+- **Effort**: S
+- **Assigned to**: claude
+- **User-facing**: yes
+
+## Goal
+g
+
+## How to test
+- open localhost:8000
+- click button
+- expect: modal
+"""
+    write_ticket(base, "in-review", "HB-001", body)
+    errors, _ = validate(tmp_path)
+    assert errors == []

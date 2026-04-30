@@ -24,7 +24,7 @@ Platform-scale review-queue features (assignment routing, SLA tracking, capabili
 BH-080, BH-081, BH-082 ship first in any order — independent schema additions. BH-083 once the schema is in place. BH-084 after BH-083 (workflow needs the new state). BH-085 after BH-083 (the skill executes the documented workflow). BH-086 anytime (pure docs convention). BH-087 last — it enforces everything else.
 
 ## Status
-Backlog
+Done
 
 ## Notes
 - **Tester ≠ dev bot.** A bot may play the tester role, but it must be a different invocation/persona than the one that built the ticket. Self-approval defeats the purpose. BH-085 enforces this.
