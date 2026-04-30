@@ -662,38 +662,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "HB-071",
-      "title": "`Split-from:` field for ticket decomposition",
-      "status": "backlog",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-010-bot-native-schema",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Add an optional `**Split-from**: HB-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
-      "why": "A bot mid-claim sometimes realizes a ticket should have been three. Today there's no way to record that lineage in the schema \u2014 provenance lives in commit messages or Notes, neither of which is machine-readable. With this field, `git blame` on the new tickets is one click, and the audit trail for decomposition is preserved without conventions in commit messages.",
-      "done_when": [
-        "`build_lib.parse_ticket` recognizes `**Split-from**:` and returns `split_from` on the ticket dict (single ID or list, comma-separated)",
-        "Board renders `Split from HB-XXX` as a chip next to existing relationship chips, same styling",
-        "HORDEOFBOTS.md schema reference lists `Split-from:` as an optional field with example",
-        "PM skill prompt mentions `split_from` so it can populate the field when generating decomposed tickets",
-        "`tests/test_parser.py` covers a ticket with `Split-from` set (single + multi)"
-      ],
-      "desired_output": "A user splits HB-005 into HB-080, HB-081, HB-082. Each child shows a `Split from HB-005` chip. The parent's history is one click away.",
-      "success_signals": "- When the user later asks \"where did HB-080 come from?\", the answer is on the card, not buried in `git log`.\n- Bots writing decomposition tickets populate the field by default.",
-      "failure_signals": "- Field becomes decorative \u2014 bots forget to set it, no inverse rendering on the parent, audit value never materializes.\n- Mitigation: PM skill defaults to populating it; HB-076 validator does not require it (optional field).",
-      "tests": "- `tests/test_parser.py` adds two cases: ticket with `Split-from: HB-005` and ticket with `Split-from: HB-005, HB-006`\n- `tests/test_build.py` adds a case that confirms the chip renders in HTML",
-      "notes": "- Inverse rendering (\"Split into HB-080, HB-081\" on the parent) is **out of scope** for this ticket. Renderer infers other inverses (Blocks/Blocked-by) at build time; could add for split later as a polish pass if it becomes valuable.\n- Field is optional everywhere \u2014 legacy tickets without it parse fine.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-072",
       "title": "`Verification:` field separate from `Status:`",
       "status": "backlog",
@@ -910,6 +878,38 @@ var D = {
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
       "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "HB-071",
+      "title": "`Split-from:` field for ticket decomposition",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-010-bot-native-schema",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 08:30",
+      "completed": "",
+      "goal": "Add an optional `**Split-from**: HB-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
+      "why": "A bot mid-claim sometimes realizes a ticket should have been three. Today there's no way to record that lineage in the schema \u2014 provenance lives in commit messages or Notes, neither of which is machine-readable. With this field, `git blame` on the new tickets is one click, and the audit trail for decomposition is preserved without conventions in commit messages.",
+      "done_when": [
+        "`build_lib.parse_ticket` recognizes `**Split-from**:` and returns `split_from` on the ticket dict (single ID or list, comma-separated)",
+        "Board renders `Split from HB-XXX` as a chip next to existing relationship chips, same styling",
+        "HORDEOFBOTS.md schema reference lists `Split-from:` as an optional field with example",
+        "PM skill prompt mentions `split_from` so it can populate the field when generating decomposed tickets",
+        "`tests/test_parser.py` covers a ticket with `Split-from` set (single + multi)"
+      ],
+      "desired_output": "A user splits HB-005 into HB-080, HB-081, HB-082. Each child shows a `Split from HB-005` chip. The parent's history is one click away.",
+      "success_signals": "- When the user later asks \"where did HB-080 come from?\", the answer is on the card, not buried in `git log`.\n- Bots writing decomposition tickets populate the field by default.",
+      "failure_signals": "- Field becomes decorative \u2014 bots forget to set it, no inverse rendering on the parent, audit value never materializes.\n- Mitigation: PM skill defaults to populating it; HB-076 validator does not require it (optional field).",
+      "tests": "- `tests/test_parser.py` adds two cases: ticket with `Split-from: HB-005` and ticket with `Split-from: HB-005, HB-006`\n- `tests/test_build.py` adds a case that confirms the chip renders in HTML",
+      "notes": "- Inverse rendering (\"Split into HB-080, HB-081\" on the parent) is **out of scope** for this ticket. Renderer infers other inverses (Blocks/Blocked-by) at build time; could add for split later as a polish pass if it becomes valuable.\n- Field is optional everywhere \u2014 legacy tickets without it parse fine.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2425,7 +2425,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T12:08:35.757841+00:00",
+  "generated": "2026-04-30T13:12:49.772536+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -2957,7 +2957,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "56ae22d3828347644935007b00a577b0038fe5f4"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "ec9dfb9523e753b3bec10d2622755a7563f490ea"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
