@@ -97,7 +97,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .view.active { display: block; }
 .board {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
@@ -108,7 +108,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   padding: 24px;
   min-width: 0;
 }
-.board.show-rejected { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.board.show-rejected { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .col-rejected { display: none; }
 .board.show-rejected .col-rejected { display: block; }
 .card.not-doing { opacity: 0.4; }
@@ -670,6 +670,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
         <div class="cards" id="c-inprogress"></div>
       </div>
       <div>
+        <div class="col-head"><span class="col-name">In Review</span><span class="col-count" id="n-inreview">0</span></div>
+        <div class="cards" id="c-inreview"></div>
+      </div>
+      <div>
         <div class="col-head"><span class="col-name">Done</span><span class="col-count" id="n-done">0</span></div>
         <div class="cards" id="c-done"></div>
       </div>
@@ -967,43 +971,6 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "BH-080",
-      "title": "`in-review/` folder + board column",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "claude",
-      "started": "2026-04-30 19:30",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "goal": "Introduce `bot-horde/in-review/` as a sixth ticket-state folder. Board renders it as a new column between `In Progress` and `Done` \u2014 same pattern as the other state folders today.",
-      "why": "The acceptance loop (fs-013) needs a place where user-facing tickets pause after dev finishes and before they ship. Reusing existing folders (`blocked/`, `in-progress/`, `done/`) conflates states and breaks the columns-as-states model. A new folder is the smallest clean addition.",
-      "done_when": [
-        "Empty directory `bot-horde/in-review/` exists with a `.gitkeep`",
-        "`build.sh` walks `in-review/` alongside the other state folders",
-        "`build_lib.parse_ticket` accepts `Status: in-review` as a valid value",
-        "Board renders an `In Review` column between `In Progress` and `Done`",
-        "BOTHORDE.md \"Ticket file format\" section adds `in-review` to the `Status` enum",
-        "Validator (already covered by BH-087) accepts the new folder"
-      ],
-      "desired_output": "A bot moves a ticket file into `in-review/` and on the next board build it appears in the new column. No other UI affordance changes.",
-      "success_signals": "- New column renders without breaking layout on narrow viewports.\n- Filter dropdown selecting `In review` shows only tickets in that folder.",
-      "failure_signals": "- Six columns make the board feel cramped on smaller screens \u2014 flag if mobile/iPad views regress visibly.\n- Existing tests that count five state folders break \u2014 update them in the same PR.",
-      "tests": "- `tests/test_parser.py` \u2014 parse a ticket with `Status: in-review`\n- `tests/test_build.py` \u2014 build runs against a fixture tree with an `in-review/` ticket; column appears in output HTML",
-      "notes": "- Pure scaffolding ticket. No tester logic, no field changes \u2014 those live in BH-081/082/083.\n- Out of scope: animating transitions between columns. Keep the visual style consistent with the existing brutalist column treatment.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "last_commit_ct": 1777582141,
       "blocked_by_inferred": []
     },
     {
@@ -2510,6 +2477,42 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "BH-080",
+      "title": "`in-review/` folder + board column",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 19:30",
+      "completed": "2026-04-30",
+      "verification": "tests-passed",
+      "failure_mode": "",
+      "goal": "Introduce `bot-horde/in-review/` as a sixth ticket-state folder. Board renders it as a new column between `In Progress` and `Done` \u2014 same pattern as the other state folders today.",
+      "why": "The acceptance loop (fs-013) needs a place where user-facing tickets pause after dev finishes and before they ship. Reusing existing folders (`blocked/`, `in-progress/`, `done/`) conflates states and breaks the columns-as-states model. A new folder is the smallest clean addition.",
+      "done_when": [
+        "Empty directory `bot-horde/in-review/` exists with a `.gitkeep`",
+        "`build.sh` walks `in-review/` alongside the other state folders",
+        "`build_lib.parse_ticket` accepts `Status: in-review` as a valid value",
+        "Board renders an `In Review` column between `In Progress` and `Done`",
+        "BOTHORDE.md \"Ticket file format\" section adds `in-review` to the `Status` enum",
+        "Validator (already covered by BH-087) accepts the new folder"
+      ],
+      "desired_output": "A bot moves a ticket file into `in-review/` and on the next board build it appears in the new column. No other UI affordance changes.",
+      "success_signals": "- New column renders without breaking layout on narrow viewports.\n- Filter dropdown selecting `In review` shows only tickets in that folder.",
+      "failure_signals": "- Six columns make the board feel cramped on smaller screens \u2014 flag if mobile/iPad views regress visibly.\n- Existing tests that count five state folders break \u2014 update them in the same PR.",
+      "tests": "- `tests/test_parser.py` \u2014 parse a ticket with `Status: in-review`\n- `tests/test_build.py` \u2014 build runs against a fixture tree with an `in-review/` ticket; column appears in output HTML",
+      "notes": "- Pure scaffolding ticket. No tester logic, no field changes \u2014 those live in BH-081/082/083.\n- Out of scope: animating transitions between columns. Keep the visual style consistent with the existing brutalist column treatment.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "BH-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not-doing",
@@ -2969,7 +2972,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T20:49:10.271380+00:00",
+  "generated": "2026-04-30T20:51:21.854595+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3192,9 +3195,9 @@ function render() {
   var gen = D.generated ? new Date(D.generated).toLocaleString() : '';
   if (gen) document.getElementById('gen-time').textContent = 'generated ' + gen;
 
-  var buckets = {open:[], 'in-progress':[], done:[], blocked:[], 'not-doing':[]};
+  var buckets = {open:[], 'in-progress':[], 'in-review':[], done:[], blocked:[], 'not-doing':[]};
   D.tickets.forEach(function(t) { if (buckets[t.status]) buckets[t.status].push(t); });
-  var colKeys = {open:'backlog','in-progress':'inprogress',done:'done',blocked:'blocked'};
+  var colKeys = {open:'backlog','in-progress':'inprogress','in-review':'inreview',done:'done',blocked:'blocked'};
   Object.keys(colKeys).forEach(function(status) {
     var list = (typeof filterAndSort === 'function') ? filterAndSort(buckets[status]) : buckets[status];
     var k = colKeys[status];
@@ -3585,7 +3588,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "19363286d520265d3215eafff7d15b5cc289e251", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "33912c372cacd3e4b6903f4b4d800b50731440bb", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
