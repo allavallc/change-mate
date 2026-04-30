@@ -50,6 +50,7 @@ def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
         "assigned_to": "",
         "started": "",
         "completed": "",
+        "verification": "",
         "failure_mode": "",
         "goal": "",
         "why": "",
@@ -71,7 +72,7 @@ def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
 
     bullet_keys = (
         "priority", "effort", "feature_set", "assigned_to",
-        "started", "completed", "failure_mode",
+        "started", "completed", "verification", "failure_mode",
         "rejected_by", "rejected", "rejection_reason",
     )
     id_list_keys = ("related", "blocks", "blocked_by", "split_from")

@@ -934,6 +934,12 @@ function cardHTML(t, isRejected) {
   var failureRow = (t.status === 'blocked' && t.failure_mode)
     ? '<div><div class="dl-label">Failure mode</div><div class="dl-val">' + esc(t.failure_mode) + '</div></div>'
     : '';
+  var verifChip = (t.status === 'done' && t.verification)
+    ? '<div class="card-rels"><span class="card-rel card-rel-verif card-rel-verif-' + esc(t.verification) + '" title="Verification: ' + esc(t.verification) + '">' + esc(t.verification.toUpperCase()) + '</span></div>'
+    : '';
+  var verifRow = (t.status === 'done' && t.verification)
+    ? '<div><div class="dl-label">Verification</div><div class="dl-val">' + esc(t.verification) + '</div></div>'
+    : '';
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
   var relDetail = relDetailHTML(relChips);
@@ -956,7 +962,7 @@ function cardHTML(t, isRejected) {
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = failureRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
     + robot
@@ -967,6 +973,7 @@ function cardHTML(t, isRejected) {
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + failChip
+    + verifChip
     + relFace
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
     + footer

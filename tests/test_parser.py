@@ -454,6 +454,54 @@ g
     assert t["failure_mode"] == "something-weird"
 
 
+# ---------- verification field ----------
+
+
+def test_parse_verification_each_allowed_value(tmp_path):
+    for value in ("bot-claimed", "tests-passed", "bot-reviewed", "human-reviewed"):
+        body = f"""# [CM-800] Done with verification
+
+- **Status**: done
+- **Completed**: 2026-04-30
+- **Verification**: {value}
+
+## Goal
+g
+"""
+        p = write(tmp_path, f"CM-800-{value}.md", body)
+        t = parse_ticket(p, "done")
+        assert t["verification"] == value
+
+
+def test_parse_verification_default_empty(tmp_path):
+    body = """# [CM-801] Done without verification (legacy)
+
+- **Status**: done
+- **Completed**: 2026-04-29
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-801.md", body)
+    t = parse_ticket(p, "done")
+    assert t["verification"] == ""
+
+
+def test_parse_verification_unknown_value_passes_through(tmp_path):
+    """Parser is permissive — value validation belongs in HB-076 validator."""
+    body = """# [CM-802] Unknown verification value
+
+- **Status**: done
+- **Verification**: gold-stamped
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-802.md", body)
+    t = parse_ticket(p, "done")
+    assert t["verification"] == "gold-stamped"
+
+
 # ---------- regression: every committed ticket parses ----------
 
 

@@ -342,13 +342,22 @@ Why a new ticket rather than picking one of the originals? Two reasons: it surfa
 
 1. Tell the user what was done in plain language
 2. Move the ticket file from `horde-of-bots/in-progress/` to `horde-of-bots/done/`
-3. Update the file — set status to `done`, add completion date, add notes about decisions made or issues encountered
+3. Update the file — set status to `done`, add completion date, set `**Verification**` (default `bot-claimed`; use `tests-passed` if you ran the tests yourself and they passed), add notes about decisions made or issues encountered
 4. Run:
    ```
    git add horde-of-bots/
    git commit -m "HB-XXX: done"
    git push
    ```
+
+`**Verification**` allowed values:
+
+- **`bot-claimed`** — the bot says it's done. Default when no further verification has happened. Lowest trust level.
+- **`tests-passed`** — bot ran the tests and they passed. Higher trust than `bot-claimed`.
+- **`bot-reviewed`** — a *separate* bot reviewed the work and signed off. Higher again.
+- **`human-reviewed`** — a human eyeballed the diff and approved. Highest trust.
+
+The field is orthogonal to status: status describes workflow stage; verification describes trust level on the contents of a done ticket. Bots producing the work set `bot-claimed` or `tests-passed`. Reviewers (human or bot) update the field to the next level after review — this is how a downstream agent can tell which "done" tickets it can trust without re-reading the diff.
 
 ---
 
@@ -382,6 +391,7 @@ HB-004-1736847392.md
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
+- **Verification**: <bot-claimed | tests-passed | bot-reviewed | human-reviewed> (set on `done/` tickets; blank otherwise)
 - **Failure mode**: <failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human> (required when ticket is in `blocked/`, blank otherwise)
 - **Rejected by**: <name or blank>
 - **Rejected**: <YYYY-MM-DD or blank>
@@ -420,7 +430,7 @@ Unit tests, integration tests, or manual QA the developer should produce before 
 Decisions made, alternatives considered and rejected (with reasons), gotchas, out-of-scope items pushed to other tickets.
 ```
 
-**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`), or `**Failure mode**` must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
+**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`), `**Verification**`, or `**Failure mode**` must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
 
 ## Relationship fields
 
