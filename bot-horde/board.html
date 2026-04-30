@@ -700,57 +700,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-087",
-      "title": "Validator enforces the acceptance loop",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "M",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [
-        "BH-080",
-        "BH-081",
-        "BH-082",
-        "BH-083",
-        "BH-084",
-        "BH-085",
-        "BH-086"
-      ],
-      "split_from": [],
-      "assigned_to": "claude",
-      "started": "2026-04-30 21:50",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "user_facing": "no",
-      "goal": "Extend `bot-horde/validate.py` to enforce the new acceptance-loop schema and workflow rules. Without enforcement, `User-facing` rots, `## How to test` goes blank, and `Verification` gets self-set on user-facing work \u2014 the loop becomes decorative.",
-      "why": "fs-010's lesson: schema fields without CI enforcement are noise. The acceptance loop adds three pieces of state (folder, field, section) and a workflow rule (Verification produced by tester, not dev). All four need machine-checkable rules or they will drift within weeks.",
-      "done_when": [
-        "`validate.py` adds the following checks; collects all errors in one pass:",
-        "`User-facing` field present and one of `yes | no` on tickets created after the schema lands (legacy tickets without the field default to `no`, no error)",
-        "`## How to test` non-empty when `User-facing: yes` AND ticket is in `in-review/` or `done/`",
-        "Tickets in `in-review/` must have `Status: in-review`, `User-facing: yes`, and non-empty `## How to test`",
-        "Tickets in `done/` with `User-facing: yes` must have `Verification` set to `human-reviewed` or `bot-reviewed` (not `bot-claimed` or `tests-passed` \u2014 those are reserved for dev self-grading on non-user-facing work)",
-        "Tickets in `done/` with `User-facing: no` must have `Verification` set to `bot-claimed` or `tests-passed` (not the loop-only values)",
-        "Errors print with the exact rule violated, file path, and corrective action",
-        "`tests/test_validate.py` adds at least one fixture per new error class",
-        "`tests/test_build.py` confirms `build.sh` exits non-zero when a fixture tree contains a malformed ticket against any new rule",
-        "BOTHORDE.md \"Validation\" section gains a paragraph listing the new rules"
-      ],
-      "desired_output": "A bot tries to push a `User-facing: yes` ticket to `done/` with `Verification: bot-claimed`. CI fails: `bot-horde/done/BH-NNN.md: User-facing: yes tickets cannot have Verification: bot-claimed \u2014 must come through in-review/`.",
-      "success_signals": "- At least one rule fires on a real PR during the rollout period (catching a drift attempt).\n- `User-facing: yes` tickets consistently carry the right Verification by the time they hit `done/`.",
-      "failure_signals": "- Validator too strict \u2014 every legacy ticket without `User-facing` fails. Mitigation: legacy tickets default `User-facing: no` (don't error on absent field for tickets predating the schema; gate on file mtime or first-commit date if needed).\n- Validator too lenient \u2014 schema drift goes uncaught. Confirm coverage by intentionally malforming a fixture ticket per rule and verifying the test catches it.",
-      "tests": "- `tests/test_validate.py`:\n  - `User-facing: maybe` \u2192 fails\n  - `User-facing: yes` ticket in `in-review/` with empty `## How to test` \u2192 fails\n  - `User-facing: yes` ticket in `done/` with `Verification: bot-claimed` \u2192 fails\n  - `User-facing: no` ticket in `done/` with `Verification: human-reviewed` \u2192 fails\n  - Legacy ticket missing `User-facing` field \u2192 passes (defaults to `no`)\n- `tests/test_build.py` \u2014 build with a malformed fixture exits non-zero",
-      "how_to_test": "",
-      "notes": "- This ticket lands last in fs-013 because it enforces fields and rules the other tickets introduce. Build them first.\n- Out of scope: auto-fixing malformed tickets. Validator reports; human or bot fixes. Auto-fix would mask drift.\n- Performance: the new checks are local field reads, no extra parsing \u2014 keep validation under the existing 500ms budget for 100 tickets.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "last_commit_ct": 1777587675,
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-001",
       "title": "Test ticket",
       "status": "done",
@@ -2611,6 +2560,56 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "BH-087",
+      "title": "Validator enforces the acceptance loop",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [
+        "BH-080",
+        "BH-081",
+        "BH-082",
+        "BH-083",
+        "BH-084",
+        "BH-085",
+        "BH-086"
+      ],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 21:50",
+      "completed": "2026-04-30",
+      "verification": "tests-passed",
+      "failure_mode": "",
+      "user_facing": "no",
+      "goal": "Extend `bot-horde/validate.py` to enforce the new acceptance-loop schema and workflow rules. Without enforcement, `User-facing` rots, `## How to test` goes blank, and `Verification` gets self-set on user-facing work \u2014 the loop becomes decorative.",
+      "why": "fs-010's lesson: schema fields without CI enforcement are noise. The acceptance loop adds three pieces of state (folder, field, section) and a workflow rule (Verification produced by tester, not dev). All four need machine-checkable rules or they will drift within weeks.",
+      "done_when": [
+        "`validate.py` adds the following checks; collects all errors in one pass:",
+        "`User-facing` field present and one of `yes | no` on tickets created after the schema lands (legacy tickets without the field default to `no`, no error)",
+        "`## How to test` non-empty when `User-facing: yes` AND ticket is in `in-review/` or `done/`",
+        "Tickets in `in-review/` must have `Status: in-review`, `User-facing: yes`, and non-empty `## How to test`",
+        "Tickets in `done/` with `User-facing: yes` must have `Verification` set to `human-reviewed` or `bot-reviewed` (not `bot-claimed` or `tests-passed` \u2014 those are reserved for dev self-grading on non-user-facing work)",
+        "Tickets in `done/` with `User-facing: no` must have `Verification` set to `bot-claimed` or `tests-passed` (not the loop-only values)",
+        "Errors print with the exact rule violated, file path, and corrective action",
+        "`tests/test_validate.py` adds at least one fixture per new error class",
+        "`tests/test_build.py` confirms `build.sh` exits non-zero when a fixture tree contains a malformed ticket against any new rule",
+        "BOTHORDE.md \"Validation\" section gains a paragraph listing the new rules"
+      ],
+      "desired_output": "A bot tries to push a `User-facing: yes` ticket to `done/` with `Verification: bot-claimed`. CI fails: `bot-horde/done/BH-NNN.md: User-facing: yes tickets cannot have Verification: bot-claimed \u2014 must come through in-review/`.",
+      "success_signals": "- At least one rule fires on a real PR during the rollout period (catching a drift attempt).\n- `User-facing: yes` tickets consistently carry the right Verification by the time they hit `done/`.",
+      "failure_signals": "- Validator too strict \u2014 every legacy ticket without `User-facing` fails. Mitigation: legacy tickets default `User-facing: no` (don't error on absent field for tickets predating the schema; gate on file mtime or first-commit date if needed).\n- Validator too lenient \u2014 schema drift goes uncaught. Confirm coverage by intentionally malforming a fixture ticket per rule and verifying the test catches it.",
+      "tests": "- `tests/test_validate.py`:\n  - `User-facing: maybe` \u2192 fails\n  - `User-facing: yes` ticket in `in-review/` with empty `## How to test` \u2192 fails\n  - `User-facing: yes` ticket in `done/` with `Verification: bot-claimed` \u2192 fails\n  - `User-facing: no` ticket in `done/` with `Verification: human-reviewed` \u2192 fails\n  - Legacy ticket missing `User-facing` field \u2192 passes (defaults to `no`)\n- `tests/test_build.py` \u2014 build with a malformed fixture exits non-zero",
+      "how_to_test": "",
+      "notes": "- This ticket lands last in fs-013 because it enforces fields and rules the other tickets introduce. Build them first.\n- Out of scope: auto-fixing malformed tickets. Validator reports; human or bot fixes. Auto-fix would mask drift.\n- Performance: the new checks are local field reads, no extra parsing \u2014 keep validation under the existing 500ms budget for 100 tickets.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "BH-010",
       "title": "Second-LLM review pass on ticket drafts before user sees them",
       "status": "not-doing",
@@ -3075,7 +3074,7 @@ var D = {
       "name": "[feature-set-013] Acceptance loop",
       "goal": "Close the dev \u2192 done loop with a tester signoff on user-facing tickets. Today the dev bot self-grades: it moves work from `in-progress/` to `done/` and sets `**Verification**` to whatever it picked. There is no folder, no field, and no required artifact representing \"this needs a separate eyes-on pass before it ships.\" This feature set adds one new state, one new schema field, one new ticket section, and a tester role \u2014 and wires them to the existing `Verification` field, which until now has been orphaned.",
       "rationale": "Feature-set-010 introduced `**Verification**` with values `bot-claimed | tests-passed | bot-reviewed | human-reviewed`, but nothing in the workflow produces the last two \u2014 they're set passively. A unit test passing isn't the same as a human (or a tester-role bot) confirming a UI change is acceptable. This feature set adds the missing stage: user-facing tickets pause in `in-review/`, a separate tester reads `## How to test`, executes, and either approves (\u2192 `done/`, Verification upgraded) or rejects (\u2192 `in-progress/` with the existing `Rejected by` / `Rejection reason` fields).\n\nGranularity is per-ticket, not per-feature-set: a feature set bundles tickets of mixed user-facing-ness (fs-010 had schema + validator + docs). `blocked/` is not reused \u2014 that means \"stuck on something broken,\" not \"complete pending external check.\"\n\nPlatform-scale review-queue features (assignment routing, SLA tracking, capability matching) stay out of scope. This is files-and-git: tickets sit in `in-review/`; any tester picks one up by reading the folder.",
-      "status": "Backlog",
+      "status": "Done",
       "tickets": [
         "BH-080",
         "BH-081",
@@ -3088,7 +3087,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T22:21:31.832502+00:00",
+  "generated": "2026-04-30T22:24:41.629720+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3705,7 +3704,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "b9f665fabe513a5d0972112e451f25212e82cbb0", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "954aea3ac01da2406eef778c27df9d393de1e80c", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
