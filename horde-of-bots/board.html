@@ -880,6 +880,74 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "HB-077",
+      "title": "Stale-claim render on in-progress cards",
+      "status": "backlog",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-011-board-honesty",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Render staleness metadata on in-progress cards: how long since the ticket was claimed, and how long since the file was last committed.",
+      "why": "A card sits in `in-progress/` looking alive even after the bot crashes. Today only Notes or git history reveal whether work is actually moving. Surfacing both timestamps on the card lets humans and reclaiming bots judge staleness at a glance \u2014 without adding a heartbeat field bots have to remember to update.",
+      "done_when": [
+        "In-progress cards show two relative timestamps in the footer: `claimed Xh ago` (from `Started` field) and `last commit Yh ago` (from `git log -1 --format=%ct -- <ticket-file>`)",
+        "Build script computes both at render time; no schema change",
+        "If `last commit > stale_after_hours` AND `claimed > stale_after_hours`, card gets a dotted accent border to flag possible-stale",
+        "`stale_after_hours` configurable in `config.json`, default 4",
+        "Missing `Started`: omit the \"claimed Xh\" string, no error",
+        "pytest: render with recent commit (no stale styling), with old commit (stale styling), with missing Started (no claimed display)"
+      ],
+      "desired_output": "A user opens the board, sees one in-progress card flagged \"claimed 18h ago \u00b7 last commit 14h ago\" with a dotted border, and immediately knows to check whether the bot is still alive.",
+      "success_signals": "- A stale claim gets reclaimed in the rollout window because someone noticed the flag\n- Bots can read the same render output to decide whether to attempt reclaim",
+      "failure_signals": "- All cards trip the threshold because real work outpaces 4h \u2014 tune up\n- Last-commit timestamp doesn't reflect work-in-progress (long-running task pre-commit) \u2014 acceptable; the heuristic is \"are you visibly committing?\", and bots that don't commit appear stale",
+      "tests": "- Render with file commit >4h ago \u2192 stale border class in HTML\n- Render with recent commit \u2192 no stale class\n- Missing `Started` \u2192 no \"claimed Xh\" string in card",
+      "notes": "- No new schema field. Render-only computation from existing data + git log.\n- 4h threshold is a guess; configurable, no code change to tune.\n- **Out of scope**: any reclaim automation. Render-only.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "HB-078",
+      "title": "Polling source honesty + README update",
+      "status": "backlog",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-011-board-honesty",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "assigned_to": "",
+      "started": "",
+      "completed": "",
+      "goal": "Add `pollSource` to `config.json` (`\"github\" | \"none\"`), surface a manual-refresh indicator when polling is off, and update README + HORDEOFBOTS.md to stop implying Horde of Bots works on any git host.",
+      "why": "The board polls GitHub specifically. On `file://` it auto-disables silently. On GitLab/Gitea/self-hosted it just fails quietly. The README's \"no vendor lock-in\" framing is misleading. An explicit `\"none\"` mode + an honest README is cheaper than building real multi-backend polling and stops the false claim.",
+      "done_when": [
+        "`config.json` schema gains `pollSource`, default `\"github\"`",
+        "Allowed values: `\"github\"` | `\"none\"` (other backends explicitly out of scope \u2014 see Notes)",
+        "`\"none\"`: polling JS is omitted; masthead shows `_(static \u2014 refresh manually)_`",
+        "`\"github\"`: existing behavior unchanged; existing `file://` auto-disable still applies",
+        "README \u2014 replace \"no vendor lock-in\" with \"GitHub, with a clean off-switch off-platform\"",
+        "HORDEOFBOTS.md sync mode docs reflect the same",
+        "INSTALL-FAQ.md adds: \"Q: does the board work on non-GitHub hosts? A: yes, but live updates are GitHub-only \u2014 set `pollSource: 'none'` and refresh manually.\"",
+        "pytest: build with `\"none\"` \u2192 no polling JS, refresh indicator present; build with `\"github\"` (default) \u2192 existing behavior"
+      ],
+      "desired_output": "A non-GitHub adopter reads the README, sees the GitHub-specificity up front, sets `pollSource: \"none\"`, and gets a working static board with no broken polling attempts in DevTools.",
+      "success_signals": "- Non-GitHub adopters complete setup without DevTools polling errors\n- \"Why doesn't live update work on GitLab?\" becomes a non-question",
+      "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
+      "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
+      "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "HB-001",
       "title": "Test ticket",
       "status": "done",
@@ -2344,9 +2412,20 @@ var D = {
         "HB-075",
         "HB-076"
       ]
+    },
+    {
+      "id": "feature-set-011-board-honesty",
+      "name": "[feature-set-011] Board honesty",
+      "goal": "Stop the board from pretending to know things it doesn't. Surface staleness on in-progress cards so humans + bots can act on dead claims; make the polling story honest so non-GitHub adopters aren't misled.",
+      "rationale": "Two small fixes surfaced during the v3.0 feedback evaluation but didn't fit the schema-redesign feature set (fs-010). Both reduce false confidence in what the board displays:\n\n- A claim sitting with no commits in 18h looks alive until someone reads the file.\n- Polling tries to hit GitHub even on `file://` and non-GitHub hosts, then quietly fails.\n\nBundled because they're the same shape of fix at different layers (render + config). Independent on their own; together they're a coherent \"honest presentation\" pass.",
+      "status": "Backlog",
+      "tickets": [
+        "HB-077",
+        "HB-078"
+      ]
     }
   ],
-  "generated": "2026-04-30T02:22:53.630351+00:00",
+  "generated": "2026-04-30T02:43:39.169684+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -2878,7 +2957,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "33516b652704ce9e9d6852aade614c5e7cb5eaa2"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "22a6663fddff4c3c308bf4ed9fc1a4502157ec12"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
