@@ -20,6 +20,16 @@ No backend, no database, no vendor lock-in. Tickets are plain markdown files in 
 
 ---
 
+## Who it's for
+
+**Running multiple agents at once?** Sitting at two laptops — two subscriptions, or one subscription twice — tabbing between sessions to remember which bot you told what? Watching one bot redo work the other one already started?
+
+That's the problem Horde of Bots solves. The board *is* the coordination layer. Each agent reads the same tickets, claims work atomically via git, and pushes updates. You stop being the message bus between them.
+
+Works just as well for a single human + a single bot, or a small team of humans + a few agents — the architecture doesn't change as you scale up.
+
+---
+
 ## What it isn't
 
 Horde of Bots is *files and git, plus a board that reads them*. That's the whole bet — the simplicity is the feature.
@@ -60,15 +70,22 @@ horde-of-bots/
 ## The workflow
 
 **An agent pulls the board at session start**
-```
-What are we working on?
 
-Backlog:
-  HB-003 — Add user authentication
-  HB-005 — Fix pagination bug
+Output is grouped by feature set, as markdown tables:
 
-In Progress (by others):
-  HB-002 — Refactor data layer [agent: sarah-bot, 2h ago]
+```markdown
+**What's in the backlog**
+
+### feature-set-001 — Auth
+| ID | Title | What it does |
+|---|---|---|
+| HB-003 | Add user authentication | Email + password login with reset flow. |
+| HB-005 | Fix pagination bug | Last page sometimes returns duplicate rows. |
+
+**In progress (by others)**
+| ID | Title | Owner | Started |
+|---|---|---|---|
+| HB-002 | Refactor data layer | sarah-bot | 2h ago |
 ```
 
 **The agent drafts a ticket before starting work**

@@ -105,24 +105,43 @@ horde-of-bots/
 
 ## On every session start
 
-When the user asks "what's next?" or starts a session:
+When the user asks "what's next?", "what's in the backlog?", "what should I work on?", or starts a session:
 
-1. Run `git pull` silently
-2. Read all files in `horde-of-bots/backlog/` and `horde-of-bots/in-progress/`
-3. Present the state clearly:
+1. `git pull` silently
+2. Read every file in `horde-of-bots/backlog/`, `horde-of-bots/in-progress/`, and `horde-of-bots/feature-sets/`
+3. Render the response as **markdown tables grouped by feature set**:
 
+```markdown
+**What's in the backlog**
+
+### feature-set-010 — Bot-native schema additions
+| ID | Title | What it does |
+|---|---|---|
+| HB-071 | Split-from field | Records lineage when one ticket becomes many. |
+| HB-072 | Verification field | Trust level separate from Status. |
+
+### Standalone (no feature set)
+| ID | Title | What it does |
+|---|---|---|
+| HB-XXX | ... | ... |
+
+**In progress (by others)**
+| ID | Title | Owner | Started |
+|---|---|---|---|
+| HB-002 | Refactor data layer | sarah-bot | 2h ago |
 ```
-What are we working on?
 
-Backlog:
-  HB-003 — Add user authentication
-  HB-005 — Fix pagination bug
+Format rules:
 
-In Progress (by others):
-  HB-002 — Refactor data layer [Sarah, 2h ago]
+- One table per feature set; heading is `### feature-set-NNN — <set goal sentence>`.
+- Tickets sorted by ID ascending within each table.
+- "What it does" = ticket Goal's first sentence, trimmed to ~12 words if longer. Single line, no markdown inside the cell.
+- Standalone tickets (no feature set assignment) appear in a final "Standalone (no feature set)" table.
+- "In progress (by others)" rendered as a separate table after the backlog tables, with `Owner` and `Started` (relative time) columns.
+- Empty backlog: render `_Backlog is empty._` instead of empty tables.
+- No in-progress tickets: omit that table entirely.
 
-Or tell me something new to add.
-```
+If the user asks "what should I work on?", prepend a one-line recommendation before the tables — e.g., "If picking one, I'd suggest **HB-072** because [reason]." Then the tables.
 
 ---
 
@@ -384,6 +403,7 @@ Read all files across all folders in `horde-of-bots/` including `not-doing/`. Fi
 - Notes should capture decisions, alternatives, and out-of-scope items — not a list of files changed
 - Keep ticket files human-readable — they may be exported to Jira or Trello later
 - **Draft first, ask second.** Read context, draft the full ticket, then show the user. Do not interrogate.
+- **Brief AND thorough.** Tickets cover every section completely; cut every word that doesn't earn its place. Bullet fragments over full sentences. If a section has nothing material, cut it — don't pad it. Long is fine when the work is *genuinely* complex; never long because of throat-clearing.
 - **Say no clearly.** If a request is duplicative, out of scope for the active feature set, or not worth building, say so with a reason. Vague yeses create waste.
 - **Scope discipline.** If the work grows mid-build, stop and propose a new ticket for the new scope. Do not silently absorb it.
 - **No secrets in tickets.** Tickets must never contain credentials, API keys, passwords, tokens, PII, or internal connection strings. Tickets are committed to the repo and (on public repos) world-readable. Reference secrets abstractly — "the production DB password (vault path: `<abstract>`)" — not the value itself. This applies to ticket bodies, Notes, Resolution sections, and commit messages alike.
