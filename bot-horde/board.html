@@ -696,48 +696,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "BH-084",
-      "title": "`Verification` becomes loop output",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "M",
-      "feature_set": "feature-set-013-acceptance-loop",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [
-        "BH-083"
-      ],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "user_facing": "no",
-      "goal": "Wire the existing `**Verification**` field as the *output* of the acceptance loop. On accept, the tester sets `Verification: human-reviewed` (human tester) or `bot-reviewed` (bot tester). The dev bot is no longer permitted to self-set `human-reviewed` or `bot-reviewed` on a `User-facing: yes` ticket \u2014 those values come from a tester transition, not a self-grade.",
-      "why": "fs-010 introduced `Verification` with four values, but the workflow never produced `human-reviewed` or `bot-reviewed`. They were settable but no path actually set them. This ticket closes that gap: the loop produces those values, and the validator (BH-087) rejects them when self-set on user-facing work.",
-      "done_when": [
-        "BOTHORDE.md \"Acceptance loop\" section (added in BH-083) explicitly states: tester writes `Verification: human-reviewed` or `bot-reviewed` as part of the accept step",
-        "BOTHORDE.md \"When work is complete\" section (existing) is updated: dev bot may self-set `Verification` only to `bot-claimed` or `tests-passed` on `User-facing: no` tickets; on `User-facing: yes`, the dev bot leaves `Verification` blank when handing off to `in-review/`",
-        "Tester role:",
-        "Human tester \u2192 `human-reviewed`",
-        "Bot tester \u2192 `bot-reviewed`",
-        "Distinction is recorded by the tester at accept time",
-        "Board renders `human-reviewed` more prominently than `bot-reviewed` (already true from BH-072 \u2014 confirm no regression)",
-        "BH-087 validator rejects: a `User-facing: yes` ticket in `done/` with `Verification: bot-claimed` or `tests-passed` (must have come through the loop)"
-      ],
-      "desired_output": "After a tester approves a user-facing ticket, the done card shows `HUMAN-REV` or `BOT-REV`. The dev bot can never produce those values directly \u2014 they're a signal that an external check happened.",
-      "success_signals": "- All `done/` tickets with `User-facing: yes` carry `human-reviewed` or `bot-reviewed`.\n- All `done/` tickets with `User-facing: no` carry `bot-claimed` or `tests-passed`.\n- Audit query `git log --grep \"Trigger: .* accepted\"` returns one commit per `human-reviewed` / `bot-reviewed` transition.",
-      "failure_signals": "- Dev bots set `Verification: human-reviewed` while skipping the loop. BH-087 must catch this; if it doesn't, the field becomes a lie.\n- Testers always pick `human-reviewed` regardless of role. Detectable from commit-author identity vs `Trigger:` lines.",
-      "tests": "- `tests/test_validate.py` \u2014 `User-facing: yes` ticket in `done/` with `Verification: bot-claimed` fails; with `human-reviewed` passes\n- Manual: walk a fixture ticket through the full loop and confirm the field is populated by the accept step, not the dev step",
-      "how_to_test": "",
-      "notes": "- The four Verification values are unchanged. This ticket is about *who* and *when* sets each, not what they mean.\n- Out of scope: a queryable index of who reviewed what across the project. Commit log is sufficient \u2014 BH-086 makes it auditable.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "BH-085",
       "title": "`acceptance-tester` skill",
       "status": "open",
@@ -867,6 +825,49 @@ var D = {
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "BH-084",
+      "title": "`Verification` becomes loop output",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "M",
+      "feature_set": "feature-set-013-acceptance-loop",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [
+        "BH-083"
+      ],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 20:30",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "user_facing": "no",
+      "goal": "Wire the existing `**Verification**` field as the *output* of the acceptance loop. On accept, the tester sets `Verification: human-reviewed` (human tester) or `bot-reviewed` (bot tester). The dev bot is no longer permitted to self-set `human-reviewed` or `bot-reviewed` on a `User-facing: yes` ticket \u2014 those values come from a tester transition, not a self-grade.",
+      "why": "fs-010 introduced `Verification` with four values, but the workflow never produced `human-reviewed` or `bot-reviewed`. They were settable but no path actually set them. This ticket closes that gap: the loop produces those values, and the validator (BH-087) rejects them when self-set on user-facing work.",
+      "done_when": [
+        "BOTHORDE.md \"Acceptance loop\" section (added in BH-083) explicitly states: tester writes `Verification: human-reviewed` or `bot-reviewed` as part of the accept step",
+        "BOTHORDE.md \"When work is complete\" section (existing) is updated: dev bot may self-set `Verification` only to `bot-claimed` or `tests-passed` on `User-facing: no` tickets; on `User-facing: yes`, the dev bot leaves `Verification` blank when handing off to `in-review/`",
+        "Tester role:",
+        "Human tester \u2192 `human-reviewed`",
+        "Bot tester \u2192 `bot-reviewed`",
+        "Distinction is recorded by the tester at accept time",
+        "Board renders `human-reviewed` more prominently than `bot-reviewed` (already true from BH-072 \u2014 confirm no regression)",
+        "BH-087 validator rejects: a `User-facing: yes` ticket in `done/` with `Verification: bot-claimed` or `tests-passed` (must have come through the loop)"
+      ],
+      "desired_output": "After a tester approves a user-facing ticket, the done card shows `HUMAN-REV` or `BOT-REV`. The dev bot can never produce those values directly \u2014 they're a signal that an external check happened.",
+      "success_signals": "- All `done/` tickets with `User-facing: yes` carry `human-reviewed` or `bot-reviewed`.\n- All `done/` tickets with `User-facing: no` carry `bot-claimed` or `tests-passed`.\n- Audit query `git log --grep \"Trigger: .* accepted\"` returns one commit per `human-reviewed` / `bot-reviewed` transition.",
+      "failure_signals": "- Dev bots set `Verification: human-reviewed` while skipping the loop. BH-087 must catch this; if it doesn't, the field becomes a lie.\n- Testers always pick `human-reviewed` regardless of role. Detectable from commit-author identity vs `Trigger:` lines.",
+      "tests": "- `tests/test_validate.py` \u2014 `User-facing: yes` ticket in `done/` with `Verification: bot-claimed` fails; with `human-reviewed` passes\n- Manual: walk a fixture ticket through the full loop and confirm the field is populated by the accept step, not the dev step",
+      "how_to_test": "",
+      "notes": "- The four Verification values are unchanged. This ticket is about *who* and *when* sets each, not what they mean.\n- Out of scope: a queryable index of who reviewed what across the project. Commit log is sufficient \u2014 BH-086 makes it auditable.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "last_commit_ct": 1777585395,
       "blocked_by_inferred": []
     },
     {
@@ -3083,7 +3084,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T21:38:14.871871+00:00",
+  "generated": "2026-04-30T21:43:30.866515+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -3700,7 +3701,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "33d95f3cc49cc6bbc36342eb0f918c349b1ecaa6", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "857abcbc8282ff69c596f11c53a9eca0e8bdee95", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
