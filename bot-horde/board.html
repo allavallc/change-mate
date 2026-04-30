@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horde of Bots board</title>
+<title>Bot Horde board</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='3' r='2' fill='%23c4724a'/><rect x='15' y='4' width='2' height='5' fill='%23c4724a'/><rect x='4' y='9' width='24' height='20' rx='4' fill='%23c4724a'/><circle cx='12' cy='19' r='3' fill='%230a0a0a'/><circle cx='20' cy='19' r='3' fill='%230a0a0a'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -304,15 +304,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.hb-robot {
+.bh-robot {
   position: absolute;
   width: 18px;
   height: 18px;
   pointer-events: none;
   z-index: 1;
-  animation: hb-robot-walk 12s linear infinite;
+  animation: bh-robot-walk 12s linear infinite;
 }
-@keyframes hb-robot-walk {
+@keyframes bh-robot-walk {
   0%   { top: -10px;             left: -10px; }
   25%  { top: -10px;             left: calc(100% - 8px); }
   50%  { top: calc(100% - 8px);  left: calc(100% - 8px); }
@@ -580,21 +580,21 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   z-index: 100;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-@keyframes hb-pulse {
+@keyframes bh-pulse {
   0%   { background: transparent; }
   30%  { background: rgba(196, 114, 74, 0.18); }
   100% { background: transparent; }
 }
-@keyframes hb-fadein {
+@keyframes bh-fadein {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.hb-moving { animation: hb-pulse 600ms ease; }
-.hb-new { animation: hb-fadein 300ms ease; }
+.bh-moving { animation: bh-pulse 600ms ease; }
+.bh-new { animation: bh-fadein 300ms ease; }
 #setup-modal .modal { max-width: 420px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-  .hb-robot { display: none; }
+  .bh-robot { display: none; }
 }
 </style>
 </head>
@@ -602,9 +602,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 <header>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="logo">horde of <span>bots</span></span>
-    <span id="hb-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
-      <span class="hb-live-dot" style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
-      <span class="hb-live-label">polling</span>
+    <span id="bh-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
+      <span class="bh-live-dot" style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+      <span class="bh-live-label">polling</span>
     </span>
   </div>
   <div class="header-right">
@@ -961,12 +961,12 @@ var D = {
         "Agents acquire a lock via insert into `locks` table (fails if row exists)",
         "Agents release the lock via delete on ticket completion",
         "Every status move (backlog \u2192 in-progress, \u2192 done, \u2192 blocked, \u2192 not-doing) inserts a row into `ticket_events`",
-        "`HORDEOFBOTS_GITHUB_TOKEN` references removed from `BOTHORDE.md`",
+        "`BOTHORDE_GITHUB_TOKEN` references removed from `BOTHORDE.md`",
         "`bot-horde-config.json` `gist_id` field deprecated (leave for backcompat but document as unused)",
         "`build.sh` continues to function \u2014 board rebuild path unchanged"
       ],
-      "desired_output": "Agents use Supabase for locking and history; the Gist path is gone; no agent needs `HORDEOFBOTS_GITHUB_TOKEN` anymore.",
-      "success_signals": "- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `HORDEOFBOTS_GITHUB_TOKEN` anymore",
+      "desired_output": "Agents use Supabase for locking and history; the Gist path is gone; no agent needs `BOTHORDE_GITHUB_TOKEN` anymore.",
+      "success_signals": "- Two agents racing for the same ticket \u2192 exactly one gets it, other sees a clean \"already claimed\" message\n- `ticket_events` accumulates one row per move\n- No agent needs `BOTHORDE_GITHUB_TOKEN` anymore",
       "failure_signals": "- Stale locks when an agent crashes mid-work (need a TTL or manual clear path)\n- `ticket_events` double-writes from build-time + runtime\n- Agents falling back to \"no lock\" path silently when Supabase is unreachable (should be a visible warning)",
       "tests": "- Integration test: parallel agents racing same ticket \u2192 one wins, one gets clean error\n- Unit test: event row shape matches schema for each status transition\n- Manual: simulate Supabase outage \u2192 agent behavior is clearly communicated, not silent",
       "notes": "**Sequencing**: depends on BH-005. Can land in parallel with BH-006/BH-007 since it touches a different surface (agent workflow, not board UI).\n\n**Alternatives considered**:\n- Keep Gist locking, add Supabase only for events \u2192 rejected; doesn't fix the atomicity bug or the token requirement\n- File-based lock in the repo itself \u2192 rejected; git push race conditions are worse than Gist races",
@@ -991,7 +991,7 @@ var D = {
       "completed": "2026-04-16",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Write end-to-end setup documentation so a new project can install Horde of Bots v5 (Supabase locks + events + write keys + Edge Function) from scratch in under 15 minutes.",
+      "goal": "Write end-to-end setup documentation so a new project can install Bot Horde v5 (Supabase locks + events + write keys + Edge Function) from scratch in under 15 minutes.",
       "why": "The new architecture touches four systems (Supabase Postgres, Supabase Edge Functions, GitHub API, GitHub Actions). Without a clean setup guide, every new install becomes a support ticket. Docs are the final mile that makes BH-005 through BH-008 actually usable by anyone other than us.",
       "done_when": [
         "`docs/SETUP.md` (or README section) covers:",
@@ -1076,20 +1076,20 @@ var D = {
       "completed": "2026-04-24",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Rewrite the top of BOTHORDE.md so any reader (human or LLM) finishes the first screen knowing Horde of Bots is local dev tooling that must never enter a deploy artifact, code must not depend on Horde of Bots paths, git is the intended sync layer, and Horde of Bots files should be excluded from code-quality passes.",
-      "why": "An adopter using Horde of Bots inside hana-core (a production repo) reported that both humans and LLMs in the repo could not tell whether `bot-horde-board.html` was a deployable asset or a dev artifact, so Horde of Bots files drifted into WIP branches and caused deploy-pipeline worry. The feedback author's own TL;DR: \"one sentence at the top of BOTHORDE.md saying this is local dev tooling, not product, and must never deploy\" is the single highest-leverage change available \u2014 everything else in this feature set flows from that.",
+      "goal": "Rewrite the top of BOTHORDE.md so any reader (human or LLM) finishes the first screen knowing Bot Horde is local dev tooling that must never enter a deploy artifact, code must not depend on Bot Horde paths, git is the intended sync layer, and Bot Horde files should be excluded from code-quality passes.",
+      "why": "An adopter using Bot Horde inside hana-core (a production repo) reported that both humans and LLMs in the repo could not tell whether `bot-horde-board.html` was a deployable asset or a dev artifact, so Bot Horde files drifted into WIP branches and caused deploy-pipeline worry. The feedback author's own TL;DR: \"one sentence at the top of BOTHORDE.md saying this is local dev tooling, not product, and must never deploy\" is the single highest-leverage change available \u2014 everything else in this feature set flows from that.",
       "done_when": [
-        "BOTHORDE.md has a new \"Scope\" section at the very top (before anything else) stating Horde of Bots is dev-only tooling and must never appear in a deploy artifact.",
-        "BOTHORDE.md has a new \"One-way dependency\" rule stating Horde of Bots knows about code but code must not reference Horde of Bots paths or tickets.",
-        "BOTHORDE.md has a new \"Sync modes\" note stating git-sync is the default and documenting that adopters who want Horde of Bots private per-machine can add `bot-horde/` to `.gitignore` (with an explicit call-out that this disables collaboration).",
-        "BOTHORDE.md has a new \"LLM guidance\" block: do not lint/typecheck/format Horde of Bots files as part of code-quality passes, exclude Horde of Bots changes from repo-change summaries by default, assume `bot-horde/` does not exist at deploy/build time.",
-        "README.md \"Files\" table updated to tag each Horde of Bots file as \"dev-only tooling\".",
+        "BOTHORDE.md has a new \"Scope\" section at the very top (before anything else) stating Bot Horde is dev-only tooling and must never appear in a deploy artifact.",
+        "BOTHORDE.md has a new \"One-way dependency\" rule stating Bot Horde knows about code but code must not reference Bot Horde paths or tickets.",
+        "BOTHORDE.md has a new \"Sync modes\" note stating git-sync is the default and documenting that adopters who want Bot Horde private per-machine can add `bot-horde/` to `.gitignore` (with an explicit call-out that this disables collaboration).",
+        "BOTHORDE.md has a new \"LLM guidance\" block: do not lint/typecheck/format Bot Horde files as part of code-quality passes, exclude Bot Horde changes from repo-change summaries by default, assume `bot-horde/` does not exist at deploy/build time.",
+        "README.md \"Files\" table updated to tag each Bot Horde file as \"dev-only tooling\".",
         "No code change. Docs only."
       ],
-      "desired_output": "A reader opening BOTHORDE.md for the first time finishes the first screen knowing: what Horde of Bots is, where it must not appear, how code and Horde of Bots relate, whether they can run it privately, and how to treat Horde of Bots files during code review. No inference required.",
-      "success_signals": "- Future adopter feedback does not repeat the \"is this product code?\" confusion.\n- LLMs (Claude, Codex, other agents) reading the repo do not propose wiring code references to Horde of Bots paths when drafting feature work.\n- Solo-only users no longer ask whether they should commit `bot-horde/` to a shared remote.",
-      "failure_signals": "- Scope statement drifts out of sync with actual behavior (e.g. a future ticket ships something that does deploy Horde of Bots files \u2014 then the statement is a lie).\n- \"Do not lint/typecheck\" guidance gets over-interpreted and adopters exclude Horde of Bots from ALL tooling including basic repo hygiene (trailing whitespace, etc.).\n- Local-only `.gitignore` guidance causes adopters to skip commits and then discover their tickets vanished on machine switch.",
-      "tests": "- Manual: read the first two screens of the updated BOTHORDE.md from cold and verify scope, dependency rule, sync modes, and LLM guidance are present and unambiguous.\n- Manual: verify README.md files table labels Horde of Bots files as dev-only.\n- Existing pytest suite passes unchanged.",
+      "desired_output": "A reader opening BOTHORDE.md for the first time finishes the first screen knowing: what Bot Horde is, where it must not appear, how code and Bot Horde relate, whether they can run it privately, and how to treat Bot Horde files during code review. No inference required.",
+      "success_signals": "- Future adopter feedback does not repeat the \"is this product code?\" confusion.\n- LLMs (Claude, Codex, other agents) reading the repo do not propose wiring code references to Bot Horde paths when drafting feature work.\n- Solo-only users no longer ask whether they should commit `bot-horde/` to a shared remote.",
+      "failure_signals": "- Scope statement drifts out of sync with actual behavior (e.g. a future ticket ships something that does deploy Bot Horde files \u2014 then the statement is a lie).\n- \"Do not lint/typecheck\" guidance gets over-interpreted and adopters exclude Bot Horde from ALL tooling including basic repo hygiene (trailing whitespace, etc.).\n- Local-only `.gitignore` guidance causes adopters to skip commits and then discover their tickets vanished on machine switch.",
+      "tests": "- Manual: read the first two screens of the updated BOTHORDE.md from cold and verify scope, dependency rule, sync modes, and LLM guidance are present and unambiguous.\n- Manual: verify README.md files table labels Bot Horde files as dev-only.\n- Existing pytest suite passes unchanged.",
       "notes": "- **Alternative considered**: split into four tiny tickets (one per feedback item). Rejected \u2014 all four changes touch the same BOTHORDE.md preamble, splitting just creates edit churn and four board rebuilds.\n- **Alternative considered (sync modes)**: build first-class support for local-only mode (no git sync, live-lock and Realtime still work per-user). Rejected as out of scope \u2014 the lock/Realtime design assumes shared ticket state. One-paragraph doc note is correct for v1; revisit if there's real demand.\n- **Out of scope**: folder layout changes (BH-049), setup.sh deploy-ignore defaults (BH-050), workflow changes (BH-051).\n- **Risk**: LLM guidance is advisory only \u2014 adopters' own linters will still run on `bot-horde/` unless they exclude it themselves. BH-050 handles the mechanical exclusion.\n- **Confidence**: 95%. Highest-ROI ticket in this feature set per the feedback author's own TL;DR.",
       "rejected_by": "",
       "rejected": "",
@@ -1098,7 +1098,7 @@ var D = {
     },
     {
       "id": "BH-049",
-      "title": "Consolidate Horde of Bots footprint into bot-horde/ folder",
+      "title": "Consolidate Bot Horde footprint into bot-horde/ folder",
       "status": "done",
       "priority": "High",
       "effort": "L",
@@ -1116,8 +1116,8 @@ var D = {
       "completed": "2026-04-24",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Move every Horde of Bots artifact that currently sits at repo root (`BOTHORDE.md`, `build.sh`, `build_lib.py`, `bot-horde-board.html`, `bot-horde-config.json`) into the `bot-horde/` folder, so that the rule \"anything under `bot-horde/` is dev tooling\" becomes mechanically true and `.dockerignore` / `.gcloudignore` exclusions collapse to one line.",
-      "why": "The current scattered layout forces every adopter and every LLM to independently build a mental model of which files belong to Horde of Bots and which are product. That mental model fails \u2014 see BH-048's underlying feedback. Consolidation makes the rule enforceable by tooling instead of tribal knowledge, and it's the enabler for BH-050's single-line deploy-ignore default.",
+      "goal": "Move every Bot Horde artifact that currently sits at repo root (`BOTHORDE.md`, `build.sh`, `build_lib.py`, `bot-horde-board.html`, `bot-horde-config.json`) into the `bot-horde/` folder, so that the rule \"anything under `bot-horde/` is dev tooling\" becomes mechanically true and `.dockerignore` / `.gcloudignore` exclusions collapse to one line.",
+      "why": "The current scattered layout forces every adopter and every LLM to independently build a mental model of which files belong to Bot Horde and which are product. That mental model fails \u2014 see BH-048's underlying feedback. Consolidation makes the rule enforceable by tooling instead of tribal knowledge, and it's the enabler for BH-050's single-line deploy-ignore default.",
       "done_when": [
         "`BOTHORDE.md` lives at `bot-horde/BOTHORDE.md`.",
         "`build.sh` lives at `bot-horde/build.sh`. It still runs from repo root (`bash bot-horde/build.sh`).",
@@ -1131,11 +1131,11 @@ var D = {
         "README.md, SETUP.md, docs/onboarding/README.md, CLAUDE.md references all updated to new paths. No stale `bot-horde-board.html` or `bot-horde-config.json` references remain in live code/docs.",
         "Generated board HTML has no hard-coded references to the old filenames."
       ],
-      "desired_output": "After this lands, `ls` at the repo root of an adopter shows `bot-horde/` and `setup.sh` \u2014 nothing else is Horde of Bots's. Adding `bot-horde/` to `.dockerignore` fully excludes Horde of Bots from every deploy artifact. A new contributor opens the repo and instantly knows which folder is workflow tooling.",
-      "success_signals": "- `.dockerignore` exclusion for Horde of Bots is one line (`bot-horde/`), verified in a sample adopter repo.\n- No adopter reports \"Horde of Bots files leaked into my deploy\" post-ship.\n- LLMs asked to summarize recent changes in an adopter repo cleanly bucket Horde of Bots vs product commits by folder.",
+      "desired_output": "After this lands, `ls` at the repo root of an adopter shows `bot-horde/` and `setup.sh` \u2014 nothing else is Bot Horde's. Adding `bot-horde/` to `.dockerignore` fully excludes Bot Horde from every deploy artifact. A new contributor opens the repo and instantly knows which folder is workflow tooling.",
+      "success_signals": "- `.dockerignore` exclusion for Bot Horde is one line (`bot-horde/`), verified in a sample adopter repo.\n- No adopter reports \"Bot Horde files leaked into my deploy\" post-ship.\n- LLMs asked to summarize recent changes in an adopter repo cleanly bucket Bot Horde vs product commits by folder.",
       "failure_signals": "- Existing adopters' boards break silently because their workflow still references `build.sh` at root. Mitigation: setup.sh migration path + release note.\n- `bash bot-horde/build.sh` breaks on Windows Git Bash paths. Mitigation: CI integration test.\n- `build.sh` reads config by absolute path (e.g. `bot-horde-config.json` as sibling) and the move breaks credential loading.\n- Adopters with bookmarked `bot-horde-board.html` URLs (GitHub Pages) hit a 404 until they update the link.",
       "tests": "- `tests/test_build.py`: run `bash bot-horde/build.sh` from repo root, confirm `bot-horde/board.html` is produced, confirm old `bot-horde-board.html` is NOT produced.\n- Unit: `parse_ticket` and `parse_feature_set` still work unchanged (pure functions, just moved).\n- Manual: on a throwaway clone with the legacy layout, run setup.sh migration path \u2014 verify it moves all five files correctly and rewrites the CLAUDE.md import. Run migration again \u2014 verify no-op.\n- Manual: `grep -r \"bot-horde-board.html\" .` and `grep -r \"bot-horde-config.json\" .` after the change \u2014 the only hits should be historical ticket bodies and changelog notes.\n- Manual: open the generated `bot-horde/board.html` in a browser and verify cards, Supabase live locks, and Add Story still function.",
-      "notes": "- **Alternative considered**: keep the root layout but aggressively prefix files (`Horde of Bots-build.sh` etc.). Rejected \u2014 doesn't solve the one-line deploy-exclude problem and leaves the mental model fractured.\n- **Alternative considered**: keep `BOTHORDE.md` at root, move the rest. Rejected \u2014 feedback explicitly calls out root-level BOTHORDE.md as part of the \"looks like product\" problem. Keeping it out of the folder breaks the one-folder rule that makes everything else mechanical.\n- **Alternative considered**: emit the board as `bot-horde/index.html` so Pages serves it at `/bot-horde/`. Attractive but out of scope for this ticket \u2014 stick with `board.html` and let a future ticket decide the public URL story.\n- **Breaking change**: yes. Existing adopters must run migration. Ship with a visible changelog entry and tested setup.sh migration path.\n- **Out of scope**: deploy-ignore defaults (BH-050), opt-in CI commits (BH-051), any change to ticket format.\n- **Risk (highest)**: `setup.sh` runs remotely via `curl | bash`. Migration branch must be idempotent and must not destroy local uncommitted changes to any of the five files.\n- **Confidence**: 75%. Mechanically obvious, but the breaking-change cost is real.",
+      "notes": "- **Alternative considered**: keep the root layout but aggressively prefix files (`Bot Horde-build.sh` etc.). Rejected \u2014 doesn't solve the one-line deploy-exclude problem and leaves the mental model fractured.\n- **Alternative considered**: keep `BOTHORDE.md` at root, move the rest. Rejected \u2014 feedback explicitly calls out root-level BOTHORDE.md as part of the \"looks like product\" problem. Keeping it out of the folder breaks the one-folder rule that makes everything else mechanical.\n- **Alternative considered**: emit the board as `bot-horde/index.html` so Pages serves it at `/bot-horde/`. Attractive but out of scope for this ticket \u2014 stick with `board.html` and let a future ticket decide the public URL story.\n- **Breaking change**: yes. Existing adopters must run migration. Ship with a visible changelog entry and tested setup.sh migration path.\n- **Out of scope**: deploy-ignore defaults (BH-050), opt-in CI commits (BH-051), any change to ticket format.\n- **Risk (highest)**: `setup.sh` runs remotely via `curl | bash`. Migration branch must be idempotent and must not destroy local uncommitted changes to any of the five files.\n- **Confidence**: 75%. Mechanically obvious, but the breaking-change cost is real.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1161,21 +1161,21 @@ var D = {
       "completed": "2026-04-24",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Make setup.sh the place that prevents Horde of Bots from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
-      "why": "BH-048 tells readers that Horde of Bots must not enter deploys. BH-049 makes that rule mechanically enforceable with one folder. BH-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read BOTHORDE.md, internalize the rule, and wire it themselves.",
+      "goal": "Make setup.sh the place that prevents Bot Horde from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
+      "why": "BH-048 tells readers that Bot Horde must not enter deploys. BH-049 makes that rule mechanically enforceable with one folder. BH-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read BOTHORDE.md, internalize the rule, and wire it themselves.",
       "done_when": [
         "`setup.sh` detects the presence of `.dockerignore`, `.gcloudignore`, `.vercelignore` and for each that exists, appends `bot-horde/` as an exclusion if not already present.",
         "If an ignore file does not exist, setup.sh does NOT create it (don't surprise adopters with new tooling files; only modify what's already there).",
         "Appends are idempotent \u2014 re-running setup.sh does not duplicate entries.",
         "setup.sh prints a one-line confirmation per file touched (e.g. `\u2713 added bot-horde/ to .dockerignore`).",
         "`.gitignore` gets a *commented* marker line `# bot-horde/ is dev-only tooling; do not ignore unless using local-only mode (see bot-horde/BOTHORDE.md)`. This is documentation, not an exclusion.",
-        "The existing `.gitignore` warning (fire if `Horde of Bots` is actually ignored) stays and is consistent with the new comment."
+        "The existing `.gitignore` warning (fire if `Bot Horde` is actually ignored) stays and is consistent with the new comment."
       ],
-      "desired_output": "An adopter runs `setup.sh` in a repo that already has Docker. The next `docker build` excludes `bot-horde/` from the image. No configuration, no thought required. Verifiable with `docker run <image> ls /app/Horde of Bots` \u2192 not found.",
-      "success_signals": "- Adopters running Docker-based deploys see zero Horde of Bots files in their images post-ship.\n- No issue reports of \"Horde of Bots files ended up in my deploy\".",
+      "desired_output": "An adopter runs `setup.sh` in a repo that already has Docker. The next `docker build` excludes `bot-horde/` from the image. No configuration, no thought required. Verifiable with `docker run <image> ls /app/Bot Horde` \u2192 not found.",
+      "success_signals": "- Adopters running Docker-based deploys see zero Bot Horde files in their images post-ship.\n- No issue reports of \"Bot Horde files ended up in my deploy\".",
       "failure_signals": "- setup.sh appends to an ignore file using a non-default format (e.g. `.gcloudignore` syntax differs subtly) and breaks the file.\n- Append runs on re-install and duplicates entries (idempotency bug).\n- Adopter using the local-only mode from BH-048 is confused when `.gitignore` comment contradicts their usage. Mitigation: comment references BH-048's doc section.\n- Adopter has carefully tuned ignore files and resents the append. Mitigation: single clear line with a comment explaining why.",
       "tests": "- Integration (new): run setup.sh twice in a temp dir with a pre-existing `.dockerignore` \u2014 confirm `bot-horde/` is added once, not twice.\n- Integration (new): run setup.sh in a temp dir with no ignore files \u2014 confirm nothing is created.\n- Manual: verify `docker build` in a sample adopter repo excludes `bot-horde/` after install.\n- Manual: verify `.gitignore` gets the commented explanation line, not an exclusion line.",
-      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `Horde of Bots.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (BH-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on BH-049**: if Horde of Bots files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
+      "notes": "- **Alternative considered**: create missing ignore files (`.dockerignore` etc.) if they don't exist. Rejected \u2014 pushes adopters into tooling they may not use.\n- **Alternative considered**: ship a single `Bot Horde.ignore` file and have all tools read from it. Rejected \u2014 no tool supports that; would just end up syncing content.\n- **Out of scope**: board / ticket content changes (BH-048/049).\n- **Risk**: list of ignore files isn't exhaustive (Docker, GCP, Vercel covers most \u2014 misses Netlify, Fly.io source deploy, Cloud Run). Start with common ones, extend on demand.\n- **Depends on BH-049**: if Bot Horde files are still scattered at root, the one-line exclusion doesn't work. This ticket assumes the consolidated layout.\n- **Confidence**: 90%.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1207,16 +1207,16 @@ var D = {
         "Default is **mode-aware**: when `supabase_url` is present and non-empty in the config, the workflow treats the flag as `true`; when absent or empty string, treats as `false`. An explicit value always wins over the default.",
         "Workflow reads the flag using `jq` against the config file and only runs `git add / commit / push` when the resolved value is `true`.",
         "When resolved to `false`, the workflow still **builds** the board (for CI signal and to surface build failures) \u2014 it just does not commit it.",
-        "Workflow file renamed: `.github/workflows/build-board.yml` \u2192 `.github/workflows/Horde of Bots-rebuild-board.yml`.",
-        "Workflow `name:` field updated to `Horde of Bots: rebuild board` so it's clearly namespaced in the Actions UI.",
+        "Workflow file renamed: `.github/workflows/build-board.yml` \u2192 `.github/workflows/Bot Horde-rebuild-board.yml`.",
+        "Workflow `name:` field updated to `Bot Horde: rebuild board` so it's clearly namespaced in the Actions UI.",
         "BOTHORDE.md \"Board rules\" section documents the flag, mode-aware default, and how to override.",
         "README.md / SETUP.md updated with the same.",
         "Release note explicitly calls out the behavior change for anyone using the workflow today."
       ],
       "desired_output": "Team adopters on GitHub Pages see their board stay fresh automatically (status quo preserved). Solo adopters stop seeing `chore: rebuild board [skip ci]` noise in `git log`. Either group can override with `\"auto_commit_board\": true/false` if their setup doesn't match the default.",
-      "success_signals": "- Noise commits from Horde of Bots on `main` drop to near-zero for solo adopters using default config.\n- Team adopters report no change in board freshness.\n- No adopter needs to edit the workflow YAML to change behavior \u2014 config flag is the sole surface.",
+      "success_signals": "- Noise commits from Bot Horde on `main` drop to near-zero for solo adopters using default config.\n- Team adopters report no change in board freshness.\n- No adopter needs to edit the workflow YAML to change behavior \u2014 config flag is the sole surface.",
       "failure_signals": "- Solo adopter hosting on Pages sees their board go stale without understanding why. Mitigation: SETUP.md solo-mode section mentions the override.\n- Mode detection misfires \u2014 e.g. `supabase_url: \"\"` reads as present and triggers auto-commit. Treat empty string as absent.\n- Config key typo (`auto-commit-board` vs `auto_commit_board`) silently takes the default and looks like the flag doesn't work.\n- `jq` missing on a minimal runner. GitHub-hosted runners have it \u2014 verify explicitly.",
-      "tests": "- Workflow test: config with `supabase_url` set + no flag \u2192 commit happens.\n- Workflow test: config with no `supabase_url` + no flag \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: false` + Supabase set \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: true` + no Supabase \u2192 commit.\n- Workflow test: `supabase_url: \"\"` treated as absent (no commit by default).\n- Manual: confirm workflow UI shows \"Horde of Bots: rebuild board\".\n- Manual: read SETUP.md / BOTHORDE.md and confirm the mode-aware default is documented clearly.",
+      "tests": "- Workflow test: config with `supabase_url` set + no flag \u2192 commit happens.\n- Workflow test: config with no `supabase_url` + no flag \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: false` + Supabase set \u2192 no commit.\n- Workflow test: explicit `auto_commit_board: true` + no Supabase \u2192 commit.\n- Workflow test: `supabase_url: \"\"` treated as absent (no commit by default).\n- Manual: confirm workflow UI shows \"Bot Horde: rebuild board\".\n- Manual: read SETUP.md / BOTHORDE.md and confirm the mode-aware default is documented clearly.",
       "notes": "- **Alternative considered**: flat default `false` for everyone. Rejected \u2014 breaks the \"humans watch\" primitive for Pages-hosted team boards until they find the flag.\n- **Alternative considered**: flat default `true` for everyone. Rejected \u2014 status quo; feedback is that the noise is a real problem for solo users.\n- **Alternative considered**: emit the board via Actions deploy to Pages instead of committing to main. Cleaner for Pages adopters but bigger scope \u2014 own ticket if pulled for.\n- **Out of scope**: rewriting build.sh (BH-049), deploy-ignore defaults (BH-050).\n- **Risk**: mode detection uses `supabase_url` as a proxy for \"team mode.\" Adopters with Supabase configured but no Pages get auto-commit they don't need \u2014 one-line config fix.\n- **Confidence**: 85% (up from 70% with the mode-aware default \u2014 solves the Pages-freshness concern surfaced during drafting).",
       "rejected_by": "",
       "rejected": "",
@@ -1380,14 +1380,14 @@ var D = {
         "`README.md` updated \u2014 drop the Supabase-related \"Files\" rows and the Live lock registry section (Gist version was already retired).",
         "`setup.sh` no longer references Supabase config keys. `auto_commit_board` mode-aware default rewires: no longer keyed off `supabase_url`. Suggested replacement: default `true` always, since the board needs to be committed to ship to Pages now that Realtime is gone.",
         "`bot-horde/BOTHORDE.md` Real-time sync section deleted, lock registry section deleted (or updated to explain the markdown-as-lock convention already implicit in the workflow).",
-        "`.github/workflows/Horde of Bots-rebuild-board.yml` no longer reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` env vars.",
+        "`.github/workflows/Bot Horde-rebuild-board.yml` no longer reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` env vars.",
         "All tests pass. No dead imports, no stale references in docs."
       ],
-      "desired_output": "An adopter pulls down the Horde of Bots repo, runs `bash setup.sh`, commits the resulting `bot-horde/` folder, and the board works on GitHub Pages within minutes \u2014 no second account, no CLI, no migrations. SETUP.md fits on one screen.",
+      "desired_output": "An adopter pulls down the Bot Horde repo, runs `bash setup.sh`, commits the resulting `bot-horde/` folder, and the board works on GitHub Pages within minutes \u2014 no second account, no CLI, no migrations. SETUP.md fits on one screen.",
       "success_signals": "- New adopter can go from zero to working board in under 5 minutes.\n- Code repo size shrinks (Supabase folder + tests removed).\n- No more \"is Supabase paused?\" support questions.",
       "failure_signals": "- A stale reference in docs sends an adopter chasing a Supabase setup that no longer applies.\n- An existing adopter's config breaks because we removed required keys. Mitigation: ignore the old keys silently, don't fail on their presence.\n- The `auto_commit_board` mode-aware default no longer makes sense without `supabase_url` as a signal \u2014 needs a different default rule (always-on is the simplest).",
       "tests": "- Existing pytest suite passes after deletions (clearly some test files will be deleted with the deletion of source files \u2014 that's expected).\n- Manual: fresh clone \u2192 `bash setup.sh` \u2192 push \u2192 open Pages \u2192 confirm board works without ever opening Supabase.\n- Manual: grep -r \"supabase\" . \u2014 only hits should be in done/historical tickets, never in live code.",
-      "notes": "- **Alternative considered**: leave the Supabase code in place behind a config flag. Rejected \u2014 leftover dead code rots and confuses adopters.\n- **Alternative considered**: keep the locks table for the live agent indicator. Rejected \u2014 drop the indicator entirely. The dashed-border + walking-robot already says \"in progress\" loud enough.\n- **Out of scope**: redesigning the board look (separate ticket if pursued).\n- **Migration risk**: existing adopters have Supabase secrets, RLS policies, and Edge Function deployed. We don't touch their Supabase project \u2014 they can leave it alone or delete it on their own. The Horde of Bots code stops calling it; that's all.\n- **Confidence**: 80%. Mostly mechanical deletions. The only design call is what to do with `auto_commit_board` mode-awareness; my recommendation is to default `true`.",
+      "notes": "- **Alternative considered**: leave the Supabase code in place behind a config flag. Rejected \u2014 leftover dead code rots and confuses adopters.\n- **Alternative considered**: keep the locks table for the live agent indicator. Rejected \u2014 drop the indicator entirely. The dashed-border + walking-robot already says \"in progress\" loud enough.\n- **Out of scope**: redesigning the board look (separate ticket if pursued).\n- **Migration risk**: existing adopters have Supabase secrets, RLS policies, and Edge Function deployed. We don't touch their Supabase project \u2014 they can leave it alone or delete it on their own. The Bot Horde code stops calling it; that's all.\n- **Confidence**: 80%. Mostly mechanical deletions. The only design call is what to do with `auto_commit_board` mode-awareness; my recommendation is to default `true`.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1426,7 +1426,7 @@ var D = {
         "Card ID, priority, effort, dates: mono uppercase wide-tracked.",
         "Card title: Big Shoulders Display, 500\u2013700 weight, uppercase, tight tracking.",
         "Card body sections (Goal, Why, etc) when expanded: Inter body, sentence case, `--ink-dim`.",
-        "Header bar: `Simplify` style logo recoloured to `Horde of Bots` with `mate` in `--accent`. Backdrop-blur `rgba(10,10,10,0.75)` + `blur(14px)`. \"+ Add story\" button restyled as outlined CTA: 1px `--ink` border, mono uppercase, hover fills `--accent` with `--bg` text.",
+        "Header bar: `Simplify` style logo recoloured to `Bot Horde` with `mate` in `--accent`. Backdrop-blur `rgba(10,10,10,0.75)` + `blur(14px)`. \"+ Add story\" button restyled as outlined CTA: 1px `--ink` border, mono uppercase, hover fills `--accent` with `--bg` text.",
         "Tabs (Board / Feature Sets): mono uppercase, 1px hairline border, active state uses `--ink` underline.",
         "Modal (Add story form): bare inputs with `border-bottom: 1px solid --line` only, no fills, no rounded corners. Labels above inputs in mono uppercase, `0.7rem`, `0.2em` tracking, `--ink-dim`. Submit becomes the outlined CTA pattern.",
         "Empty-column state (\"No tickets\") becomes mono uppercase `--ink-dimmer`.",
@@ -1478,7 +1478,7 @@ var D = {
         "`bot-horde/build_lib.py`",
         "`bot-horde/config.json` (only if not present \u2014 don't overwrite an existing one)",
         "`bot-horde/INSTALL-FAQ.md` (BH-066 ships the content)",
-        "`.github/workflows/Horde of Bots-rebuild-board.yml`",
+        "`.github/workflows/Bot Horde-rebuild-board.yml`",
         "A starter `bot-horde/board.html` is generated by running `bash bot-horde/build.sh` once at end of install (so the adopter sees a board immediately, even before their first push).",
         "All download URLs use `$REPO_URL/...` so the install honors the same upstream as the existing BOTHORDE.md fetch.",
         "Existing files are skipped with the same `~ already present` log line setup.sh uses today \u2014 never overwrite.",
@@ -1489,7 +1489,7 @@ var D = {
       "success_signals": "- Time-to-working-board drops from \"manual copy + 5 follow-up questions\" to \"two commands.\"\n- Zero \"I ran setup.sh but build.sh isn't there\" issues post-ship.",
       "failure_signals": "- Workflow YAML overwrites an adopter's existing GitHub Actions setup. Mitigation: skip if file exists, log the skip.\n- Generated board.html commits with embedded creds. Mitigation: build.sh no longer touches Supabase, so no creds \u2014 but verify.\n- Adopter on a flaky network sees a partial install. Mitigation: setup.sh exits non-zero on any download failure (`set -e` already does this).",
       "tests": "- Manual: `mktemp -d`, `git init`, `bash setup.sh`, confirm all expected files exist.\n- Manual: re-run setup.sh in the same dir, confirm no overwrites and no duplicates.\n- Manual: in a repo with an unrelated `.github/workflows/` file, confirm setup doesn't touch it.",
-      "notes": "- **Alternative considered**: distribute Horde of Bots as a single `setup.sh` that contains the file content inline (here-docs). Rejected \u2014 drift between Horde of Bots's source repo and the inlined version is harder to maintain than `curl` from the source repo.\n- **Out of scope**: skill versioning (BH-065), non-interactive prompts (BH-062), README copy (BH-064), FAQ content (BH-066).\n- **Risk**: silent rate-limiting on raw.githubusercontent.com if many adopters install at once. Acceptable \u2014 it's not a credentialed call and unauth'd raw.githubusercontent has high limits.\n- **Confidence**: 90%.",
+      "notes": "- **Alternative considered**: distribute Bot Horde as a single `setup.sh` that contains the file content inline (here-docs). Rejected \u2014 drift between Bot Horde's source repo and the inlined version is harder to maintain than `curl` from the source repo.\n- **Out of scope**: skill versioning (BH-065), non-interactive prompts (BH-062), README copy (BH-064), FAQ content (BH-066).\n- **Risk**: silent rate-limiting on raw.githubusercontent.com if many adopters install at once. Acceptable \u2014 it's not a credentialed call and unauth'd raw.githubusercontent has high limits.\n- **Confidence**: 90%.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1516,16 +1516,16 @@ var D = {
       "goal": "Make `setup.sh` safe to run via `curl -fsSL ... | bash` and from CI \u2014 the legacy-migration prompt currently uses `read -r -p` which hangs forever on a non-TTY stdin.",
       "why": "The canonical install instruction in the README is `curl \u2026 | bash`. Today, if any of the legacy root-level files happen to exist, that exact command silently hangs because `read` has no TTY. CI installers, devcontainer post-create scripts, and any automation hits this. It's a 5-minute fix that removes a real footgun.",
       "done_when": [
-        "`setup.sh` detects non-interactive stdin (`[ ! -t 0 ]`) and skips the migration prompt with a clear log line: `~ legacy layout detected but stdin is not a TTY \u2014 re-run interactively or set HORDEOFBOTS_AUTO_MIGRATE=yes`.",
-        "`HORDEOFBOTS_AUTO_MIGRATE=yes` env var (or `--yes` flag, pick one \u2014 env var is simpler with `curl|bash`) bypasses the prompt and runs the migration directly.",
-        "`HORDEOFBOTS_AUTO_MIGRATE=no` env var (or default when stdin not a TTY and var not set) skips migration and proceeds with the rest of the install.",
+        "`setup.sh` detects non-interactive stdin (`[ ! -t 0 ]`) and skips the migration prompt with a clear log line: `~ legacy layout detected but stdin is not a TTY \u2014 re-run interactively or set BOTHORDE_AUTO_MIGRATE=yes`.",
+        "`BOTHORDE_AUTO_MIGRATE=yes` env var (or `--yes` flag, pick one \u2014 env var is simpler with `curl|bash`) bypasses the prompt and runs the migration directly.",
+        "`BOTHORDE_AUTO_MIGRATE=no` env var (or default when stdin not a TTY and var not set) skips migration and proceeds with the rest of the install.",
         "The interactive prompt path stays the default for direct `bash setup.sh` runs."
       ],
-      "desired_output": "`curl -fsSL \u2026/setup.sh | HORDEOFBOTS_AUTO_MIGRATE=yes bash` works cleanly even on a repo with legacy layout. Direct `bash setup.sh` keeps prompting.",
-      "success_signals": "- CI installs of Horde of Bots work without modification.\n- Adopters using `curl|bash` no longer see the script appear to hang.",
-      "failure_signals": "- Adopter sets `HORDEOFBOTS_AUTO_MIGRATE=yes` accidentally on a repo that shouldn't migrate. Mitigation: log every move and tell the adopter how to revert (`git checkout -- .`).\n- Detection logic gets fooled by some shells that always report stdin as a TTY. Edge case; document the env-var override as the universal fix.",
-      "tests": "- Manual: `bash setup.sh < /dev/null` on a repo with legacy files \u2014 confirm no hang, clear log line.\n- Manual: `HORDEOFBOTS_AUTO_MIGRATE=yes bash setup.sh < /dev/null` \u2014 migration runs.\n- Manual: `bash setup.sh` in a terminal \u2014 interactive prompt still appears.",
-      "notes": "- **Alternative considered**: drop the migration entirely from setup.sh and ship a separate `Horde of Bots-migrate.sh`. Rejected \u2014 splits the install into two commands for a one-time legacy detection.\n- **Out of scope**: changing the migration logic itself; only its triggering UX.\n- **Confidence**: 95%.",
+      "desired_output": "`curl -fsSL \u2026/setup.sh | BOTHORDE_AUTO_MIGRATE=yes bash` works cleanly even on a repo with legacy layout. Direct `bash setup.sh` keeps prompting.",
+      "success_signals": "- CI installs of Bot Horde work without modification.\n- Adopters using `curl|bash` no longer see the script appear to hang.",
+      "failure_signals": "- Adopter sets `BOTHORDE_AUTO_MIGRATE=yes` accidentally on a repo that shouldn't migrate. Mitigation: log every move and tell the adopter how to revert (`git checkout -- .`).\n- Detection logic gets fooled by some shells that always report stdin as a TTY. Edge case; document the env-var override as the universal fix.",
+      "tests": "- Manual: `bash setup.sh < /dev/null` on a repo with legacy files \u2014 confirm no hang, clear log line.\n- Manual: `BOTHORDE_AUTO_MIGRATE=yes bash setup.sh < /dev/null` \u2014 migration runs.\n- Manual: `bash setup.sh` in a terminal \u2014 interactive prompt still appears.",
+      "notes": "- **Alternative considered**: drop the migration entirely from setup.sh and ship a separate `Bot Horde-migrate.sh`. Rejected \u2014 splits the install into two commands for a one-time legacy detection.\n- **Out of scope**: changing the migration logic itself; only its triggering UX.\n- **Confidence**: 95%.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -1550,8 +1550,8 @@ var D = {
       "completed": "2026-04-27",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Wrap the `# Horde of Bots\\n@bot-horde/BOTHORDE.md` block setup.sh appends to `CLAUDE.md` with HTML comment markers so users can find it, understand what it does, and not accidentally delete it without realizing.",
-      "why": "Today the import is two ambiguous lines. A user editing CLAUDE.md to tighten their own rules can innocently delete those lines and silently lose the Horde of Bots workflow \u2014 the agent stops following BOTHORDE.md with no error. A `<!-- Horde of Bots import block \u2014 managed by setup.sh -->` marker pair makes the intent obvious and gives idempotency a stronger anchor.",
+      "goal": "Wrap the `# Bot Horde\\n@bot-horde/BOTHORDE.md` block setup.sh appends to `CLAUDE.md` with HTML comment markers so users can find it, understand what it does, and not accidentally delete it without realizing.",
+      "why": "Today the import is two ambiguous lines. A user editing CLAUDE.md to tighten their own rules can innocently delete those lines and silently lose the Bot Horde workflow \u2014 the agent stops following BOTHORDE.md with no error. A `<!-- Bot Horde import block \u2014 managed by setup.sh -->` marker pair makes the intent obvious and gives idempotency a stronger anchor.",
       "done_when": [
         "setup.sh wraps the appended block:",
         "Idempotency check uses the opening marker as the existence test (replaces the current `grep -qF \"$IMPORT_LINE\"`).",
@@ -1595,7 +1595,7 @@ var D = {
         "README adds a single line under the Setup section: \"Tickets are committed to your repo. If your repo is public, your tickets are public.\"",
         "No invented features. Don't claim any capability the code doesn't actually have today."
       ],
-      "desired_output": "An adopter reading the docs sees the actual requirements and constraints up front, decides if Horde of Bots fits, and doesn't get blocked by surprises after install.",
+      "desired_output": "An adopter reading the docs sees the actual requirements and constraints up front, decides if Bot Horde fits, and doesn't get blocked by surprises after install.",
       "success_signals": "- Adopter feedback shifts from \"this didn't match what I expected\" to \"this matched the README.\"\n- Public-repo / private-tickets confusion goes away.",
       "failure_signals": "- Adopters get scared off by the warnings. Mitigation: keep the warnings short and factual \u2014 not a wall of caveats.",
       "tests": "- Manual: read README + SETUP cold, list any remaining inaccuracies.\n- Manual: grep README for \"no dependencies\", \"no external deps\", \"zero deps\" \u2014 should be zero hits.",
@@ -1624,18 +1624,18 @@ var D = {
       "verification": "bot-claimed",
       "failure_mode": "",
       "goal": "Give adopters a way to know what version of the PM skill is installed and a one-liner to upgrade \u2014 instead of today's \"delete the file and re-run setup.\"",
-      "why": "The skill installs globally to `~/.claude/skills/product-manager/SKILL.md`, shared across all Horde of Bots projects on the user's machine. Adopters managing more than one project (or returning months later) can't tell whether their skill is current. There's no version, no upgrade command. A small `## Version: 1.0.0` line in SKILL.md plus a `--upgrade-skill` flag on setup.sh closes the gap.",
+      "why": "The skill installs globally to `~/.claude/skills/product-manager/SKILL.md`, shared across all Bot Horde projects on the user's machine. Adopters managing more than one project (or returning months later) can't tell whether their skill is current. There's no version, no upgrade command. A small `## Version: 1.0.0` line in SKILL.md plus a `--upgrade-skill` flag on setup.sh closes the gap.",
       "done_when": [
         "`skills/product-manager/SKILL.md` (source) has a `## Version` line at the top with a semver value.",
         "`setup.sh` reads the version line from both the installed and the upstream copy. If they differ, it prints the diff (`local 1.0.0 \u2192 upstream 1.1.0`) and asks whether to upgrade.",
-        "`bash setup.sh --upgrade-skill` (or `HORDEOFBOTS_UPGRADE_SKILL=yes`) bypasses the prompt and forces overwrite.",
+        "`bash setup.sh --upgrade-skill` (or `BOTHORDE_UPGRADE_SKILL=yes`) bypasses the prompt and forces overwrite.",
         "The non-interactive path (BH-062) treats the upgrade prompt the same way as the migration prompt.",
         "Adopters running setup.sh today (without the version line) see the new version on first re-run after this lands; behavior is purely additive."
       ],
       "desired_output": "An adopter on a 6-month-old install runs setup.sh and learns \"your PM skill is v1.0.0; upstream is v1.3.0. Upgrade? [y/N].\" One command later they're current.",
-      "success_signals": "- Adopters with multiple Horde of Bots projects can tell which version is on their machine.\n- \"How do I upgrade\" stops being asked.",
+      "success_signals": "- Adopters with multiple Bot Horde projects can tell which version is on their machine.\n- \"How do I upgrade\" stops being asked.",
       "failure_signals": "- Version drift between adopters becomes noisy if we bump versions for trivial changes. Mitigation: only bump when behavior changes.\n- Adopter pinned a custom local edit to SKILL.md and the upgrade overwrites it. Mitigation: detect non-version edits via line count or hash and warn before overwrite.",
-      "tests": "- Manual: install setup.sh fresh \u2192 SKILL.md has version line, no prompt.\n- Manual: bump version in source repo \u2192 re-run setup.sh \u2192 upgrade prompt appears.\n- Manual: `HORDEOFBOTS_UPGRADE_SKILL=yes bash setup.sh < /dev/null` \u2192 upgrade runs.",
+      "tests": "- Manual: install setup.sh fresh \u2192 SKILL.md has version line, no prompt.\n- Manual: bump version in source repo \u2192 re-run setup.sh \u2192 upgrade prompt appears.\n- Manual: `BOTHORDE_UPGRADE_SKILL=yes bash setup.sh < /dev/null` \u2192 upgrade runs.",
       "notes": "- **Alternative considered**: per-project skill installs. Rejected \u2014 Claude Code's skill mechanism is global by design. Per-project would require its own loader.\n- **Out of scope**: rolling back. Adopters re-install from a tag if they need an older version.\n- **Confidence**: 80%.",
       "rejected_by": "",
       "rejected": "",
@@ -1680,7 +1680,7 @@ var D = {
         "File is referenced from the README setup section (\"After install, see `bot-horde/INSTALL-FAQ.md`\").",
         "BH-061 wires setup.sh to download this file alongside BOTHORDE.md."
       ],
-      "desired_output": "An adopter who clones Horde of Bots and runs setup.sh sees `bot-horde/INSTALL-FAQ.md` in their repo. They (or their agent) read it once and get the answer to every common install-time question without contacting the maintainer.",
+      "desired_output": "An adopter who clones Bot Horde and runs setup.sh sees `bot-horde/INSTALL-FAQ.md` in their repo. They (or their agent) read it once and get the answer to every common install-time question without contacting the maintainer.",
       "success_signals": "- \"How does the CLAUDE.md import work?\" / \"Are tickets public?\" / \"Where does the PAT live?\" stop showing up in adopter feedback.",
       "failure_signals": "- The FAQ goes stale as the code evolves. Mitigation: tie updates to the tickets that change behavior (BH-061 / 062 / 063 / 064 / 065 each link to their FAQ section).",
       "tests": "- Manual: read the FAQ cold, confirm every question from the original feedback batch has a matching answer.\n- Manual: cross-reference each answer against current code/docs; flag any that no longer match.",
@@ -1708,7 +1708,7 @@ var D = {
       "completed": "2026-04-27",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Make it explicit that Horde of Bots tickets must not contain secrets. The agent should refuse to put credentials, keys, passwords, tokens, PII, or internal connection strings into a ticket \u2014 and adopters should know the same rule applies on their end.",
+      "goal": "Make it explicit that Bot Horde tickets must not contain secrets. The agent should refuse to put credentials, keys, passwords, tokens, PII, or internal connection strings into a ticket \u2014 and adopters should know the same rule applies on their end.",
       "why": "Tickets are committed to git, world-readable on public repos, and the agent doesn't redact anything before committing. The reviewer's feedback flagged that internal infrastructure detail (env var names, internal URLs, ports) might end up in tickets. A single rule line in BOTHORDE.md (so the agent reads it every session) plus a reinforcing paragraph in INSTALL-FAQ.md (so adopters see it on first install) closes that gap.",
       "done_when": [
         "BOTHORDE.md \u2192 Rules section has a `**No secrets in tickets.**` bullet describing what is forbidden, where it applies (body, Notes, Resolution, commit messages), and how to reference secrets abstractly.",
@@ -1745,13 +1745,13 @@ var D = {
       "completed": "2026-04-27",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Give bots and humans a deterministic way to answer \"is my local copy of Horde of Bots up to date?\" \u2014 without relying on file mtimes, hashes, or \"delete and re-run.\" A single `bot-horde/MANIFEST.json` lists every managed file and its upstream version stamp. Local copy includes the manifest as of last install. Upgrade = fetch upstream manifest, diff, fetch the files that changed.",
+      "goal": "Give bots and humans a deterministic way to answer \"is my local copy of Bot Horde up to date?\" \u2014 without relying on file mtimes, hashes, or \"delete and re-run.\" A single `bot-horde/MANIFEST.json` lists every managed file and its upstream version stamp. Local copy includes the manifest as of last install. Upgrade = fetch upstream manifest, diff, fetch the files that changed.",
       "why": "After BH-067 added the no-secrets rule, existing adopters had no path to the new BOTHORDE.md / INSTALL-FAQ.md other than `delete + re-run` or manual curl. That same gap exists for every future doc/script update. A manifest closes the gap once: bots fetch one tiny JSON file, diff against their local copy, know exactly what's stale, and can update only what changed.",
       "done_when": [
         "`bot-horde/MANIFEST.json` exists at repo root with `schema_version`, `updated` (ISO 8601 timestamp), and `files` (path \u2192 version date) for every managed file: BOTHORDE.md, INSTALL-FAQ.md, build.sh, build_lib.py, config.json, the workflow YAML, and the PM skill.",
         "`setup.sh` installs MANIFEST.json on fresh install (idempotent \u2014 skipped if present).",
-        "`HORDEOFBOTS_CHECK_UPDATES=yes bash setup.sh` (or `--check`) fetches the upstream manifest, diffs against local, prints one stale file per line, exits non-zero if anything is stale (CI-friendly).",
-        "`HORDEOFBOTS_UPGRADE_DOCS=yes bash setup.sh` fetches the upstream manifest and re-fetches every file whose version differs from local. After successful fetches, the local manifest is updated to match upstream.",
+        "`BOTHORDE_CHECK_UPDATES=yes bash setup.sh` (or `--check`) fetches the upstream manifest, diffs against local, prints one stale file per line, exits non-zero if anything is stale (CI-friendly).",
+        "`BOTHORDE_UPGRADE_DOCS=yes bash setup.sh` fetches the upstream manifest and re-fetches every file whose version differs from local. After successful fetches, the local manifest is updated to match upstream.",
         "When no local manifest exists (existing adopters' first run after this lands), upgrade mode treats every tracked file as stale and fetches all of them \u2014 bootstraps cleanly.",
         "INSTALL-FAQ.md gets a \"How do I know if I need to update?\" section pointing at the manifest + the two env vars.",
         "Manifest entries use simple ISO date strings (`2026-04-27`) \u2014 string comparison = chronological. Skill stays on semver since it already has `version: 1.0.0`."
@@ -1833,16 +1833,16 @@ var D = {
       "why": "The README + setup flow asks adopters to imagine what their board will look like once they have tickets. A live demo collapses that to one click. It also gives newcomers a feel for the brutalist styling, the walking robot, the per-bot crab colors, and the filter/sort UX without having to install anything.",
       "done_when": [
         "`demo/data.json` contains the demo content as a single static fixture: 4 backlog tickets, 5 in-progress tickets (each with a different `assigned_to` so the per-bot crab + robot palette shows variety), 7 done tickets \u2014 all assigned across exactly 2 feature sets. **No parallel ticket tree under `demo/bot-horde/`** \u2014 the previous approach replicated the real repo's directory layout for fixture data, which the user (correctly) flagged as ridiculous.",
-        "`bot-horde/build.sh` honors `HORDEOFBOTS_DEMO=1`. When set: skips the directory walk, loads tickets + feature_sets from `demo/data.json`, forces `demo_mode=true`, writes the rendered board to `demo/index.html`. Default behavior unchanged when the env var is absent.",
+        "`bot-horde/build.sh` honors `BOTHORDE_DEMO=1`. When set: skips the directory walk, loads tickets + feature_sets from `demo/data.json`, forces `demo_mode=true`, writes the rendered board to `demo/index.html`. Default behavior unchanged when the env var is absent.",
         "Demo mode emits a board with (a) empty `repo` config (disables polling \u2014 the demo never changes), (b) the \"+ Add Story\" button hidden so visitors can't be tricked into writing tickets to the real repo.",
-        "`.github/workflows/Horde of Bots-rebuild-board.yml` builds the demo board alongside the real one on every push to main (gated on `demo/data.json` existing) and commits both via the existing `auto_commit_board` flow.",
+        "`.github/workflows/Bot Horde-rebuild-board.yml` builds the demo board alongside the real one on every push to main (gated on `demo/data.json` existing) and commits both via the existing `auto_commit_board` flow.",
         "README links to the live demo at `/demo/` (GitHub Pages serves `demo/index.html` as the index).",
         "Existing tests still pass; the demo build is verified locally."
       ],
       "desired_output": "A visitor opens the GitHub Pages URL for `/demo/`, sees a populated brutalist kanban with 4 columns of frozen tickets, two feature sets, walking robots on the in-progress cards, varied per-bot colors, and the working filter/sort bar. Clicking \"+ Add Story\" or trying to push state has no destructive effect (the button is hidden in demo mode; polling is off).",
       "success_signals": "- README CTR to the demo URL is non-trivial (no formal metric \u2014 just a smell test that adopters click it).\n- New issues / discussions reference the demo as the thing that sold them.",
       "failure_signals": "- Demo content drifts from the production board's visual conventions (someone changes the real board's CSS but not the demo's, or vice versa) \u2192 the demo is misleading.\n- A bug introduced into `build.sh` only manifests on the demo path (because demo_mode toggles output) and reaches main without anyone noticing \u2192 demo build needs at least one smoke check in CI or a test.\n- A visitor finds the Add Story button still present in demo mode \u2192 write attempt fails or worse, succeeds against a public PAT and pollutes the repo.",
-      "tests": "- Unit-ish: build.sh with `HORDEOFBOTS_ROOT=demo bash bot-horde/build.sh` produces `demo/bot-horde/board.html`. Verify by parse + grep.\n- Build the demo locally; manually verify the 4/5/7 distribution renders, robots walk, filter/sort bar populates, both feature sets appear in the feature-set dropdown.\n- Manually verify Add Story button is hidden when `demo_mode: true`.\n- Real board build still works: `bash bot-horde/build.sh` (no env var) produces `bot-horde/board.html` unchanged.\n- Existing pytest suite still passes \u2014 no test should reference the demo dir explicitly.",
+      "tests": "- Unit-ish: build.sh with `BOTHORDE_ROOT=demo bash bot-horde/build.sh` produces `demo/bot-horde/board.html`. Verify by parse + grep.\n- Build the demo locally; manually verify the 4/5/7 distribution renders, robots walk, filter/sort bar populates, both feature sets appear in the feature-set dropdown.\n- Manually verify Add Story button is hidden when `demo_mode: true`.\n- Real board build still works: `bash bot-horde/build.sh` (no env var) produces `bot-horde/board.html` unchanged.\n- Existing pytest suite still passes \u2014 no test should reference the demo dir explicitly.",
       "notes": "- **Alternatives considered \u2014 separate \"demo\" branch**: rejected. A branch goes stale fast and Pages can only serve one branch by default. A subdirectory in main is simpler.\n- **Alternatives considered \u2014 separate repo**: rejected. Cross-repo upkeep cost is high for a static showcase. Single repo, single main branch.\n- **Alternatives considered \u2014 dynamic demo with live \"play with it\" mode**: rejected. Out of scope for v1. The demo is read-only; play = filter/sort interactions, not write.\n- **Out of scope**: a \"reset demo\" mechanism. The demo content is frozen at commit time; if it gets edited, just revert.\n- **Out of scope**: per-bot personality profiles or fake commit history. The bots are names + colors, nothing more.\n- **Out of scope**: snapshotting the demo for the README screenshot. That's a separate ticket if pulled (the user wants to approve the demo first, then I capture).\n- **Course-correction during build**: the first pass replicated the full ticket-tree layout under `demo/bot-horde/`, dumping 18 fixture markdown files into the repo. User pushed back \u2014 the demo content is fixture data, not a parallel project. Replaced with a single `demo/data.json` fixture file. Net repo cost dropped from 18 source files + a redirect to **2 files** (`demo/data.json` source, `demo/index.html` generated).\n- **Confidence**: 90% (post-rework). Single static JSON + one env-var-gated branch in build.sh.",
       "rejected_by": "",
       "rejected": "",
@@ -2012,7 +2012,7 @@ var D = {
       "goal": "Existing `Blocked-by:` field is already parsed and rendered. Add: (a) a \"Ready only\" filter toggle on the board that hides backlog/in-progress tickets whose `Blocked-by:` references a ticket not yet in `done/`; (b) validator rule (BH-076) refusing `done/` placement while `Blocked-by:` references unfinished tickets.",
       "why": "Today nothing prevents a bot from claiming a ticket whose dependencies aren't met. If BH-005 is `Blocked-by: BH-003` and BH-003 is in `backlog/`, a bot can grab BH-005 and burn cycles. The schema already encodes the dependency; we're not adding a feature, we're enforcing the field that already exists. The board filter helps humans + bots see only ready work; the validator catches premature done-transitions in CI.",
       "done_when": [
-        "Board filter bar gains a \"Ready only\" toggle (single checkbox, persists in `localStorage` under existing `hb_board_filters_v1` key)",
+        "Board filter bar gains a \"Ready only\" toggle (single checkbox, persists in `localStorage` under existing `bh_board_filters_v1` key)",
         "When toggle is on: tickets with at least one `Blocked-by:` reference that is **not** in `done/` are hidden from `backlog/` and `in-progress/` columns. `done/`, `blocked/`, and `not-doing/` columns are unaffected (they always show).",
         "Default toggle state: **off** \u2014 preserves current behavior for existing adopters; users opt in.",
         "Validator (BH-076) refuses `done/` placement if any `Blocked-by:` reference points to a ticket not in `done/`. Error message lists the unmet deps.",
@@ -2137,7 +2137,7 @@ var D = {
       "completed": "2026-04-30",
       "verification": "tests-passed",
       "failure_mode": "",
-      "goal": "Add `pollSource` to `config.json` (`\"github\" | \"none\"`), surface a manual-refresh indicator when polling is off, and update README + BOTHORDE.md to stop implying Horde of Bots works on any git host.",
+      "goal": "Add `pollSource` to `config.json` (`\"github\" | \"none\"`), surface a manual-refresh indicator when polling is off, and update README + BOTHORDE.md to stop implying Bot Horde works on any git host.",
       "why": "The board polls GitHub specifically. On `file://` it auto-disables silently. On GitLab/Gitea/self-hosted it just fails quietly. The README's \"no vendor lock-in\" framing is misleading. An explicit `\"none\"` mode + an honest README is cheaper than building real multi-backend polling and stops the false claim.",
       "done_when": [
         "`config.json` schema gains `pollSource`, default `\"github\"`",
@@ -2152,7 +2152,7 @@ var D = {
       "desired_output": "A non-GitHub adopter reads the README, sees the GitHub-specificity up front, sets `pollSource: \"none\"`, and gets a working static board with no broken polling attempts in DevTools.",
       "success_signals": "- Non-GitHub adopters complete setup without DevTools polling errors\n- \"Why doesn't live update work on GitLab?\" becomes a non-question",
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
-      "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
+      "tests": "- Build with `pollSource: \"none\"` \u2192 no `bh-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
       "rejected_by": "",
       "rejected": "",
@@ -2175,7 +2175,7 @@ var D = {
       "completed": "2026-04-30",
       "verification": "bot-claimed",
       "failure_mode": "",
-      "goal": "Fix two pre-existing test-infrastructure bugs that survived the change-mate \u2192 horde-of-bots rename: the repo-root `conftest.py` adds the wrong path (so `py -m pytest <specific-test>` fails); and the regression test that walks every committed ticket globs `CM-*.md`, so post-rename it walks zero files.",
+      "goal": "Fix two pre-existing test-infrastructure bugs that survived the change-mate \u2192 bot-horde rename: the repo-root `conftest.py` adds the wrong path (so `py -m pytest <specific-test>` fails); and the regression test that walks every committed ticket globs `CM-*.md`, so post-rename it walks zero files.",
       "why": "Both bugs make the test setup pretend to work. Standalone path invocations fail with `ModuleNotFoundError: build_lib`, hiding why CI passes but local runs of a single file don't. The regression test claims to verify every committed ticket parses \u2014 but currently walks zero files, catching nothing. As fs-010 adds new schema fields (Verification, Failure-mode), that regression test is exactly what we need to catch breakage on real tickets.",
       "done_when": [
         "`conftest.py` at repo root adds `bot-horde/` to `sys.path` (not just repo root) so `from build_lib import ...` resolves regardless of pytest invocation form",
@@ -2212,7 +2212,7 @@ var D = {
       "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
       "why": "The product-manager skill (BH-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
       "done_when": [
-        "Config file migrates from `bot-horde-config.json` to `Horde of Bots-config.jsonc` (JSONC = JSON + comments). Existing JSON readers updated to strip comments before parsing. Works in any project, no new runtime dependencies.",
+        "Config file migrates from `bot-horde-config.json` to `Bot Horde-config.jsonc` (JSONC = JSON + comments). Existing JSON readers updated to strip comments before parsing. Works in any project, no new runtime dependencies.",
         "New block in the config:",
         "Off by default. Explicit opt-in. Setup wizard does NOT prompt for it \u2014 users flip the flag themselves.",
         "`reviewer_llm_engaged` absent or `false` \u2192 no review, no network call, no warning. Behavior identical to BH-004 baseline.",
@@ -2226,7 +2226,7 @@ var D = {
       "success_signals": "- Engaged + valid: drafts arrive with tighter acceptance criteria and clearer risk callouts.\n- Engaged + misconfigured: user sees \"\u26a0 reviewer config incomplete\" and the draft still lands. They fix the config at their leisure.\n- Disengaged: behavior is identical to BH-004 baseline.\n- Runtime error mid-review: user sees \"\u26a0 reviewer errored \u2014 using unreviewed draft\" and the draft still lands.",
       "failure_signals": "- Latency spike on ticket creation when engaged (every draft now costs 2 LLM calls)\n- Reviewer hallucinating requirements the PM never captured \u2014 draft drifts from user intent\n- Infinite revise loops if not capped at one pass\n- Any failure mode that crashes the PM skill instead of degrading gracefully",
       "tests": "- Unit: `reviewer_llm_engaged` absent \u2192 single draft pass-through unchanged, no warning surfaced.\n- Unit: `reviewer_llm_engaged` false \u2192 identical to above.\n- Unit: `reviewer_llm_engaged` true, `provider` empty \u2192 draft passes through with warning, no LLM call made.\n- Unit: `reviewer_llm_engaged` true, `api_key` empty \u2192 same as above.\n- Unit: engaged + valid + reviewer returns \"approved\" \u2192 draft unchanged.\n- Unit: engaged + valid + reviewer returns \"revise\" \u2192 draft rewritten exactly once.\n- Unit: engaged + valid + reviewer call throws \u2192 draft passes through with warning, no crash.\n- Unit: JSONC parser handles: no comments, line `//` comments, block `/* */` comments, trailing commas disallowed (strict).",
-      "notes": "**Sequencing**: depends on BH-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Config format decision**: JSONC over plain JSON because the optional reviewer block benefits from inline instructions. JSONC over TypeScript because Horde of Bots must work in any project (Python, Go, static HTML, etc.) \u2014 forcing a TS runtime on non-TS users would break the \"zero dependencies beyond git\" promise.\n\n**Error surface**: stderr + a one-line note on the draft the user sees. No separate log file. The user finds out about misconfiguration at the moment it matters \u2014 when they're about to approve a draft.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance\n- TypeScript config file \u2192 rejected; forces TS runtime on every consumer (bash, python, board HTML) and breaks the \"any stack\" promise\n- Separate log file for reviewer errors \u2192 rejected; adds state the user has to know about; stderr + draft note reach the human when it matters",
+      "notes": "**Sequencing**: depends on BH-004 (the PM skill must exist first). Low priority \u2014 ship only after the baseline PM skill has been in real use long enough to see where drafts actually get weak.\n\n**Config format decision**: JSONC over plain JSON because the optional reviewer block benefits from inline instructions. JSONC over TypeScript because Bot Horde must work in any project (Python, Go, static HTML, etc.) \u2014 forcing a TS runtime on non-TS users would break the \"zero dependencies beyond git\" promise.\n\n**Error surface**: stderr + a one-line note on the draft the user sees. No separate log file. The user finds out about misconfiguration at the moment it matters \u2014 when they're about to approve a draft.\n\n**Alternatives considered**:\n- Always run reviewer (no toggle) \u2192 rejected; doubles cost and latency for every draft\n- Self-review by the same LLM in a second prompt \u2192 rejected; same blind spots, less critical distance\n- TypeScript config file \u2192 rejected; forces TS runtime on every consumer (bash, python, board HTML) and breaks the \"any stack\" promise\n- Separate log file for reviewer errors \u2192 rejected; adds state the user has to know about; stderr + draft note reach the human when it matters",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2249,7 +2249,7 @@ var D = {
       "verification": "",
       "failure_mode": "",
       "goal": "Give each Kanban column a small animated SVG scene in its header showing a blacksmith at the matching stage of work \u2014 raw materials piled up for backlog, hammering on the anvil for in-progress, finished blades on a display rack for done, and so on.",
-      "why": "The board today is visually flat \u2014 text cards in gray columns. A thematic animated scene per column makes work state feel visceral, rewards progress (watching cards move toward the \"done\" rack is satisfying), and gives Horde of Bots a memorable visual identity that stands out from every other Kanban tool.",
+      "why": "The board today is visually flat \u2014 text cards in gray columns. A thematic animated scene per column makes work state feel visceral, rewards progress (watching cards move toward the \"done\" rack is satisfying), and gives Bot Horde a memorable visual identity that stands out from every other Kanban tool.",
       "done_when": [
         "Each of the 5 Kanban columns (backlog / in-progress / done / blocked / not-doing) has a custom SVG scene at its header (~200\u00d7200px max)",
         "Scenes are animated with CSS keyframes only \u2014 no external animation libraries, no sprite sheets",
@@ -2506,7 +2506,7 @@ var D = {
     {
       "id": "feature-set-002-workflow-hygiene",
       "name": "[feature-set-002] Workflow Hygiene",
-      "goal": "Reshape the Horde of Bots ticket workflow so the agent operates as a senior technical PM, ticket structure carries explicit success/failure signals, tickets can reference each other, and ticket drafts can optionally pass through a critic.",
+      "goal": "Reshape the Bot Horde ticket workflow so the agent operates as a senior technical PM, ticket structure carries explicit success/failure signals, tickets can reference each other, and ticket drafts can optionally pass through a critic.",
       "rationale": "Tickets created by the LLM today follow a thin format and a developer-voice persona, with no way to express relationships between work items. BH-003, BH-004, and BH-010 collectively address all three: relationship fields (BH-003), PM persona + new sections + product-manager skill (BH-004), and second-LLM critic on drafts (BH-010). Bundling keeps the ticket-format changes coherent and avoids two formats coexisting mid-rollout.",
       "status": "In progress",
       "tickets": [
@@ -2518,8 +2518,8 @@ var D = {
     {
       "id": "feature-set-003-scope-hygiene",
       "name": "[feature-set-003] Scope & footprint hygiene",
-      "goal": "Make it mechanically clear that Horde of Bots is dev workflow tooling, not product code \u2014 through explicit scope docs, folder consolidation, install-time deploy-ignore defaults, and a quieter CI workflow.",
-      "rationale": "An adopter running Horde of Bots inside a production monorepo (hana-core) reported that Horde of Bots files leaked into their mental model of product code, caused deploy-pipeline anxiety, and created noise commits on `main`. Root cause: Horde of Bots's files are scattered across repo root and the docs don't explicitly mark the project as dev-only. This feature set hardens the line between \"Horde of Bots (dev workflow)\" and \"product code\" through four coherent changes. Bundled because BH-050 depends on BH-049, and BH-048 documents the rule that BH-049/050/051 make enforceable.",
+      "goal": "Make it mechanically clear that Bot Horde is dev workflow tooling, not product code \u2014 through explicit scope docs, folder consolidation, install-time deploy-ignore defaults, and a quieter CI workflow.",
+      "rationale": "An adopter running Bot Horde inside a production monorepo (hana-core) reported that Bot Horde files leaked into their mental model of product code, caused deploy-pipeline anxiety, and created noise commits on `main`. Root cause: Bot Horde's files are scattered across repo root and the docs don't explicitly mark the project as dev-only. This feature set hardens the line between \"Bot Horde (dev workflow)\" and \"product code\" through four coherent changes. Bundled because BH-050 depends on BH-049, and BH-048 documents the rule that BH-049/050/051 make enforceable.",
       "status": "Done \u2014 2026-04-24",
       "tickets": [
         "BH-048",
@@ -2558,7 +2558,7 @@ var D = {
       "id": "feature-set-006-redesign",
       "name": "[feature-set-006] Brutalist redesign (SimplifyOps style)",
       "goal": "Replace the current friendly-Inter board look with the SimplifyOps brutalist editorial system: dark `#0a0a0a` background, single rust `#c4724a` accent, hairline borders, Big Shoulders Display headlines + Inter body + JetBrains Mono metadata. The board should feel like the same product family as `simplifyops.com`.",
-      "rationale": "The user owns simplifyops.com and wants Horde of Bots visually unified with it. The styleguide is well-defined and complete. Redesign happens before the kill-Supabase work (feature-set-005) because visual changes get faster feedback and the Supabase removal doesn't touch CSS \u2014 the two streams are independent.",
+      "rationale": "The user owns simplifyops.com and wants Bot Horde visually unified with it. The styleguide is well-defined and complete. Redesign happens before the kill-Supabase work (feature-set-005) because visual changes get faster feedback and the Supabase removal doesn't touch CSS \u2014 the two streams are independent.",
       "status": "In progress",
       "tickets": [
         "BH-060"
@@ -2592,7 +2592,7 @@ var D = {
     {
       "id": "feature-set-009-showcase",
       "name": "[feature-set-009] Showcase",
-      "goal": "Make Horde of Bots easy to evaluate without installing it. Live demo, README screenshots, anything else that helps a stranger see the product in 30 seconds.",
+      "goal": "Make Bot Horde easy to evaluate without installing it. Live demo, README screenshots, anything else that helps a stranger see the product in 30 seconds.",
       "rationale": "Adopters install on a hunch \u2014 \"looks interesting, let's try it.\" The hunch is built on what they see in the README and any live preview. This set collects work that lowers the bar from \"imagine your board with tickets\" to \"click and look.\"",
       "status": "In progress \u2014 demo live; README screenshot + demo URL link land next.",
       "tickets": [
@@ -2602,8 +2602,8 @@ var D = {
     {
       "id": "feature-set-010-bot-native-schema",
       "name": "[feature-set-010] Bot-native schema additions",
-      "goal": "Extend the Horde of Bots ticket format with structured fields and conventions that express bot-era concerns \u2014 decomposition lineage, verification level, failure mode, dependency readiness, model provenance \u2014 and add CI validation to enforce them. The whole change ships as additions to existing markdown plus one validator script. No daemon, no scheduler, no new runtime.",
-      "rationale": "Feedback (\"v3.0\") proposed a category-redefining bot-native tracker. Most of the proposal required infrastructure and broke the files-and-git contract that makes Horde of Bots small. A subset \u2014 the schema-only items \u2014 is implementable as additions to the existing markdown format with no platform jump. This feature set ships exactly that subset, plus a validator that makes the new fields trustworthy.\n\nThe platform-scale items (capability matching, scheduling, cross-repo coordination, lease daemons) are deferred to a separate exploration doc and are not work in this repo.",
+      "goal": "Extend the Bot Horde ticket format with structured fields and conventions that express bot-era concerns \u2014 decomposition lineage, verification level, failure mode, dependency readiness, model provenance \u2014 and add CI validation to enforce them. The whole change ships as additions to existing markdown plus one validator script. No daemon, no scheduler, no new runtime.",
+      "rationale": "Feedback (\"v3.0\") proposed a category-redefining bot-native tracker. Most of the proposal required infrastructure and broke the files-and-git contract that makes Bot Horde small. A subset \u2014 the schema-only items \u2014 is implementable as additions to the existing markdown format with no platform jump. This feature set ships exactly that subset, plus a validator that makes the new fields trustworthy.\n\nThe platform-scale items (capability matching, scheduling, cross-repo coordination, lease daemons) are deferred to a separate exploration doc and are not work in this repo.",
       "status": "Backlog",
       "tickets": [
         "BH-071",
@@ -2636,7 +2636,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T16:49:58.878120+00:00",
+  "generated": "2026-04-30T16:56:33.754249+00:00",
   "demo_mode": false,
   "stale_after_hours": 4
 };
@@ -2662,7 +2662,7 @@ function robotSvg(name) {
   var c = name ? crabColor(name) : '#22c55e';
   var d = -Math.random() * 12;
   var style = 'color:' + c + ';filter:drop-shadow(0 0 3px ' + c + '99);animation-delay:' + d + 's';
-  return '<svg class="hb-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
+  return '<svg class="bh-robot" aria-hidden="true" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="' + style + '">'
     + '<circle cx="9" cy="1" r="1" fill="currentColor"/>'
     + '<line x1="9" y1="1.5" x2="9" y2="3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
     + '<rect x="3" y="3.5" width="12" height="10.5" rx="2" fill="currentColor"/>'
@@ -2912,7 +2912,7 @@ function render() {
 }
 
 // --- filter/sort (CM-069) ---
-var FILTER_KEY = 'hb_board_filters_v1';
+var FILTER_KEY = 'bh_board_filters_v1';
 var FILTER_DEFAULT = { priority: '', effort: '', featureset: '', sort: 'default', readyOnly: false };
 var FILTER_STATE = Object.assign({}, FILTER_DEFAULT);
 var PRIO_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -3054,11 +3054,11 @@ function closeModal() {
   document.getElementById('f-featureset').value = '';
 }
 
-function getGithubToken() { return localStorage.getItem('hb_github_token') || ''; }
-function setGithubToken(t) { localStorage.setItem('hb_github_token', t); }
-function clearGithubToken() { localStorage.removeItem('hb_github_token'); }
-function getAgentName() { return localStorage.getItem('hb_agent_name') || ''; }
-function setAgentName(n) { localStorage.setItem('hb_agent_name', n); }
+function getGithubToken() { return localStorage.getItem('bh_github_token') || ''; }
+function setGithubToken(t) { localStorage.setItem('bh_github_token', t); }
+function clearGithubToken() { localStorage.removeItem('bh_github_token'); }
+function getAgentName() { return localStorage.getItem('bh_agent_name') || ''; }
+function setAgentName(n) { localStorage.setItem('bh_agent_name', n); }
 
 function promptSetup(onSuccess, errorMsg) {
   var modal = document.getElementById('setup-modal');
@@ -3252,13 +3252,13 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "d34ba61275e92a8813c588069fed4f001b2983b3", "poll_source": "github"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "allavallc/bot-horde", "poll_seconds": 30, "head_sha": "d70f1e62d2371ee618735da375096b33ae32f090", "poll_source": "github"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
   // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
-  var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
-  var indicator = document.getElementById('hb-live-indicator');
+  var cfg = JSON.parse(document.getElementById('bh-poll-config').textContent);
+  var indicator = document.getElementById('bh-live-indicator');
 
   // BH-078: pollSource: "none" — board is served somewhere off-GitHub (or
   // bundled offline). Surface that explicitly instead of attempting fetches
@@ -3266,8 +3266,8 @@ document.addEventListener('keydown', function(e) {
   if (cfg.poll_source === 'none') {
     if (indicator) {
       indicator.style.display = 'flex';
-      var nDot = indicator.querySelector('.hb-live-dot');
-      var nLabel = indicator.querySelector('.hb-live-label');
+      var nDot = indicator.querySelector('.bh-live-dot');
+      var nLabel = indicator.querySelector('.bh-live-label');
       if (nDot) nDot.style.background = 'var(--ink-dim)';
       if (nLabel) nLabel.textContent = 'static \u2014 refresh manually';
     }
@@ -3275,27 +3275,27 @@ document.addEventListener('keydown', function(e) {
   }
 
   if (!cfg.repo) {
-    console.warn('[hb-poll] no repo detected, polling disabled');
+    console.warn('[bh-poll] no repo detected, polling disabled');
     return;
   }
   // file:// views are local snapshots — reloading just re-loads the same stale
   // file. Only useful when served over http(s) (GitHub Pages / a live server).
   if (location.protocol === 'file:') {
-    console.info('[hb-poll] file:// detected — polling disabled (open via http(s) for live updates)');
+    console.info('[bh-poll] file:// detected — polling disabled (open via http(s) for live updates)');
     return;
   }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
   if (indicator) {
     indicator.style.display = 'flex';
-    var label = indicator.querySelector('.hb-live-label');
+    var label = indicator.querySelector('.bh-live-label');
     if (label) label.textContent = 'polling';
   }
 
   var lastSha = cfg.head_sha || null;
   var consecutiveFailures = 0;
 
-  function getToken() { return localStorage.getItem('hb_github_token') || ''; }
+  function getToken() { return localStorage.getItem('bh_github_token') || ''; }
 
   async function pollOnce() {
     if (document.hidden) return;
@@ -3305,12 +3305,12 @@ document.addEventListener('keydown', function(e) {
       if (token) headers['Authorization'] = 'Bearer ' + token;
       var res = await fetch('https://api.github.com/repos/' + cfg.repo + '/commits/main', { headers: headers });
       if (res.status === 403) {
-        console.warn('[hb-poll] rate limited, backing off');
+        console.warn('[bh-poll] rate limited, backing off');
         consecutiveFailures++;
         return;
       }
       if (!res.ok) {
-        console.warn('[hb-poll] HTTP', res.status);
+        console.warn('[bh-poll] HTTP', res.status);
         consecutiveFailures++;
         return;
       }
@@ -3319,13 +3319,13 @@ document.addEventListener('keydown', function(e) {
       var sha = body && body.sha;
       if (!sha) return;
       if (lastSha && sha !== lastSha) {
-        console.log('[hb-poll] HEAD changed', lastSha, '->', sha, '— reloading');
+        console.log('[bh-poll] HEAD changed', lastSha, '->', sha, '— reloading');
         location.reload();
         return;
       }
       lastSha = sha;
     } catch (e) {
-      console.warn('[hb-poll] error', e);
+      console.warn('[bh-poll] error', e);
       consecutiveFailures++;
     }
   }

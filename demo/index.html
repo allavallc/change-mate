@@ -1108,7 +1108,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T16:40:14.645216+00:00",
+  "generated": "2026-04-30T16:56:33.899978+00:00",
   "demo_mode": true,
   "stale_after_hours": 4
 };
@@ -1565,7 +1565,7 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
-var TICKET_PREFIX = "HB";
+var TICKET_PREFIX = "BH";
 var TICKET_ID_RE = new RegExp('^' + TICKET_PREFIX + '-(\\d+)$');
 function nextTicketIdNumber() {
   var max = 0;
@@ -1724,7 +1724,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "f152b5c8b5d7e1b1e5ddfb6cd2015da3daf743b4", "poll_source": "none"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "d70f1e62d2371ee618735da375096b33ae32f090", "poll_source": "none"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
@@ -1732,7 +1732,7 @@ document.addEventListener('keydown', function(e) {
   var cfg = JSON.parse(document.getElementById('bh-poll-config').textContent);
   var indicator = document.getElementById('bh-live-indicator');
 
-  // HB-078: pollSource: "none" — board is served somewhere off-GitHub (or
+  // BH-078: pollSource: "none" — board is served somewhere off-GitHub (or
   // bundled offline). Surface that explicitly instead of attempting fetches
   // that will fail.
   if (cfg.poll_source === 'none') {
