@@ -286,6 +286,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .b-medium   { color: var(--ink-dim); border-color: var(--line); }
 .b-low      { color: var(--ink-dimmer); border-color: var(--line); }
 .b-effort   { color: var(--ink-dim); border-color: var(--line); }
+.b-userfacing { color: var(--accent); border-color: var(--accent); }
 .card-crab {
   display: inline-flex;
   align-items: center;
@@ -1112,7 +1113,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T20:54:24.379781+00:00",
+  "generated": "2026-04-30T20:56:27.075066+00:00",
   "demo_mode": true,
   "stale_after_hours": 4
 };
@@ -1302,7 +1303,7 @@ function cardHTML(t, isRejected) {
     + fsChip
     + '<div class="card-top">'
     + '<span class="card-id">' + esc(t.id) + '</span>'
-    + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
+    + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + (t.user_facing === 'yes' ? '<span class="badge b-userfacing" title="User-facing — needs acceptance test">USER-FACING</span>' : '') + '</div>'
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + failChip
@@ -1728,7 +1729,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="bh-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "b6de02709f44e083d3f2890ef23deed72d87b1a4", "poll_source": "none"}</script>
+<script id="bh-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "0584239534c842ca985b90cb9a9fce219faba99c", "poll_source": "none"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
