@@ -2,7 +2,7 @@
 
 set -e
 
-REPO_URL="https://raw.githubusercontent.com/allavallc/horde-of-bots/main"
+REPO_URL="https://raw.githubusercontent.com/allavallc/bot-horde/main"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -64,12 +64,12 @@ py_cmd() {
   return 1
 }
 
-# Returns 0 (true) if horde-of-bots/ is excluded from the repo (local-only mode).
-# Matches: horde-of-bots, horde-of-bots/, /horde-of-bots, /horde-of-bots/ (with optional trailing whitespace).
+# Returns 0 (true) if bot-horde/ is excluded from the repo (local-only mode).
+# Matches: horde-of-bots, bot-horde/, /horde-of-bots, /bot-horde/ (with optional trailing whitespace).
 # Lines starting with # are ignored. .gitignore must already exist.
 is_local_only_mode() {
   [ -f .gitignore ] || return 1
-  grep -qE '^[[:space:]]*/?horde-of-bots/?[[:space:]]*$' .gitignore
+  grep -qE '^[[:space:]]*/?bot-horde/?[[:space:]]*$' .gitignore
 }
 
 # Diff upstream manifest against local. Outputs tab-separated `path<TAB>upstream<TAB>local` per stale file.
@@ -97,13 +97,13 @@ PYEOF
 run_check_mode() {
   local tmp_manifest
   tmp_manifest=$(mktemp 2>/dev/null || echo "/tmp/cm-manifest-$$")
-  if ! curl -fsSL "$REPO_URL/horde-of-bots/MANIFEST.json" -o "$tmp_manifest"; then
+  if ! curl -fsSL "$REPO_URL/bot-horde/MANIFEST.json" -o "$tmp_manifest"; then
     echo -e "${RED}✗${NC} could not fetch upstream MANIFEST.json"
     rm -f "$tmp_manifest"
     return 2
   fi
   local stale
-  stale=$(manifest_diff "$tmp_manifest" "horde-of-bots/MANIFEST.json")
+  stale=$(manifest_diff "$tmp_manifest" "bot-horde/MANIFEST.json")
   rm -f "$tmp_manifest"
   if [ -z "$stale" ]; then
     echo -e "${GREEN}✓${NC} all horde-of-bots files are up to date"
@@ -121,13 +121,13 @@ run_check_mode() {
 run_upgrade_mode() {
   local tmp_manifest
   tmp_manifest=$(mktemp 2>/dev/null || echo "/tmp/cm-manifest-$$")
-  if ! curl -fsSL "$REPO_URL/horde-of-bots/MANIFEST.json" -o "$tmp_manifest"; then
+  if ! curl -fsSL "$REPO_URL/bot-horde/MANIFEST.json" -o "$tmp_manifest"; then
     echo -e "${RED}✗${NC} could not fetch upstream MANIFEST.json"
     rm -f "$tmp_manifest"
     return 2
   fi
   local stale
-  stale=$(manifest_diff "$tmp_manifest" "horde-of-bots/MANIFEST.json")
+  stale=$(manifest_diff "$tmp_manifest" "bot-horde/MANIFEST.json")
   if [ -z "$stale" ]; then
     echo -e "${GREEN}✓${NC} already up to date — nothing to do"
     rm -f "$tmp_manifest"
@@ -140,7 +140,7 @@ run_upgrade_mode() {
   local failed=0
   while IFS=$'\t' read -r path up loc; do
     [ -z "$path" ] && continue
-    if [ $local_only -eq 1 ] && [ "$path" = ".github/workflows/horde-of-bots-rebuild-board.yml" ]; then
+    if [ $local_only -eq 1 ] && [ "$path" = ".github/workflows/bot-horde-rebuild-board.yml" ]; then
       echo -e "${YELLOW}~${NC} skipping $path (local-only mode — workflow not used)"
       continue
     fi
@@ -153,8 +153,8 @@ run_upgrade_mode() {
     fi
   done <<< "$stale"
   if [ $failed -eq 0 ]; then
-    mv "$tmp_manifest" horde-of-bots/MANIFEST.json
-    echo -e "${GREEN}✓${NC} updated horde-of-bots/MANIFEST.json"
+    mv "$tmp_manifest" bot-horde/MANIFEST.json
+    echo -e "${GREEN}✓${NC} updated bot-horde/MANIFEST.json"
   else
     rm -f "$tmp_manifest"
     echo -e "${YELLOW}~${NC} some fetches failed; local MANIFEST.json left unchanged"
@@ -180,30 +180,30 @@ echo ""
 
 # --- folder structure -----------------------------------------------------
 
-mkdir -p horde-of-bots/backlog horde-of-bots/in-progress horde-of-bots/done horde-of-bots/blocked horde-of-bots/not-doing horde-of-bots/feature-sets
+mkdir -p bot-horde/backlog bot-horde/in-progress bot-horde/done bot-horde/blocked bot-horde/not-doing bot-horde/feature-sets
 
 for d in backlog in-progress done blocked not-doing feature-sets; do
-  touch "horde-of-bots/$d/.gitkeep"
+  touch "bot-horde/$d/.gitkeep"
 done
 
-echo -e "${GREEN}✓${NC} created horde-of-bots/ folder structure"
+echo -e "${GREEN}✓${NC} created bot-horde/ folder structure"
 
 # --- runtime files --------------------------------------------------------
 
 # Files installed once per repo (skipped if present).
-download "horde-of-bots/HORDEOFBOTS.md"          horde-of-bots/HORDEOFBOTS.md
-download "horde-of-bots/INSTALL-FAQ.md"         horde-of-bots/INSTALL-FAQ.md
-download "horde-of-bots/UPDATING.md"            horde-of-bots/UPDATING.md
-download "horde-of-bots/MANIFEST.json"          horde-of-bots/MANIFEST.json
-download "horde-of-bots/build.sh"               horde-of-bots/build.sh
-download "horde-of-bots/build_lib.py"           horde-of-bots/build_lib.py
-download "horde-of-bots/config.json"            horde-of-bots/config.json
+download "bot-horde/BOTHORDE.md"          bot-horde/BOTHORDE.md
+download "bot-horde/INSTALL-FAQ.md"         bot-horde/INSTALL-FAQ.md
+download "bot-horde/UPDATING.md"            bot-horde/UPDATING.md
+download "bot-horde/MANIFEST.json"          bot-horde/MANIFEST.json
+download "bot-horde/build.sh"               bot-horde/build.sh
+download "bot-horde/build_lib.py"           bot-horde/build_lib.py
+download "bot-horde/config.json"            bot-horde/config.json
 
-# The rebuild-board workflow is git-sync only. In local-only mode (horde-of-bots/ in
-# .gitignore), it would fail on every push since horde-of-bots/build.sh isn't checked in.
-WORKFLOW_PATH=".github/workflows/horde-of-bots-rebuild-board.yml"
+# The rebuild-board workflow is git-sync only. In local-only mode (bot-horde/ in
+# .gitignore), it would fail on every push since bot-horde/build.sh isn't checked in.
+WORKFLOW_PATH=".github/workflows/bot-horde-rebuild-board.yml"
 if is_local_only_mode; then
-  echo -e "${YELLOW}~${NC} local-only mode detected (horde-of-bots/ in .gitignore) — skipping rebuild-board workflow"
+  echo -e "${YELLOW}~${NC} local-only mode detected (bot-horde/ in .gitignore) — skipping rebuild-board workflow"
   if [ -f "$WORKFLOW_PATH" ]; then
     echo ""
     echo -e "${YELLOW}!${NC} an existing $WORKFLOW_PATH was found"
@@ -220,7 +220,7 @@ else
   download "$WORKFLOW_PATH" "$WORKFLOW_PATH"
 fi
 
-chmod +x horde-of-bots/build.sh 2>/dev/null || true
+chmod +x bot-horde/build.sh 2>/dev/null || true
 
 # --- product-manager skill (global, ~/.claude/skills/) --------------------
 
@@ -262,7 +262,7 @@ fi
 
 CM_MARKER_OPEN="<!-- horde-of-bots import block — managed by setup.sh; remove the block to disable horde-of-bots -->"
 CM_MARKER_CLOSE="<!-- /horde-of-bots import block -->"
-IMPORT_LINE="@horde-of-bots/HORDEOFBOTS.md"
+IMPORT_LINE="@bot-horde/BOTHORDE.md"
 
 write_cm_block() {
   printf '%s\n# horde-of-bots\n%s\n%s\n' "$CM_MARKER_OPEN" "$IMPORT_LINE" "$CM_MARKER_CLOSE"
@@ -303,15 +303,15 @@ fi
 
 # --- deploy-ignore defaults ----------------------------------------------
 
-CM_IGNORE_LINE="horde-of-bots/"
+CM_IGNORE_LINE="bot-horde/"
 for ignore_file in .dockerignore .gcloudignore .vercelignore; do
   if [ -f "$ignore_file" ]; then
     if grep -qxF "$CM_IGNORE_LINE" "$ignore_file"; then
-      echo -e "${YELLOW}~${NC} $ignore_file already excludes horde-of-bots/, skipping"
+      echo -e "${YELLOW}~${NC} $ignore_file already excludes bot-horde/, skipping"
     else
       [ -s "$ignore_file" ] && [ "$(tail -c1 "$ignore_file" 2>/dev/null | wc -l)" = "0" ] && echo "" >> "$ignore_file"
       echo "$CM_IGNORE_LINE" >> "$ignore_file"
-      echo -e "${GREEN}✓${NC} added horde-of-bots/ to $ignore_file"
+      echo -e "${GREEN}✓${NC} added bot-horde/ to $ignore_file"
     fi
   fi
 done
@@ -321,8 +321,8 @@ done
 if [ -f ".gitignore" ]; then
   if is_local_only_mode; then
     echo ""
-    echo -e "${YELLOW}local-only mode${NC}: horde-of-bots/ is gitignored — tickets won't sync between teammates."
-    echo "   To switch to git-sync mode, remove the horde-of-bots/ line from .gitignore"
+    echo -e "${YELLOW}local-only mode${NC}: bot-horde/ is gitignored — tickets won't sync between teammates."
+    echo "   To switch to git-sync mode, remove the bot-horde/ line from .gitignore"
     echo "   and re-run setup.sh."
     echo ""
     LOCAL_ONLY_MARKER="# horde-of-bots: local-only mode (rebuild-board workflow intentionally not installed)"
@@ -332,7 +332,7 @@ if [ -f ".gitignore" ]; then
       echo -e "${GREEN}✓${NC} added local-only marker comment to .gitignore"
     fi
   else
-    GIT_MARKER="# horde-of-bots/ is dev-only tooling; do not ignore unless using local-only mode (see horde-of-bots/HORDEOFBOTS.md)"
+    GIT_MARKER="# bot-horde/ is dev-only tooling; do not ignore unless using local-only mode (see bot-horde/BOTHORDE.md)"
     if ! grep -qF "$GIT_MARKER" .gitignore; then
       [ -s ".gitignore" ] && [ "$(tail -c1 .gitignore 2>/dev/null | wc -l)" = "0" ] && echo "" >> .gitignore
       echo "$GIT_MARKER" >> .gitignore
@@ -343,10 +343,10 @@ fi
 
 # --- starter board.html (best-effort) ------------------------------------
 
-if [ ! -f horde-of-bots/board.html ]; then
+if [ ! -f bot-horde/board.html ]; then
   if command -v py >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
-    if bash horde-of-bots/build.sh >/dev/null 2>&1; then
-      echo -e "${GREEN}✓${NC} generated initial horde-of-bots/board.html"
+    if bash bot-horde/build.sh >/dev/null 2>&1; then
+      echo -e "${GREEN}✓${NC} generated initial bot-horde/board.html"
     else
       echo -e "${YELLOW}~${NC} build.sh failed locally — your first push will trigger CI to build the board"
     fi
@@ -361,7 +361,7 @@ echo ""
 echo -e "${GREEN}horde-of-bots is ready.${NC}"
 echo ""
 echo "next steps:"
-echo "  1. read horde-of-bots/INSTALL-FAQ.md if you have questions"
-echo "  2. commit and push the horde-of-bots/ folder + .github/workflows/ to your repo"
+echo "  1. read bot-horde/INSTALL-FAQ.md if you have questions"
+echo "  2. commit and push the bot-horde/ folder + .github/workflows/ to your repo"
 echo "  3. start an agent session and ask: 'what are we working on?'"
 echo ""

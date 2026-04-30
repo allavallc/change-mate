@@ -1,9 +1,9 @@
 """Tests for setup.sh — the local-only-mode gating in particular.
 
-Local-only mode is signaled by `horde-of-bots/` appearing in `.gitignore`. In that
-mode `setup.sh` must NOT install `.github/workflows/horde-of-bots-rebuild-board.yml`
-(the workflow runs `bash horde-of-bots/build.sh` in CI, which fails when
-`horde-of-bots/` is gitignored). Re-running setup.sh should also detect a stale
+Local-only mode is signaled by `bot-horde/` appearing in `.gitignore`. In that
+mode `setup.sh` must NOT install `.github/workflows/bot-horde-rebuild-board.yml`
+(the workflow runs `bash bot-horde/build.sh` in CI, which fails when
+`bot-horde/` is gitignored). Re-running setup.sh should also detect a stale
 workflow and offer to remove it.
 
 These tests pre-create every managed horde-of-bots file in a tmp working dir so
@@ -20,7 +20,7 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent
 
 MANAGED_HB_FILES = (
-    "HORDEOFBOTS.md",
+    "BOTHORDE.md",
     "INSTALL-FAQ.md",
     "UPDATING.md",
     "MANIFEST.json",
@@ -29,11 +29,11 @@ MANAGED_HB_FILES = (
     "config.json",
 )
 
-WORKFLOW_REL = ".github/workflows/horde-of-bots-rebuild-board.yml"
+WORKFLOW_REL = ".github/workflows/bot-horde-rebuild-board.yml"
 
 
 def _stage_repo(tmp_path: Path, gitignore_contents: str, with_workflow: bool = False) -> None:
-    hb_dir = tmp_path / "horde-of-bots"
+    hb_dir = tmp_path / "bot-horde"
     hb_dir.mkdir()
     for name in MANAGED_HB_FILES:
         (hb_dir / name).write_text("placeholder", encoding="utf-8")
@@ -65,7 +65,7 @@ def _run_setup(tmp_path: Path, env_overrides: dict) -> subprocess.CompletedProce
 
 def test_local_only_mode_skips_workflow_install(tmp_path):
     """In local-only mode with no existing workflow, setup.sh must not download one."""
-    _stage_repo(tmp_path, "horde-of-bots/\n")
+    _stage_repo(tmp_path, "bot-horde/\n")
 
     result = _run_setup(tmp_path, {})
 
@@ -79,7 +79,7 @@ def test_local_only_mode_skips_workflow_install(tmp_path):
 def test_local_only_mode_offers_to_remove_existing_workflow(tmp_path):
     """An adopter who installed before the fix has a stale workflow. Re-running
     setup.sh in local-only mode with HORDEOFBOTS_REMOVE_WORKFLOW=yes removes it."""
-    _stage_repo(tmp_path, "horde-of-bots/\n", with_workflow=True)
+    _stage_repo(tmp_path, "bot-horde/\n", with_workflow=True)
 
     result = _run_setup(tmp_path, {"HORDEOFBOTS_REMOVE_WORKFLOW": "yes"})
 
@@ -90,7 +90,7 @@ def test_local_only_mode_offers_to_remove_existing_workflow(tmp_path):
 
 def test_local_only_mode_keeps_workflow_when_removal_declined(tmp_path):
     """If the user declines removal, the workflow stays (with a warning)."""
-    _stage_repo(tmp_path, "horde-of-bots/\n", with_workflow=True)
+    _stage_repo(tmp_path, "bot-horde/\n", with_workflow=True)
 
     result = _run_setup(tmp_path, {"HORDEOFBOTS_REMOVE_WORKFLOW": "no"})
 
@@ -100,7 +100,7 @@ def test_local_only_mode_keeps_workflow_when_removal_declined(tmp_path):
 
 def test_local_only_mode_adds_marker_comment_to_gitignore(tmp_path):
     """setup.sh writes a one-line marker explaining why no workflow is installed."""
-    _stage_repo(tmp_path, "horde-of-bots/\n")
+    _stage_repo(tmp_path, "bot-horde/\n")
 
     result = _run_setup(tmp_path, {})
     assert result.returncode == 0
@@ -112,11 +112,11 @@ def test_local_only_mode_adds_marker_comment_to_gitignore(tmp_path):
 
 def test_local_only_mode_detection_ignores_unrelated_lines(tmp_path):
     """A .gitignore that mentions horde-of-bots in a comment or a partial-match
-    pattern (e.g. horde-of-bots-output/, foo/horde-of-bots/) must NOT trigger
+    pattern (e.g. horde-of-bots-output/, foo/bot-horde/) must NOT trigger
     local-only mode. Pre-create the workflow so download() skips network."""
     _stage_repo(
         tmp_path,
-        "# horde-of-bots notes\nhorde-of-bots-output/\nfoo/horde-of-bots/\n",
+        "# horde-of-bots notes\nhorde-of-bots-output/\nfoo/bot-horde/\n",
         with_workflow=True,
     )
 
@@ -125,5 +125,5 @@ def test_local_only_mode_detection_ignores_unrelated_lines(tmp_path):
     assert result.returncode == 0, \
         f"setup.sh failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     assert "local-only mode detected" not in result.stdout, \
-        "false positive: .gitignore did not contain a true horde-of-bots/ ignore rule"
+        "false positive: .gitignore did not contain a true bot-horde/ ignore rule"
     assert (tmp_path / WORKFLOW_REL).exists(), "git-sync mode should keep the workflow"

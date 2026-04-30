@@ -20,7 +20,7 @@ Trigger this skill any time the user:
 - Picks something to work on that doesn't yet have a ticket
 - Asks "should we build X?" — the answer is a draft ticket plus a recommendation
 
-Do **not** trigger this skill for: status updates, ticket completion, rejection, or routine git operations. Those follow the workflow in `HORDEOFBOTS.md` directly.
+Do **not** trigger this skill for: status updates, ticket completion, rejection, or routine git operations. Those follow the workflow in `BOTHORDE.md` directly.
 
 ## Core principle: draft first, ask second
 
@@ -51,8 +51,8 @@ Long is fine when the work is *genuinely* complex (architectural rationale, mult
 
 Before drafting a single line:
 
-- **Backlog scan**: read every file in `horde-of-bots/backlog/` and `horde-of-bots/in-progress/`. Look for duplicates, near-duplicates, and tickets the new work would supersede or depend on.
-- **Feature set scan**: read every file in `horde-of-bots/feature-sets/`. Identify the set this work most likely belongs to.
+- **Backlog scan**: read every file in `bot-horde/backlog/` and `bot-horde/in-progress/`. Look for duplicates, near-duplicates, and tickets the new work would supersede or depend on.
+- **Feature set scan**: read every file in `bot-horde/feature-sets/`. Identify the set this work most likely belongs to.
 - **Code scan**: read the files the request touches. If the user says "add a settings page", read the existing pages, the routing layer, the auth layer. The code is more authoritative than the request.
 - **History scan**: if the request relates to recent work, run `git log --oneline -20` and read the diffs of relevant commits.
 
@@ -78,7 +78,7 @@ Every ticket gets a feature set. There is no "no feature set" option.
 
 For each new ticket:
 
-1. Compare the ticket against every existing feature set in `horde-of-bots/feature-sets/`. Ask: does this ticket meaningfully advance any of these goals? If yes → reference that feature set.
+1. Compare the ticket against every existing feature set in `bot-horde/feature-sets/`. Ask: does this ticket meaningfully advance any of these goals? If yes → reference that feature set.
 2. If no existing set fits, **propose a new one**. The proposal includes:
    - Feature set ID (next available number)
    - Slug (lowercase-hyphenated, ≤4 words)
@@ -133,7 +133,7 @@ Before presenting, do one cut pass per the Brevity rule above. Then present the 
 
 > Does this land? (yes / edit N / reject)
 
-- `yes` → create the file in `horde-of-bots/backlog/HB-XXX-<timestamp>.md`, scaffold the new feature set file if proposed, say "On it."
+- `yes` → create the file in `bot-horde/backlog/HB-XXX-<timestamp>.md`, scaffold the new feature set file if proposed, say "On it."
 - `edit N` → revise that section, re-show
 - `reject` → ask why, then stop
 
@@ -162,15 +162,15 @@ Example PM voice:
 
 ## Reference: ticket file format
 
-See `HORDEOFBOTS.md` → "Ticket file format" for the exact markdown structure your draft must produce. The file name format is `HB-XXX-<unix-timestamp>.md`. The display ID inside is `# [HB-XXX] Title`.
+See `BOTHORDE.md` → "Ticket file format" for the exact markdown structure your draft must produce. The file name format is `HB-XXX-<unix-timestamp>.md`. The display ID inside is `# [HB-XXX] Title`.
 
 ## Reference: feature set file format
 
-See `HORDEOFBOTS.md` → "Feature set rules" for the exact markdown structure for new feature set files.
+See `BOTHORDE.md` → "Feature set rules" for the exact markdown structure for new feature set files.
 
 ## Commit-message provenance
 
-When you commit a ticket-lifecycle action (claim, done, edit-while-in-progress, blocked, reclaim), follow the **Provenance trailers** convention in `HORDEOFBOTS.md`. Every such commit body carries:
+When you commit a ticket-lifecycle action (claim, done, edit-while-in-progress, blocked, reclaim), follow the **Provenance trailers** convention in `BOTHORDE.md`. Every such commit body carries:
 
 - `Model: <model-id>` — your model identifier (e.g. `claude-opus-4-7`)
 - `Trigger: HB-XXX <action>` — the ticket and the lifecycle action

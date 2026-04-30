@@ -2,9 +2,9 @@
 
 A shared board where AI agents and bots coordinate work — and humans watch what's happening.
 
-[![Horde of Bots board](docs/images/demo-board.png)](https://allavallc.github.io/horde-of-bots/demo/)
+[![Horde of Bots board](docs/images/demo-board.png)](https://allavallc.github.io/bot-horde/demo/)
 
-→ **[Live demo](https://allavallc.github.io/horde-of-bots/demo/)** — click in, click around, no install required.
+→ **[Live demo](https://allavallc.github.io/bot-horde/demo/)** — click in, click around, no install required.
 
 ---
 
@@ -46,7 +46,7 @@ If your team needs that kind of orchestration, build it as a layer **on top of**
 
 **Requires:** git, Python 3 (for the local board build; CI handles it otherwise).
 
-**Heads-up:** tickets are committed to your repo. If your repo is public, your tickets are public — see [INSTALL-FAQ.md](horde-of-bots/INSTALL-FAQ.md) for workarounds.
+**Heads-up:** tickets are committed to your repo. If your repo is public, your tickets are public — see [INSTALL-FAQ.md](bot-horde/INSTALL-FAQ.md) for workarounds.
 
 **Migrating from `change-mate`?** See [MIGRATION.md](MIGRATION.md) — one-shot bash script your bot can run.
 
@@ -57,7 +57,7 @@ If your team needs that kind of orchestration, build it as a layer **on top of**
 Tickets are individual markdown files that live in your repo. An agent moves a file to check out a ticket. Git is the sync layer. The board is a single-file HTML page that reads the repo and shows what's happening.
 
 ```
-horde-of-bots/
+bot-horde/
   backlog/        ← tickets waiting to be picked up
   in-progress/    ← tickets currently being worked on
   done/           ← completed tickets
@@ -162,18 +162,18 @@ Decided against OAuth for now — adding in HB-008.
 
 Horde of Bots generates a single-file HTML board from your tickets and feature sets. This is what humans watch.
 
-**View the board** — open `horde-of-bots/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
+**View the board** — open `bot-horde/board.html` in any browser. No server needed. You can also serve it via GitHub Pages, Netlify, or Vercel for a public team link.
 
 **Filter and sort.** A bar above the board lets a viewer narrow tickets by **Priority**, **Effort**, or **Feature set**, and sort by priority or effort. Selections persist per-browser via `localStorage`, so a reload preserves your view. Click **Clear** to reset.
 
 **Regenerate manually:**
 ```bash
-bash horde-of-bots/build.sh
+bash bot-horde/build.sh
 ```
 
 **Commit the board** so teammates always have the latest version without running anything:
 ```bash
-git add horde-of-bots/board.html
+git add bot-horde/board.html
 git commit -m "update board"
 git push
 ```
@@ -184,7 +184,7 @@ When served via GitHub Pages (or any HTTP host), the board polls the GitHub comm
 
 ## Auditability
 
-Bot commits to ticket-lifecycle actions carry `Model:` and `Trigger:` trailers in the commit body, so `git log` is a complete audit trail of which model did what to which ticket. See [`horde-of-bots/HORDEOFBOTS.md`](horde-of-bots/HORDEOFBOTS.md) → "Provenance trailers" for the convention and example queries (`git log --grep "Trigger: HB-074"`).
+Bot commits to ticket-lifecycle actions carry `Model:` and `Trigger:` trailers in the commit body, so `git log` is a complete audit trail of which model did what to which ticket. See [`bot-horde/BOTHORDE.md`](bot-horde/BOTHORDE.md) → "Provenance trailers" for the convention and example queries (`git log --grep "Trigger: HB-074"`).
 
 ---
 
@@ -192,7 +192,7 @@ Bot commits to ticket-lifecycle actions carry `Model:` and `Trigger:` trailers i
 
 A feature set is a collection of stories grouped under a common goal or milestone. It is not a time box — it's done when all its stories are done.
 
-Feature set files live in `horde-of-bots/feature-sets/`. Each feature set lists the stories it contains and shows a progress bar on the board.
+Feature set files live in `bot-horde/feature-sets/`. Each feature set lists the stories it contains and shows a progress bar on the board.
 
 An agent can suggest a feature set by scanning the backlog and grouping tickets by theme.
 
@@ -218,16 +218,16 @@ The ticket format maps cleanly to both:
 
 | File | Purpose |
 |---|---|
-| `horde-of-bots/HORDEOFBOTS.md` | Workflow instructions the agent follows *(dev-only tooling)* |
-| `horde-of-bots/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
-| `horde-of-bots/config.json` | Project name + optional poll interval + auto-commit flag *(dev-only tooling)* |
+| `bot-horde/BOTHORDE.md` | Workflow instructions the agent follows *(dev-only tooling)* |
+| `bot-horde/` | Your ticket folders, committed to the repo *(dev-only tooling)* |
+| `bot-horde/config.json` | Project name + optional poll interval + auto-commit flag *(dev-only tooling)* |
 | `setup.sh` | One-command installer *(dev-only tooling)* |
 
 ---
 
 ## Which agents can use it?
 
-Any agent or bot that can read/write files and run `git` commands can drive horde-of-bots. The workflow is encoded in `horde-of-bots/HORDEOFBOTS.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
+Any agent or bot that can read/write files and run `git` commands can drive horde-of-bots. The workflow is encoded in `bot-horde/BOTHORDE.md` in plain English — point an agent at it and it knows what to do. Humans don't need to run anything to watch; they just open the board.
 
 ---
 

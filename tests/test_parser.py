@@ -507,7 +507,7 @@ g
 
 def test_every_committed_ticket_parses_without_error():
     repo_root = Path(__file__).parent.parent
-    base = repo_root / "horde-of-bots"
+    base = repo_root / "bot-horde"
     if not base.exists():
         pytest.skip("horde-of-bots directory not present")
 

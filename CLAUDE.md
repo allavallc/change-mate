@@ -4,35 +4,35 @@
 
 If you're a Claude agent reading this at session start, check `~/.claude/projects/<this-project>/memory/MEMORY.md` for the resume-point memory — active tickets mid-flight (including pending pre-build interviews) live there.
 
-Authoritative workflow spec: `horde-of-bots/HORDEOFBOTS.md`. Read it before touching tickets.
+Authoritative workflow spec: `bot-horde/BOTHORDE.md`. Read it before touching tickets.
 
 ## Board
 
-- `horde-of-bots/board.html` is auto-rebuilt by GitHub Actions (`.github/workflows/horde-of-bots-rebuild-board.yml`) on every push to `main`; rebuild commit is gated by `auto_commit_board` in `horde-of-bots/config.json` (default `true`) — **never** run `bash horde-of-bots/build.sh` manually and commit its output
-- `horde-of-bots/build.sh` requires Python 3 (`py` / `python3` / `python`)
-- Local builds for verification are fine as long as you `git checkout -- horde-of-bots/board.html` before committing
+- `bot-horde/board.html` is auto-rebuilt by GitHub Actions (`.github/workflows/bot-horde-rebuild-board.yml`) on every push to `main`; rebuild commit is gated by `auto_commit_board` in `bot-horde/config.json` (default `true`) — **never** run `bash bot-horde/build.sh` manually and commit its output
+- `bot-horde/build.sh` requires Python 3 (`py` / `python3` / `python`)
+- Local builds for verification are fine as long as you `git checkout -- bot-horde/board.html` before committing
 - Tests run in GitHub Actions (`.github/workflows/test.yml`) on push + PR
 
 ## Config
 
-- `horde-of-bots/config.json` holds `project_name`, optional `poll_seconds` (default 30), optional `auto_commit_board` (default true)
+- `bot-horde/config.json` holds `project_name`, optional `poll_seconds` (default 30), optional `auto_commit_board` (default true)
 - Auth is GitHub — users authenticate with their own fine-grained PAT (`Contents: Read and write` on the repo). PAT lives in browser localStorage; never sent to any server other than `api.github.com`.
 - No backend. Add Story PUTs directly to GitHub Contents API. Live updates come from polling `GET /repos/{owner}/{repo}/commits/main`.
 
 ## Code layout
 
-- `horde-of-bots/HORDEOFBOTS.md` — workflow spec (single source of truth)
-- `horde-of-bots/INSTALL-FAQ.md` — install-time questions (CLAUDE.md import semantics, public-repo exposure, Pages caveats, PAT scope, polling, idempotency)
-- `horde-of-bots/UPDATING.md` — bot-readable update procedure (also embedded as a section in HORDEOFBOTS.md)
-- `horde-of-bots/MANIFEST.json` — version map of every managed file. Drives `HORDEOFBOTS_CHECK_UPDATES=yes` and `HORDEOFBOTS_UPGRADE_DOCS=yes` in setup.sh. Bump file's entry whenever you touch it.
+- `bot-horde/BOTHORDE.md` — workflow spec (single source of truth)
+- `bot-horde/INSTALL-FAQ.md` — install-time questions (CLAUDE.md import semantics, public-repo exposure, Pages caveats, PAT scope, polling, idempotency)
+- `bot-horde/UPDATING.md` — bot-readable update procedure (also embedded as a section in BOTHORDE.md)
+- `bot-horde/MANIFEST.json` — version map of every managed file. Drives `HORDEOFBOTS_CHECK_UPDATES=yes` and `HORDEOFBOTS_UPGRADE_DOCS=yes` in setup.sh. Bump file's entry whenever you touch it.
 - `skills/product-manager/SKILL.md` — PM skill (source; `setup.sh` installs to `~/.claude/skills/product-manager/`). Has a `version:` line in frontmatter; bump on behavior change.
-- `horde-of-bots/build.sh` — generates `horde-of-bots/board.html` (detects GitHub repo, embeds head SHA + poll config, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles). Includes the `hb-poll` script (polls GitHub commits API for live board updates; **disabled on `file://`** because the local file isn't auto-updated, so reload would just re-render the same stale snapshot), the per-agent walking-robot animation, and the filter/sort bar (single-select Priority/Effort/Feature-set + Sort dropdowns, state in `localStorage` under `hb_board_filters_v1`, applied per-column inside `render()` via `filterAndSort` — stable sort with original-index tie-break). Also: **`HORDEOFBOTS_DEMO=1` flag** — skips directory walk, loads tickets + feature_sets from `demo/data.json`, forces `demo_mode=true` (empty repo config so polling is off, hides the Add Story button), writes output to `demo/index.html`. Used to build the showcase demo at `<pages>/demo/`.
-- `horde-of-bots/build_lib.py` — `parse_ticket` + `parse_feature_set`
-- `horde-of-bots/backlog/|in-progress/|done/|blocked/|not-doing/` — ticket files (markdown, `HB-XXX-<timestamp>.md`)
-- `horde-of-bots/feature-sets/` — feature set files (`feature-set-XXX-<slug>.md`)
+- `bot-horde/build.sh` — generates `bot-horde/board.html` (detects GitHub repo, embeds head SHA + poll config, parses all tickets, emits HTML+CSS+JS, pre-render pass computes inverse blocked-by edges and warns on orphans/cycles). Includes the `hb-poll` script (polls GitHub commits API for live board updates; **disabled on `file://`** because the local file isn't auto-updated, so reload would just re-render the same stale snapshot), the per-agent walking-robot animation, and the filter/sort bar (single-select Priority/Effort/Feature-set + Sort dropdowns, state in `localStorage` under `hb_board_filters_v1`, applied per-column inside `render()` via `filterAndSort` — stable sort with original-index tie-break). Also: **`HORDEOFBOTS_DEMO=1` flag** — skips directory walk, loads tickets + feature_sets from `demo/data.json`, forces `demo_mode=true` (empty repo config so polling is off, hides the Add Story button), writes output to `demo/index.html`. Used to build the showcase demo at `<pages>/demo/`.
+- `bot-horde/build_lib.py` — `parse_ticket` + `parse_feature_set`
+- `bot-horde/backlog/|in-progress/|done/|blocked/|not-doing/` — ticket files (markdown, `HB-XXX-<timestamp>.md`)
+- `bot-horde/feature-sets/` — feature set files (`feature-set-XXX-<slug>.md`)
 - `tests/` — pytest suite (`test_parser.py` unit + `test_build.py` subprocess integration + `test_setup.py` setup.sh tests). No Supabase tests — that whole layer is gone.
 - `demo/data.json` — single fixture file holding all showcase content (16 tickets + 2 feature sets). Source for the public demo board. **Upstream-only — not in MANIFEST**, adopters never get this file.
-- `demo/index.html` — generated by `HORDEOFBOTS_DEMO=1 bash horde-of-bots/build.sh`. GitHub Pages serves it at `<pages>/demo/`. Auto-rebuilt by the same workflow that rebuilds the main board.
+- `demo/index.html` — generated by `HORDEOFBOTS_DEMO=1 bash bot-horde/build.sh`. GitHub Pages serves it at `<pages>/demo/`. Auto-rebuilt by the same workflow that rebuilds the main board.
 
 ## Ticket format — quick reference
 
@@ -45,22 +45,22 @@ Relationships: **write only one side of each edge.** The renderer infers the inv
 | Task | Command |
 |---|---|
 | Run tests locally | `py -m pytest -v` (or `pytest -v` on Linux/Mac) |
-| Build board locally (reset before commit) | `bash horde-of-bots/build.sh && git checkout -- horde-of-bots/board.html` |
+| Build board locally (reset before commit) | `bash bot-horde/build.sh && git checkout -- bot-horde/board.html` |
 | Install PM skill globally | `bash setup.sh` (part of setup flow) |
 
 ## Gotchas
 
-- Windows CRLF: `.gitattributes` enforces LF on `*.sh` / `*.py` / `*.yml`. If `test_build.py` fails locally with `$'\r'` errors, `sed -i 's/\r$//' horde-of-bots/build.sh` fixes it. CI is unaffected.
-- `horde-of-bots/build.sh` embedded JS uses `\\` escape convention (double-backslash in source → single-backslash in generated JS). Preserve this when editing regex patterns inside the JS block.
+- Windows CRLF: `.gitattributes` enforces LF on `*.sh` / `*.py` / `*.yml`. If `test_build.py` fails locally with `$'\r'` errors, `sed -i 's/\r$//' bot-horde/build.sh` fixes it. CI is unaffected.
+- `bot-horde/build.sh` embedded JS uses `\\` escape convention (double-backslash in source → single-backslash in generated JS). Preserve this when editing regex patterns inside the JS block.
 - Feature set IDs must be unique — two files both starting `feature-set-001-` will collide.
 - When you edit any file in `MANIFEST.json`'s `files` map, bump that file's value (ISO 8601 timestamp like `2026-04-27T19:35:00Z`) and update the top-level `updated`. Otherwise existing adopters won't detect the change.
-- `horde-of-bots/HORDEOFBOTS.md` is loaded by every Claude Code session via `@-import` — keep it lean. New verbose docs go in `INSTALL-FAQ.md` or `UPDATING.md` and get referenced from HORDEOFBOTS.md.
+- `bot-horde/BOTHORDE.md` is loaded by every Claude Code session via `@-import` — keep it lean. New verbose docs go in `INSTALL-FAQ.md` or `UPDATING.md` and get referenced from BOTHORDE.md.
 - The board is brutalist-styled per `plan/style-guide.md` (SimplifyOps system). Single rust accent (`#c4724a`); status uses dash patterns, not colors. Per-agent crab + robot colors are an intentional styleguide deviation documented in HB-060.
 - Card titles + feature-set chip + modal titles use `--read` (Atkinson Hyperlegible) — chosen for legibility over Big Shoulders' display-display weight. The masthead logo keeps Big Shoulders. Card layout (post-HB-069): feature-set chip top, HB-ID + Priority/Effort badges row, title, relationship chips, expanded body, crab worker in a bottom-left `card-footer`. The duplicate `.card-assignee` text is gone.
-- `setup.sh` detects local-only mode via `is_local_only_mode()` (checks `.gitignore` for an exact `horde-of-bots` / `horde-of-bots/` line). In that mode the rebuild-board workflow is skipped on install, prompted-for-removal if already present (`HORDEOFBOTS_REMOVE_WORKFLOW=yes|no`), and filtered out of the `HORDEOFBOTS_UPGRADE_DOCS` flow. The workflow itself is also self-defending: if `horde-of-bots/build.sh` is absent at run time it short-circuits cleanly instead of failing every push.
+- `setup.sh` detects local-only mode via `is_local_only_mode()` (checks `.gitignore` for an exact `horde-of-bots` / `bot-horde/` line). In that mode the rebuild-board workflow is skipped on install, prompted-for-removal if already present (`HORDEOFBOTS_REMOVE_WORKFLOW=yes|no`), and filtered out of the `HORDEOFBOTS_UPGRADE_DOCS` flow. The workflow itself is also self-defending: if `bot-horde/build.sh` is absent at run time it short-circuits cleanly instead of failing every push.
 
 ## Direction
 
 - **Files-and-git is the contract.** Markdown files are the data; git is the lock; CI rebuilds the board; the browser polls commits. The two non-files moving parts (GitHub Actions, the polling client) are intentionally minimal. Anyone with `cat` and `git` can read the whole system in an afternoon.
 - **Out of scope by design**: scheduler / work-request endpoint, capability matching / agent registry, lease & heartbeat daemon, CLI-as-primary-interface, semantic-similarity dedupe, cross-repo coordination, budget enforcement. Each of these would require a daemon and break the "any agent with a PAT can read+write the repo and you're done" promise. They live in a separate v3.0 exploration, not this repo. If a session asks you to add any of them, push back unless the user explicitly reopens that direction.
-- **In scope**: schema additions to the markdown ticket format (new fields, validators, conventions). They extend the contract without adding infrastructure. The active schema work lives in `horde-of-bots/feature-sets/feature-set-010-bot-native-schema.md`.
+- **In scope**: schema additions to the markdown ticket format (new fields, validators, conventions). They extend the contract without adding infrastructure. The active schema work lives in `bot-horde/feature-sets/feature-set-010-bot-native-schema.md`.

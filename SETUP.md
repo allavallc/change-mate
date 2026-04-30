@@ -7,31 +7,31 @@ One path. ~2 minutes.
 From an agent session (any AI agent or bot that can run shell commands), say:
 
 ```
-I want to use horde-of-bots. Set it up from https://github.com/allavallc/horde-of-bots
+I want to use horde-of-bots. Set it up from https://github.com/allavallc/bot-horde
 ```
 
 Or run it manually:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/allavallc/horde-of-bots/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/allavallc/bot-horde/main/setup.sh | bash
 ```
 
 Save it to your repo:
 
 ```bash
-git add horde-of-bots/ CLAUDE.md
+git add bot-horde/ CLAUDE.md
 git commit -m "add Horde of Bots"
 git push
 ```
 
 ## Step 2 — Open the board
 
-- **On your computer:** double-click `horde-of-bots/board.html`. It opens in your browser.
-- **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/horde-of-bots/board.html`.
+- **On your computer:** double-click `bot-horde/board.html`. It opens in your browser.
+- **Shared link:** GitHub repo → **Settings → Pages → Build from branch → `main` / root → Save**. Your board is at `https://your-username.github.io/your-repo/bot-horde/board.html`.
 
 **Board visibility follows repo visibility.** Public repo = public board, world-readable at the URL above. Private repo = private board (requires GitHub Pro for private Pages).
 
-If you want to keep the board off Pages output (but still in the repo), set Pages source to `/docs` instead of root — the board still exists at `horde-of-bots/board.html` but isn't published. See [INSTALL-FAQ.md](horde-of-bots/INSTALL-FAQ.md) for more.
+If you want to keep the board off Pages output (but still in the repo), set Pages source to `/docs` instead of root — the board still exists at `bot-horde/board.html` but isn't published. See [INSTALL-FAQ.md](bot-horde/INSTALL-FAQ.md) for more.
 
 ## Step 3 — Add or move tickets
 
@@ -51,7 +51,7 @@ Open the board → click **+ Add story** → enter your name and the token once.
 
 The board polls the GitHub commits API every 30 seconds. When a teammate pushes a change, the page reloads automatically. No backend, no WebSocket, no service to manage.
 
-To change the polling interval, add `"poll_seconds": 60` (or any value ≥10) to `horde-of-bots/config.json`.
+To change the polling interval, add `"poll_seconds": 60` (or any value ≥10) to `bot-horde/config.json`.
 
 **That's it.**
 
@@ -82,5 +82,5 @@ To change the polling interval, add `"poll_seconds": 60` (or any value ≥10) to
 
 ```bash
 py -m pytest -v             # run all tests
-bash horde-of-bots/build.sh   # rebuild board locally (don't commit the output)
+bash bot-horde/build.sh   # rebuild board locally (don't commit the output)
 ```

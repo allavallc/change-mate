@@ -1,4 +1,221 @@
-<!DOCTYPE html>
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+
+PYTHON=""
+for cmd in py python3 python; do
+  if command -v "$cmd" &>/dev/null && "$cmd" -c "import sys; assert sys.version_info[0] >= 3" 2>/dev/null; then
+    PYTHON="$cmd"
+    break
+  fi
+done
+if [ -z "$PYTHON" ]; then
+  echo "Error: Python 3 is required. Please install it and try again." >&2
+  exit 1
+fi
+
+"$PYTHON" "$(dirname "$0")/validate.py"
+
+"$PYTHON" - << 'PYEOF'
+import re, json, subprocess, sys, os
+from pathlib import Path
+from datetime import datetime, timezone
+UTC = timezone.utc
+
+# HORDEOFBOTS_DEMO=1 builds a static showcase board (see CM-070). Demo content
+# lives in a single JSON data file at demo/data.json (no parallel ticket tree).
+# Output goes to demo/index.html so GitHub Pages serves it cleanly at /demo/.
+DEMO_BUILD = os.environ.get("HORDEOFBOTS_DEMO", "").lower() in ("1", "true", "yes")
+
+ROOT = Path.cwd()
+CM = ROOT / "bot-horde"
+sys.path.insert(0, str(CM))
+from build_lib import parse_ticket, parse_feature_set
+
+# Read horde-of-bots config (project_name, ticket_prefix, poll_seconds, auto_commit_board, demo_mode, etc.)
+_cfg_path = CM / "config.json"
+_cfg = json.loads(_cfg_path.read_text()) if _cfg_path.exists() else {}
+PROJECT_NAME = _cfg.get('project_name', '')
+TICKET_PREFIX = _cfg.get('ticket_prefix', 'CM')
+DEMO_MODE = DEMO_BUILD or bool(_cfg.get('demo_mode', False))
+
+
+def detect_github_repo():
+    try:
+        res = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True, text=True, timeout=5
+        )
+        url = res.stdout.strip()
+        m = re.search(r"github\.com[:/](.+?)(?:\.git)?$", url)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return ""
+
+GITHUB_REPO = detect_github_repo()
+
+
+
+if DEMO_BUILD:
+    # Demo build: read tickets + feature_sets from a single static JSON file
+    # instead of walking a parallel ticket tree.
+    _demo_data = json.loads(Path("demo/data.json").read_text(encoding="utf-8"))
+    tickets = _demo_data.get("tickets", [])
+    feature_sets = _demo_data.get("feature_sets", [])
+else:
+    tickets = []
+    for folder, default_status in [
+        ("backlog", "open"),
+        ("in-progress", "in-progress"),
+        ("done", "done"),
+        ("blocked", "blocked"),
+        ("not-doing", "not-doing"),
+    ]:
+        d = CM / folder
+        if d.exists():
+            for f in sorted(d.glob(f"{TICKET_PREFIX}-*.md")):
+                t = parse_ticket(f, default_status, prefix=TICKET_PREFIX)
+                t["_file_path"] = str(f.relative_to(ROOT)).replace("\\", "/")
+                tickets.append(t)
+
+    feature_sets = []
+    sd = CM / "feature-sets"
+    if sd.exists():
+        for f in sorted(sd.glob("feature-set-*.md")):
+            feature_sets.append(parse_feature_set(f, prefix=TICKET_PREFIX))
+
+# HB-077: stale-claim rendering. For each in-progress ticket, find the timestamp
+# of the last commit that touched its file. JS uses this to render
+# "last commit Yh ago" and apply stale styling when both timestamps exceed
+# stale_after_hours. None when git lookup fails (fresh untracked tickets).
+def _last_commit_ct(rel_path):
+    try:
+        res = subprocess.run(
+            ["git", "log", "-1", "--format=%ct", "--", rel_path],
+            capture_output=True, text=True, timeout=5,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return int(res.stdout.strip())
+    except Exception:
+        pass
+    return None
+
+for t in tickets:
+    if t.get("status") == "in-progress" and t.get("_file_path"):
+        ct = _last_commit_ct(t["_file_path"])
+        if ct is not None:
+            t["last_commit_ct"] = ct
+
+# Strip internal-only fields before serializing to JS
+for t in tickets:
+    t.pop("_file_path", None)
+
+# Relationship analysis: inverse edge inference + orphan + cycle detection
+valid_ids = {t["id"] for t in tickets}
+by_id = {t["id"]: t for t in tickets}
+
+# Inverse blocked_by: if A blocks B, B.blocked_by_inferred += [A]
+inv = {tid: [] for tid in valid_ids}
+for t in tickets:
+    for target in t.get("blocks", []):
+        if target in inv:
+            inv[target].append(t["id"])
+
+for t in tickets:
+    explicit = set(t.get("blocked_by", []))
+    # Only include inferred if not already explicit (dedupe — avoid showing same edge twice)
+    t["blocked_by_inferred"] = [x for x in inv.get(t["id"], []) if x not in explicit]
+
+# Orphan detection — reference to a CM-ID that doesn't exist on disk
+for t in tickets:
+    for field in ("related", "blocks", "blocked_by", "split_from"):
+        for ref in t.get(field, []):
+            if ref not in valid_ids:
+                print(f"[warn] {t['id']} references {ref} in {field} but {ref} does not exist", file=sys.stderr)
+
+# Cycle detection on the blocks graph (A blocks B = A -> B)
+cycles_found = []
+visited = set()
+
+def _dfs_cycles(node, path, path_set):
+    for neighbor in by_id.get(node, {}).get("blocks", []):
+        if neighbor not in valid_ids:
+            continue
+        if neighbor in path_set:
+            idx = path.index(neighbor)
+            cycles_found.append(path[idx:])
+        elif neighbor not in visited:
+            _dfs_cycles(neighbor, path + [neighbor], path_set | {neighbor})
+    visited.add(node)
+
+for _tid in sorted(valid_ids):
+    if _tid not in visited:
+        _dfs_cycles(_tid, [_tid], {_tid})
+
+# Deduplicate cycles (same cycle can be discovered from different rotations)
+_seen_cycles = set()
+for _cycle in cycles_found:
+    if not _cycle:
+        continue
+    _min_idx = _cycle.index(min(_cycle))
+    _norm = tuple(_cycle[_min_idx:] + _cycle[:_min_idx])
+    if _norm not in _seen_cycles:
+        _seen_cycles.add(_norm)
+        _chain = " -> ".join(_norm) + f" -> {_norm[0]}"
+        print(f"[warn] cycle detected in blocks graph: {_chain}", file=sys.stderr)
+
+STALE_AFTER_HOURS = _cfg.get("stale_after_hours", 4)
+
+data_json = json.dumps(
+    {
+        "tickets": tickets,
+        "feature_sets": feature_sets,
+        "generated": datetime.now(UTC).isoformat(),
+        "demo_mode": DEMO_MODE,
+        "stale_after_hours": STALE_AFTER_HOURS,
+    },
+    indent=2
+)
+
+def detect_head_sha():
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5
+        )
+        return res.stdout.strip()
+    except Exception:
+        return ""
+
+
+POLL_SECONDS = _cfg.get("poll_seconds", 30)
+HEAD_SHA = detect_head_sha()
+
+# HB-078: pollSource config field. "github" = existing behavior; "none" = bail
+# in JS, show "static — refresh manually" indicator. Unknown values warn and
+# fall back to "github" so misconfig doesn't silently kill polling.
+_RAW_POLL_SOURCE = str(_cfg.get("pollSource", "github")).lower()
+if _RAW_POLL_SOURCE not in ("github", "none"):
+    print(
+        f"[warn] config.json pollSource='{_RAW_POLL_SOURCE}' is not recognized "
+        "(allowed: 'github' | 'none'); falling back to 'github'",
+        file=sys.stderr,
+    )
+    _RAW_POLL_SOURCE = "github"
+POLL_SOURCE = "none" if DEMO_MODE else _RAW_POLL_SOURCE
+
+poll_config_json = json.dumps({
+    # In demo mode the demo never changes — disable polling so the page never
+    # reloads on origin SHA changes.
+    "repo": "" if DEMO_MODE else GITHUB_REPO,
+    "poll_seconds": POLL_SECONDS,
+    "head_sha": HEAD_SHA,
+    "poll_source": POLL_SOURCE,
+})
+
+HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -688,431 +905,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   </div>
 </main>
 <script>
-var D = {
-  "tickets": [
-    {
-      "id": "HB-001",
-      "title": "Sign in with email + password",
-      "status": "done",
-      "priority": "Critical",
-      "effort": "M",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "claude",
-      "started": "2026-03-12",
-      "completed": "2026-03-15",
-      "goal": "Authenticated users can sign in with their email and password.",
-      "why": "Foundation for every other authenticated feature.",
-      "done_when": [
-        "POST /auth/login validates credentials against bcrypt-hashed passwords",
-        "A signed JWT is returned on success",
-        "Wrong password returns 401 with a generic error",
-        "Rate limit: 10 attempts per 15 minutes per IP"
-      ],
-      "notes": "JWT over sessions for stateless API compat. Refresh-token flow tracked in HB-003.",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-002",
-      "title": "User registration",
-      "status": "done",
-      "priority": "Critical",
-      "effort": "M",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "sarah",
-      "started": "2026-03-15",
-      "completed": "2026-03-18",
-      "goal": "A new user can create an account with email and password.",
-      "why": "Without registration there's no one to sign in.",
-      "done_when": [
-        "POST /auth/register accepts email + password + name",
-        "Password meets policy (min 12 chars, mixed case, digit)",
-        "Email uniqueness enforced at the DB layer",
-        "Account starts in pending state until verified"
-      ],
-      "notes": "Email verification handled separately in HB-007.",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-003",
-      "title": "Session management",
-      "status": "done",
-      "priority": "High",
-      "effort": "L",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "alex",
-      "started": "2026-03-18",
-      "completed": "2026-03-25",
-      "goal": "Issued JWTs are validated, refreshed, and revoked correctly.",
-      "why": "A robust auth surface needs more than 'is this token signed by us?' \u2014 refresh, revocation on logout, short-lived access tokens.",
-      "done_when": [
-        "Access tokens TTL = 15 min, refresh tokens TTL = 30 days",
-        "POST /auth/refresh exchanges a valid refresh token for a new access token",
-        "POST /auth/logout revokes the refresh token",
-        "Middleware rejects expired or revoked tokens with 401"
-      ],
-      "notes": "Used Redis for the revocation list \u2014 TTL self-prunes.",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-004",
-      "title": "Profile page",
-      "status": "done",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "ada",
-      "started": "2026-03-26",
-      "completed": "2026-03-28",
-      "goal": "Signed-in users can view and edit their profile.",
-      "why": "First place a user lands after sign-in. Empty state would suggest the app is broken.",
-      "done_when": [
-        "GET /profile returns the user's record",
-        "PATCH /profile accepts partial updates",
-        "Avatar upload accepts images <= 2MB",
-        "Email change triggers re-verification"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-005",
-      "title": "OAuth Google integration",
-      "status": "in-progress",
-      "priority": "High",
-      "effort": "L",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "claude",
-      "started": "2026-04-22 09:30",
-      "completed": "",
-      "goal": "Users can sign in with their Google account.",
-      "why": "Reduces signup friction by ~40%. Critical for mobile.",
-      "done_when": [
-        "'Continue with Google' button on the login page",
-        "OAuth 2.0 redirect flow implemented end-to-end",
-        "New Google sign-ins create a user record automatically",
-        "Existing accounts can link a Google identity from their profile"
-      ],
-      "notes": "PKCE flow, no client secret in the SPA.",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-006",
-      "title": "Password reset flow",
-      "status": "in-progress",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "sarah",
-      "started": "2026-04-23 11:00",
-      "completed": "",
-      "goal": "Users who forget their password can reset it via email.",
-      "why": "Top-3 support ticket category in any signed-in app.",
-      "done_when": [
-        "POST /auth/forgot accepts an email; always returns 200 (no leak)",
-        "Reset email contains a single-use token (24-hour expiry)",
-        "POST /auth/reset accepts token + new password",
-        "All active sessions revoked on successful reset"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-007",
-      "title": "Email verification",
-      "status": "in-progress",
-      "priority": "High",
-      "effort": "S",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "ada",
-      "started": "2026-04-25 14:20",
-      "completed": "",
-      "goal": "New registrations and email changes require a verification click.",
-      "why": "Stops typo'd or fraudulent registrations from blocking the email forever.",
-      "done_when": [
-        "Registration sends a verification email with a 24-hour token",
-        "Unverified accounts cannot post user-generated content",
-        "Email change re-issues verification",
-        "Resend-verification endpoint with rate limit"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-008",
-      "title": "Sign in with Apple",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "M",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Users can sign in with their Apple ID.",
-      "why": "Apple's Sign In with Apple is mandatory once we ship iOS with Google OAuth \u2014 App Store will reject the build otherwise.",
-      "done_when": [
-        "'Sign in with Apple' button on login + registration",
-        "Apple's 'hide my email' relay supported",
-        "Web (SIWA JS) and native iOS flows both work"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-009",
-      "title": "Two-factor authentication",
-      "status": "open",
-      "priority": "High",
-      "effort": "L",
-      "feature_set": "feature-set-001-user-authentication",
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Users can opt in to TOTP-based 2FA on their account.",
-      "why": "Required by enterprise prospects. Also a strong trust signal for security-conscious consumers.",
-      "done_when": [
-        "Profile setting to enable/disable 2FA",
-        "TOTP setup flow with QR code + recovery codes",
-        "Login enforces second factor when enabled",
-        "Recovery code can be used in place of TOTP (one-time)"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-010",
-      "title": "Basic search",
-      "status": "done",
-      "priority": "Critical",
-      "effort": "M",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "codex",
-      "started": "2026-03-29",
-      "completed": "2026-04-02",
-      "goal": "Users can run a full-text search across the catalog.",
-      "why": "The single most-used surface in any content-heavy app.",
-      "done_when": [
-        "GET /search?q=<query> returns top 25 hits",
-        "Postgres FTS index in place; query returns < 200ms p95",
-        "Empty query returns empty result set, not 400",
-        "Special characters escaped before being passed to ts_query"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-011",
-      "title": "Search filters",
-      "status": "done",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "claude",
-      "started": "2026-04-02",
-      "completed": "2026-04-06",
-      "goal": "Users can narrow search results by category, date range, and price range.",
-      "why": "A 25-result page without filters is just a wall.",
-      "done_when": [
-        "Query params: category, min_date, max_date, min_price, max_price",
-        "Filters compose (AND across types)",
-        "Filter chips render below the search bar",
-        "Result count updates live as filters change"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-012",
-      "title": "Search results pagination",
-      "status": "done",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "sarah",
-      "started": "2026-04-07",
-      "completed": "2026-04-09",
-      "goal": "Users can page through more than the first 25 search results.",
-      "why": "Limiting to 25 silently drops the long tail.",
-      "done_when": [
-        "cursor query param accepts an opaque token",
-        "Each page returns next_cursor (null when done)",
-        "'Load more' button advances the cursor without leaving the page"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-013",
-      "title": "Search ranking algorithm",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "L",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "alex",
-      "started": "2026-04-21 10:00",
-      "completed": "",
-      "goal": "Replace lexical-only ranking with a hybrid score (BM25 + recency + popularity).",
-      "why": "Pure lexical match buries fresh, popular content under stale-but-keyword-perfect matches.",
-      "done_when": [
-        "Score formula: 0.6 * BM25 + 0.25 * recency_decay + 0.15 * normalized_clicks",
-        "Recency decay half-life: 30 days",
-        "A/B harness on a 50/50 split",
-        "p95 query latency stays under 250ms"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-014",
-      "title": "Recommendation engine v2",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "XL",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "codex",
-      "started": "2026-04-15 09:00",
-      "completed": "",
-      "goal": "'You might also like' driven by collaborative filtering, replacing the rule-based recommender.",
-      "why": "Current recommender clicks at <2%. Industry benchmark for CF is 6-8%.",
-      "done_when": [
-        "ALS model trained nightly on 30-day interaction window",
-        "/recommendations/<user_id> returns top 10 unseen items",
-        "Cold-start fallback: trending in user's stated categories",
-        "CTR measured against v1 via A/B at 5%"
-      ],
-      "notes": "ALS over neural CF for v2 \u2014 trains in 8 min, deploys via batch export. Neural CF is overkill until catalog grows 10x.",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-015",
-      "title": "Search synonyms support",
-      "status": "open",
-      "priority": "Low",
-      "effort": "S",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "'sneakers' and 'trainers' return the same results. So do 'couch' and 'sofa'.",
-      "why": "Users from different markets use different words for the same thing.",
-      "done_when": [
-        "Synonym dictionary maintained as a config file",
-        "Postgres FTS configured with the synonym dictionary",
-        "Adding a synonym pair requires only a redeploy"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-016",
-      "title": "Trending searches widget",
-      "status": "open",
-      "priority": "Low",
-      "effort": "S",
-      "feature_set": "feature-set-002-search-and-discovery",
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "goal": "Empty search bar shows the top 5 most-run searches in the last 24 hours.",
-      "why": "Idle users with nothing to search for hit a dead end at the empty search page.",
-      "done_when": [
-        "Materialized view rebuilt every 15 minutes",
-        "'Trending' chips render below the search bar when input is empty",
-        "Clicking a chip pre-fills the search and runs it",
-        "Privacy: only show trending if at least 50 unique users issued the query"
-      ],
-      "notes": "",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "blocked_by_inferred": []
-    }
-  ],
-  "feature_sets": [
-    {
-      "id": "feature-set-001-user-authentication",
-      "name": "User authentication",
-      "goal": "Sign up, sign in, sign out, recover. Solid auth across email/password and major OAuth providers.",
-      "rationale": "Every app needs a login the user can trust. This set covers the full account lifecycle from registration through password recovery and third-party sign-in.",
-      "status": "In progress",
-      "tickets": [
-        "HB-001",
-        "HB-002",
-        "HB-003",
-        "HB-004",
-        "HB-005",
-        "HB-006",
-        "HB-007",
-        "HB-008",
-        "HB-009"
-      ]
-    },
-    {
-      "id": "feature-set-002-search-and-discovery",
-      "name": "Search and discovery",
-      "goal": "Help users find what they came for. Full-text search, filters, pagination, recommendations.",
-      "rationale": "A populated app is useful only if users can navigate it. This set covers the discovery surface: search, filtering, pagination, and the recommendation engine that surfaces what a user didn't know to look for.",
-      "status": "In progress",
-      "tickets": [
-        "HB-010",
-        "HB-011",
-        "HB-012",
-        "HB-013",
-        "HB-014",
-        "HB-015",
-        "HB-016"
-      ]
-    }
-  ],
-  "generated": "2026-04-30T16:33:12.216016+00:00",
-  "demo_mode": true,
-  "stale_after_hours": 4
-};
-var DEFAULT_REPO = "allavallc/bot-horde";
+var D = PLACEHOLDER_JSON;
+var DEFAULT_REPO = PLACEHOLDER_REPO;
 
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1127,7 +921,7 @@ function crabColor(name) {
 function crabBadge(name) {
   if (!name) return '';
   var c = crabColor(name);
-  return '<span class="card-crab" style="border-color:' + c + ';color:' + c + '">\u{1F980} ' + esc(name) + '</span>';
+  return '<span class="card-crab" style="border-color:' + c + ';color:' + c + '">\\u{1F980} ' + esc(name) + '</span>';
 }
 
 function robotSvg(name) {
@@ -1152,11 +946,11 @@ function priorityBadge(p) {
 
 function bulletOrProse(s) {
   if (!s) return '';
-  var lines = String(s).split(/\r?\n/);
-  var bullets = lines.filter(function(l) { return /^\s*-\s+/.test(l); });
+  var lines = String(s).split(/\\r?\\n/);
+  var bullets = lines.filter(function(l) { return /^\\s*-\\s+/.test(l); });
   if (bullets.length && bullets.length === lines.filter(function(l) { return l.trim(); }).length) {
     return '<ul class="dl-list">'
-      + bullets.map(function(l) { return '<li>' + esc(l.replace(/^\s*-\s+/, '')) + '</li>'; }).join('')
+      + bullets.map(function(l) { return '<li>' + esc(l.replace(/^\\s*-\\s+/, '')) + '</li>'; }).join('')
       + '</ul>';
   }
   return '<div class="dl-val pre">' + esc(s) + '</div>';
@@ -1171,7 +965,7 @@ function parseStartedDate(s) {
   if (!s) return null;
   var trimmed = String(s).trim();
   if (!trimmed) return null;
-  var bits = trimmed.split(/\s+/);
+  var bits = trimmed.split(/\\s+/);
   var datePart = bits[0];
   var timePart = bits[1] || '00:00';
   var iso = datePart + 'T' + (timePart.length === 5 ? timePart : '00:00') + ':00';
@@ -1193,13 +987,13 @@ function relativeAgo(date) {
 
 function buildRelChips(t) {
   var all = [];
-  (t.related || []).forEach(function(id) { all.push({kind:'related', id:id, prefix:'\u2194'}); });
-  (t.blocks || []).forEach(function(id) { all.push({kind:'blocks', id:id, prefix:'\u2192'}); });
+  (t.related || []).forEach(function(id) { all.push({kind:'related', id:id, prefix:'\\u2194'}); });
+  (t.blocks || []).forEach(function(id) { all.push({kind:'blocks', id:id, prefix:'\\u2192'}); });
   var bb = {};
   (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
   (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
-  Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\u2190'}); });
-  (t.split_from || []).forEach(function(id) { all.push({kind:'split_from', id:id, prefix:'\u21B0'}); });
+  Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\\u2190'}); });
+  (t.split_from || []).forEach(function(id) { all.push({kind:'split_from', id:id, prefix:'\\u21B0'}); });
   return all;
 }
 
@@ -1236,7 +1030,7 @@ function cardHTML(t, isRejected) {
   else if (t.status === 'open') statusClass = ' status-open';
   var fsChip = t.feature_set ? '<div class="card-fs" title="' + esc(t.feature_set) + '">' + esc(t.feature_set) + '</div>' : '';
   var failChip = (t.status === 'blocked' && t.failure_mode)
-    ? '<div class="card-rels"><span class="card-rel card-rel-failure" title="Failure mode: ' + esc(t.failure_mode) + '">\u26A0 ' + esc(t.failure_mode) + '</span></div>'
+    ? '<div class="card-rels"><span class="card-rel card-rel-failure" title="Failure mode: ' + esc(t.failure_mode) + '">\\u26A0 ' + esc(t.failure_mode) + '</span></div>'
     : '';
   var failureRow = (t.status === 'blocked' && t.failure_mode)
     ? '<div><div class="dl-label">Failure mode</div><div class="dl-val">' + esc(t.failure_mode) + '</div></div>'
@@ -1258,7 +1052,7 @@ function cardHTML(t, isRejected) {
     if (claimedDate) parts.push('claimed ' + relativeAgo(claimedDate));
     if (lastCommitDate) parts.push('last commit ' + relativeAgo(lastCommitDate));
     if (parts.length) {
-      staleMeta = '<div class="card-stale-meta">' + parts.join(' \u00b7 ') + '</div>';
+      staleMeta = '<div class="card-stale-meta">' + parts.join(' \\u00b7 ') + '</div>';
     }
     if (claimedDate && lastCommitDate
         && (nowMs - claimedDate.getTime()) > thresholdMs
@@ -1565,8 +1359,8 @@ function closeSetupModal() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
-var TICKET_PREFIX = "HB";
-var TICKET_ID_RE = new RegExp('^' + TICKET_PREFIX + '-(\\d+)$');
+var TICKET_PREFIX = PLACEHOLDER_TICKET_PREFIX;
+var TICKET_ID_RE = new RegExp('^' + TICKET_PREFIX + '-(\\\\d+)$');
 function nextTicketIdNumber() {
   var max = 0;
   D.tickets.forEach(function(t) {
@@ -1614,7 +1408,7 @@ function renderTicketMarkdown(ticketId, payload) {
     lines.push(payload.notes.trim());
     lines.push('');
   }
-  return lines.join('\n');
+  return lines.join('\\n');
 }
 
 async function createStory() {
@@ -1724,7 +1518,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "892a459bb928f7c16739955c7b282e071172a0cb", "poll_source": "none"}</script>
+<script id="hb-poll-config" type="application/json">PLACEHOLDER_POLL_CONFIG</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
@@ -1741,7 +1535,7 @@ document.addEventListener('keydown', function(e) {
       var nDot = indicator.querySelector('.hb-live-dot');
       var nLabel = indicator.querySelector('.hb-live-label');
       if (nDot) nDot.style.background = 'var(--ink-dim)';
-      if (nLabel) nLabel.textContent = 'static \u2014 refresh manually';
+      if (nLabel) nLabel.textContent = 'static \\u2014 refresh manually';
     }
     return;
   }
@@ -1898,4 +1692,15 @@ document.addEventListener('keydown', function(e) {
 </div>
 <div id="toast"></div>
 </body>
-</html>
+</html>"""
+
+output = (HTML
+    .replace("PLACEHOLDER_JSON", data_json)
+    .replace("PLACEHOLDER_REPO", json.dumps(GITHUB_REPO))
+    .replace("PLACEHOLDER_POLL_CONFIG", poll_config_json)
+    .replace("PLACEHOLDER_TICKET_PREFIX", json.dumps(TICKET_PREFIX)))
+out_path = Path("demo/index.html") if DEMO_BUILD else Path("bot-horde/board.html")
+out_path.parent.mkdir(parents=True, exist_ok=True)
+out_path.write_text(output, encoding="utf-8")
+print(f"{out_path} updated")
+PYEOF

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-change-mate/memory/feedback_always_list.md C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-horde-of-bots/memory/)",
+      "Bash(cp C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-change-mate/memory/feedback_no_overengineering.md C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-horde-of-bots/memory/)",
+      "Bash(cp C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-change-mate/memory/feedback_surface_scope_cuts.md C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-horde-of-bots/memory/)",
+      "Bash(cp 'C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-change-mate/*.jsonl' C:/Users/adefilippo/.claude/projects/C--Users-adefilippo-MyDocuments-17-projects-horde-of-bots/)"
+    ]
+  }
+}

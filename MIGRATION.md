@@ -2,16 +2,16 @@
 
 The project formerly known as `change-mate` is now **Horde of Bots**. Tickets use the `HB-` prefix instead of `CM-`. The install command, ticket format, board UI, and workflow are unchanged — only names changed. This note tells your bot (or you) how to migrate an existing repo.
 
-The repo URL `github.com/allavallc/change-mate` auto-redirects to `github.com/allavallc/horde-of-bots`, so existing clones still pull and push. Update remotes when convenient.
+The repo URL `github.com/allavallc/change-mate` auto-redirects to `github.com/allavallc/bot-horde`, so existing clones still pull and push. Update remotes when convenient.
 
 ## What changed
 
 | Before | After |
 |---|---|
-| `change-mate/` directory | `horde-of-bots/` |
-| `CHANGEMATE.md` | `HORDEOFBOTS.md` |
+| `change-mate/` directory | `bot-horde/` |
+| `CHANGEMATE.md` | `BOTHORDE.md` |
 | `CM-NNN` ticket IDs | `HB-NNN` (numbers preserved) |
-| `.github/workflows/change-mate-rebuild-board.yml` | `horde-of-bots-rebuild-board.yml` |
+| `.github/workflows/change-mate-rebuild-board.yml` | `bot-horde-rebuild-board.yml` |
 | `CHANGEMATE_*` env vars (UPGRADE_DOCS, REMOVE_WORKFLOW, etc.) | `HORDEOFBOTS_*` |
 | `localStorage` keys (`cm_github_token`, etc.) | `hb_*` (one-time re-auth in browser) |
 
@@ -31,13 +31,13 @@ set -e
 
 # 1. Rename directory + managed filenames
 [ -d change-mate ] && git mv change-mate horde-of-bots
-[ -f horde-of-bots/CHANGEMATE.md ] && git mv horde-of-bots/CHANGEMATE.md horde-of-bots/HORDEOFBOTS.md
+[ -f bot-horde/CHANGEMATE.md ] && git mv bot-horde/CHANGEMATE.md bot-horde/BOTHORDE.md
 [ -f .github/workflows/change-mate-rebuild-board.yml ] && \
-  git mv .github/workflows/change-mate-rebuild-board.yml .github/workflows/horde-of-bots-rebuild-board.yml
+  git mv .github/workflows/change-mate-rebuild-board.yml .github/workflows/bot-horde-rebuild-board.yml
 
 # 2. Rename ticket files CM-NNN → HB-NNN (numbers preserved)
 for d in backlog in-progress done blocked not-doing; do
-  for f in horde-of-bots/$d/CM-*.md; do
+  for f in bot-horde/$d/CM-*.md; do
     [ -f "$f" ] || continue
     git mv "$f" "$(echo "$f" | sed 's|/CM-|/HB-|')"
   done
@@ -49,23 +49,23 @@ find horde-of-bots -name '*.md' -exec \
 
 # 4. Update CLAUDE.md import line (if present)
 [ -f CLAUDE.md ] && \
-  sed -i 's|@change-mate/CHANGEMATE\.md|@horde-of-bots/HORDEOFBOTS.md|g' CLAUDE.md
+  sed -i 's|@change-mate/CHANGEMATE\.md|@bot-horde/BOTHORDE.md|g' CLAUDE.md
 
 # 5. Update .gitignore (if running in local-only mode) and deploy-ignores
 for f in .gitignore .dockerignore .gcloudignore .vercelignore; do
-  [ -f "$f" ] && sed -i 's|^change-mate/\?$|horde-of-bots/|' "$f"
+  [ -f "$f" ] && sed -i 's|^change-mate/\?$|bot-horde/|' "$f"
 done
 
 # 6. Pull the new build.sh + spec + workflow + supporting files
-for f in build.sh build_lib.py config.json HORDEOFBOTS.md INSTALL-FAQ.md UPDATING.md MANIFEST.json; do
-  curl -fsSL "https://raw.githubusercontent.com/allavallc/horde-of-bots/main/horde-of-bots/$f" \
-       -o "horde-of-bots/$f"
+for f in build.sh build_lib.py config.json BOTHORDE.md INSTALL-FAQ.md UPDATING.md MANIFEST.json; do
+  curl -fsSL "https://raw.githubusercontent.com/allavallc/bot-horde/main/bot-horde/$f" \
+       -o "bot-horde/$f"
 done
-curl -fsSL "https://raw.githubusercontent.com/allavallc/horde-of-bots/main/.github/workflows/horde-of-bots-rebuild-board.yml" \
-     -o ".github/workflows/horde-of-bots-rebuild-board.yml"
+curl -fsSL "https://raw.githubusercontent.com/allavallc/bot-horde/main/.github/workflows/bot-horde-rebuild-board.yml" \
+     -o ".github/workflows/bot-horde-rebuild-board.yml"
 
 # 7. (Optional) update local git remote — GitHub auto-redirects, but cleaner this way
-git remote set-url origin https://github.com/allavallc/horde-of-bots.git 2>/dev/null || true
+git remote set-url origin https://github.com/allavallc/bot-horde.git 2>/dev/null || true
 ```
 
 ## Verify
@@ -76,8 +76,8 @@ find . -name 'CM-[0-9]*.md' | head
 #   (expected: empty)
 
 # Build works
-bash horde-of-bots/build.sh
-#   (expected: "horde-of-bots/board.html updated")
+bash bot-horde/build.sh
+#   (expected: "bot-horde/board.html updated")
 
 # Tests pass (if you have the test suite)
 py -m pytest tests/ -v
@@ -97,14 +97,14 @@ CI rebuilds the board on push.
 ## After migration
 
 - **Browser**: open the board, click "+ Add story". You'll be re-prompted for your GitHub PAT once (storage key renamed `cm_github_token` → `hb_github_token`). Saved filter state also resets once.
-- **Custom `config.json`**: if you had customized `project_name` in `horde-of-bots/config.json`, step 6 above overwrote it. Re-set your value:
+- **Custom `config.json`**: if you had customized `project_name` in `bot-horde/config.json`, step 6 above overwrote it. Re-set your value:
   ```json
   {
     "project_name": "Your Project Name",
     "ticket_prefix": "HB"
   }
   ```
-- **Future renames are now config-driven**: change `project_name` and `ticket_prefix` in `horde-of-bots/config.json` and the masthead + parser pick it up. The directory name and `HORDEOFBOTS.md` filename are still hard-coded — accept the tradeoff or fork.
+- **Future renames are now config-driven**: change `project_name` and `ticket_prefix` in `bot-horde/config.json` and the masthead + parser pick it up. The directory name and `BOTHORDE.md` filename are still hard-coded — accept the tradeoff or fork.
 
 ## Rollback
 
@@ -119,4 +119,4 @@ If you've already pushed and need to revert: `git revert` the migration commit a
 
 ## Questions
 
-File an issue at https://github.com/allavallc/horde-of-bots/issues.
+File an issue at https://github.com/allavallc/bot-horde/issues.

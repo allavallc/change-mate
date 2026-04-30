@@ -1,10 +1,10 @@
-"""Tests for horde-of-bots/validate.py — one fixture per error class."""
+"""Tests for bot-horde/validate.py — one fixture per error class."""
 import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "horde-of-bots"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "bot-horde"))
 from validate import validate
 
 
@@ -14,8 +14,8 @@ FOLDERS = ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-se
 
 
 def make_repo(tmp_path, prefix="HB"):
-    """Build a minimal horde-of-bots/ tree under tmp_path."""
-    base = tmp_path / "horde-of-bots"
+    """Build a minimal bot-horde/ tree under tmp_path."""
+    base = tmp_path / "bot-horde"
     base.mkdir()
     for f in FOLDERS:
         (base / f).mkdir()
@@ -307,7 +307,7 @@ g
 
 
 def test_no_horde_of_bots_dir_returns_empty(tmp_path):
-    """If horde-of-bots/ doesn't exist, validator no-ops cleanly."""
+    """If bot-horde/ doesn't exist, validator no-ops cleanly."""
     errors, count = validate(tmp_path)
     assert errors == []
     assert count == 0
