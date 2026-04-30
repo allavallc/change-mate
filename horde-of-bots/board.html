@@ -248,6 +248,17 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 .card.status-done       { border: 2px solid var(--accent); }
 .card.status-inprogress { position: relative; border: 1px dashed var(--accent); }
 .card.status-blocked    { border: 1px dotted var(--accent); }
+.card.stale-claim { outline: 1px dotted var(--accent); outline-offset: 2px; }
+.card-stale-meta {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  margin-left: auto;
+  text-align: right;
+  text-transform: uppercase;
+}
+.card.stale-claim .card-stale-meta { color: var(--accent); }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .card-id {
   font-family: var(--read);
@@ -712,42 +723,6 @@ var D = {
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
       "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
-      "id": "HB-077",
-      "title": "Stale-claim render on in-progress cards",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-011-board-honesty",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "claude",
-      "started": "2026-04-30 12:00",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "goal": "Render staleness metadata on in-progress cards: how long since the ticket was claimed, and how long since the file was last committed.",
-      "why": "A card sits in `in-progress/` looking alive even after the bot crashes. Today only Notes or git history reveal whether work is actually moving. Surfacing both timestamps on the card lets humans and reclaiming bots judge staleness at a glance \u2014 without adding a heartbeat field bots have to remember to update.",
-      "done_when": [
-        "In-progress cards show two relative timestamps in the footer: `claimed Xh ago` (from `Started` field) and `last commit Yh ago` (from `git log -1 --format=%ct -- <ticket-file>`)",
-        "Build script computes both at render time; no schema change",
-        "If `last commit > stale_after_hours` AND `claimed > stale_after_hours`, card gets a dotted accent border to flag possible-stale",
-        "`stale_after_hours` configurable in `config.json`, default 4",
-        "Missing `Started`: omit the \"claimed Xh\" string, no error",
-        "pytest: render with recent commit (no stale styling), with old commit (stale styling), with missing Started (no claimed display)"
-      ],
-      "desired_output": "A user opens the board, sees one in-progress card flagged \"claimed 18h ago \u00b7 last commit 14h ago\" with a dotted border, and immediately knows to check whether the bot is still alive.",
-      "success_signals": "- A stale claim gets reclaimed in the rollout window because someone noticed the flag\n- Bots can read the same render output to decide whether to attempt reclaim",
-      "failure_signals": "- All cards trip the threshold because real work outpaces 4h \u2014 tune up\n- Last-commit timestamp doesn't reflect work-in-progress (long-running task pre-commit) \u2014 acceptable; the heuristic is \"are you visibly committing?\", and bots that don't commit appear stale",
-      "tests": "- Render with file commit >4h ago \u2192 stale border class in HTML\n- Render with recent commit \u2192 no stale class\n- Missing `Started` \u2192 no \"claimed Xh\" string in card",
-      "notes": "- No new schema field. Render-only computation from existing data + git log.\n- 4h threshold is a guess; configurable, no code change to tune.\n- **Out of scope**: any reclaim automation. Render-only.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2149,6 +2124,42 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "HB-077",
+      "title": "Stale-claim render on in-progress cards",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-011-board-honesty",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 12:00",
+      "completed": "2026-04-30",
+      "verification": "tests-passed",
+      "failure_mode": "",
+      "goal": "Render staleness metadata on in-progress cards: how long since the ticket was claimed, and how long since the file was last committed.",
+      "why": "A card sits in `in-progress/` looking alive even after the bot crashes. Today only Notes or git history reveal whether work is actually moving. Surfacing both timestamps on the card lets humans and reclaiming bots judge staleness at a glance \u2014 without adding a heartbeat field bots have to remember to update.",
+      "done_when": [
+        "In-progress cards show two relative timestamps in the footer: `claimed Xh ago` (from `Started` field) and `last commit Yh ago` (from `git log -1 --format=%ct -- <ticket-file>`)",
+        "Build script computes both at render time; no schema change",
+        "If `last commit > stale_after_hours` AND `claimed > stale_after_hours`, card gets a dotted accent border to flag possible-stale",
+        "`stale_after_hours` configurable in `config.json`, default 4",
+        "Missing `Started`: omit the \"claimed Xh\" string, no error",
+        "pytest: render with recent commit (no stale styling), with old commit (stale styling), with missing Started (no claimed display)"
+      ],
+      "desired_output": "A user opens the board, sees one in-progress card flagged \"claimed 18h ago \u00b7 last commit 14h ago\" with a dotted border, and immediately knows to check whether the bot is still alive.",
+      "success_signals": "- A stale claim gets reclaimed in the rollout window because someone noticed the flag\n- Bots can read the same render output to decide whether to attempt reclaim",
+      "failure_signals": "- All cards trip the threshold because real work outpaces 4h \u2014 tune up\n- Last-commit timestamp doesn't reflect work-in-progress (long-running task pre-commit) \u2014 acceptable; the heuristic is \"are you visibly committing?\", and bots that don't commit appear stale",
+      "tests": "- Render with file commit >4h ago \u2192 stale border class in HTML\n- Render with recent commit \u2192 no stale class\n- Missing `Started` \u2192 no \"claimed Xh\" string in card",
+      "notes": "- No new schema field. Render-only computation from existing data + git log.\n- 4h threshold is a guess; configurable, no code change to tune.\n- **Out of scope**: any reclaim automation. Render-only.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "HB-079",
       "title": "Post-rename test infrastructure cleanup",
       "status": "done",
@@ -2625,8 +2636,9 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T16:00:58.363614+00:00",
-  "demo_mode": false
+  "generated": "2026-04-30T16:04:43.392099+00:00",
+  "demo_mode": false,
+  "stale_after_hours": 4
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
 
@@ -2681,6 +2693,30 @@ function bulletOrProse(s) {
 function detailRow(label, content) {
   if (!content) return '';
   return '<div><div class="dl-label">' + label + '</div>' + content + '</div>';
+}
+
+function parseStartedDate(s) {
+  if (!s) return null;
+  var trimmed = String(s).trim();
+  if (!trimmed) return null;
+  var bits = trimmed.split(/\s+/);
+  var datePart = bits[0];
+  var timePart = bits[1] || '00:00';
+  var iso = datePart + 'T' + (timePart.length === 5 ? timePart : '00:00') + ':00';
+  var dt = new Date(iso);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function relativeAgo(date) {
+  if (!date) return '';
+  var diffMs = Date.now() - date.getTime();
+  if (diffMs < 60 * 1000) return 'just now';
+  var mins = Math.floor(diffMs / (60 * 1000));
+  if (mins < 60) return mins + 'm ago';
+  var hours = Math.floor(mins / 60);
+  if (hours < 48) return hours + 'h ago';
+  var days = Math.floor(hours / 24);
+  return days + 'd ago';
 }
 
 function buildRelChips(t) {
@@ -2739,10 +2775,32 @@ function cardHTML(t, isRejected) {
   var verifRow = (t.status === 'done' && t.verification)
     ? '<div><div class="dl-label">Verification</div><div class="dl-val">' + esc(t.verification) + '</div></div>'
     : '';
+  var staleMeta = '';
+  var staleClass = '';
+  if (t.status === 'in-progress') {
+    var claimedDate = parseStartedDate(t.started);
+    var lastCommitDate = t.last_commit_ct ? new Date(t.last_commit_ct * 1000) : null;
+    var thresholdMs = (D.stale_after_hours || 4) * 60 * 60 * 1000;
+    var nowMs = Date.now();
+    var parts = [];
+    if (claimedDate) parts.push('claimed ' + relativeAgo(claimedDate));
+    if (lastCommitDate) parts.push('last commit ' + relativeAgo(lastCommitDate));
+    if (parts.length) {
+      staleMeta = '<div class="card-stale-meta">' + parts.join(' \u00b7 ') + '</div>';
+    }
+    if (claimedDate && lastCommitDate
+        && (nowMs - claimedDate.getTime()) > thresholdMs
+        && (nowMs - lastCommitDate.getTime()) > thresholdMs) {
+      staleClass = ' stale-claim';
+    }
+  }
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
   var relDetail = relDetailHTML(relChips);
-  var footer = t.assigned_to ? '<div class="card-footer">' + crabBadge(t.assigned_to) + '</div>' : '';
+  var footerInner = '';
+  if (t.assigned_to) footerInner += crabBadge(t.assigned_to);
+  if (staleMeta) footerInner += staleMeta;
+  var footer = footerInner ? '<div class="card-footer">' + footerInner + '</div>' : '';
 
   var goal  = t.goal  ? '<div><div class="dl-label">Goal</div><div class="dl-val">'  + esc(t.goal)  + '</div></div>' : '';
   var why   = t.why   ? '<div><div class="dl-label">Why</div><div class="dl-val">'   + esc(t.why)   + '</div></div>' : '';
@@ -2763,7 +2821,7 @@ function cardHTML(t, isRejected) {
 
   var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
-  return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
+  return '<div class="card' + rejClass + statusClass + staleClass + '" onclick="toggleCard(this)">'
     + robot
     + fsChip
     + '<div class="card-top">'
@@ -3194,7 +3252,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "bcc0253938552d9efd218252a4aa6536ea46fafb"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "8cf1e0237ad7ef20cd6dda4e19d2a758fb1d0645"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
