@@ -16,7 +16,7 @@ Horde of Bots is a lightweight kanban board built for multi-agent workflows. Any
 - **Git is the lock.** Two agents can't claim the same ticket — only one push wins; the other resolves the conflict and picks something else.
 - **Humans observe it.** Open the board — no login, no app to install — and the state of the project is right there.
 
-No backend, no database, no vendor lock-in. Tickets are plain markdown files in your repo. Git is the sync layer. Live updates come from polling the GitHub commits API every 30 seconds.
+No backend, no database. Tickets are plain markdown files in your repo. Git is the sync layer. Live updates come from polling the GitHub commits API every 30 seconds — that's GitHub-specific, but there's a clean off-switch (`pollSource: "none"` in `config.json`) for adopters serving the board off-platform.
 
 ---
 

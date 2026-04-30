@@ -254,6 +254,72 @@ def test_build_generates_html(tmp_path):
     assert "Ship login, registration, and password reset" in html
 
 
+def test_build_with_pollsource_none_renders_static_indicator(tmp_path):
+    """HB-078: pollSource=none changes JS branch and indicator copy."""
+    for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
+
+    write(tmp_path, "horde-of-bots/backlog/CM-001-1000.md", FULL_TICKET)
+    write(
+        tmp_path,
+        "horde-of-bots/config.json",
+        '{"project_name": "Test", "ticket_prefix": "CM", "pollSource": "none"}',
+    )
+
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
+
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
+    assert '"poll_source": "none"' in html
+    assert "refresh manually" in html
+
+
+def test_build_invalid_pollsource_falls_back_with_warning(tmp_path):
+    """HB-078: unknown pollSource warns and falls back to 'github'."""
+    for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
+
+    write(tmp_path, "horde-of-bots/backlog/CM-001-1000.md", FULL_TICKET)
+    write(
+        tmp_path,
+        "horde-of-bots/config.json",
+        '{"project_name": "Test", "ticket_prefix": "CM", "pollSource": "gitlab"}',
+    )
+
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
+
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "pollSource='gitlab' is not recognized" in result.stderr
+
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
+    assert '"poll_source": "github"' in html
+
+
+def test_build_default_pollsource_is_github(tmp_path):
+    """HB-078: when pollSource is absent, default 'github' applies."""
+    for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
+
+    write(tmp_path, "horde-of-bots/backlog/CM-001-1000.md", FULL_TICKET)
+
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "validate.py", tmp_path / "horde-of-bots" / "validate.py")
+
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
+    assert '"poll_source": "github"' in html
+
+
 def test_build_renders_stale_claim_machinery(tmp_path):
     """HB-077: stale-claim render plumbing is wired into the generated HTML."""
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):

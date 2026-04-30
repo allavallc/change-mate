@@ -148,6 +148,18 @@ curl -fsSL https://raw.githubusercontent.com/allavallc/horde-of-bots/main/setup.
 
 ---
 
+## Non-GitHub hosts
+
+**Does the board work on GitLab / Gitea / self-hosted git?**
+Yes for read-only use; not for live updates. Tickets are still markdown files in your repo, the board still renders, agents can still claim and complete tickets via filesystem moves and `git push`. What's GitHub-specific is the *live update* layer (the board polls `api.github.com/repos/.../commits/main`) and the *Add Story* button (it writes via the GitHub Contents API).
+
+**To run the board off-GitHub:** set `"pollSource": "none"` in `horde-of-bots/config.json`. The masthead then shows `static — refresh manually` instead of pretending to be live, and no fetch attempts go out. You'll need to refresh the page yourself when teammates push.
+
+**Will multi-backend polling (GitLab/Gitea API) ever land?**
+Out of scope for the project as currently scoped. The reads (commits API) and writes (Contents API) are both GitHub-shaped; supporting another backend means re-implementing both ends. Not on the roadmap; if you need it, a separate fork or layer-on-top is the right shape.
+
+---
+
 ## Python requirement
 
 **Does Horde of Bots need Python?**

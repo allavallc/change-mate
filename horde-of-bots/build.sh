@@ -192,12 +192,27 @@ def detect_head_sha():
 
 POLL_SECONDS = _cfg.get("poll_seconds", 30)
 HEAD_SHA = detect_head_sha()
+
+# HB-078: pollSource config field. "github" = existing behavior; "none" = bail
+# in JS, show "static — refresh manually" indicator. Unknown values warn and
+# fall back to "github" so misconfig doesn't silently kill polling.
+_RAW_POLL_SOURCE = str(_cfg.get("pollSource", "github")).lower()
+if _RAW_POLL_SOURCE not in ("github", "none"):
+    print(
+        f"[warn] config.json pollSource='{_RAW_POLL_SOURCE}' is not recognized "
+        "(allowed: 'github' | 'none'); falling back to 'github'",
+        file=sys.stderr,
+    )
+    _RAW_POLL_SOURCE = "github"
+POLL_SOURCE = "none" if DEMO_MODE else _RAW_POLL_SOURCE
+
 poll_config_json = json.dumps({
     # In demo mode the demo never changes — disable polling so the page never
     # reloads on origin SHA changes.
     "repo": "" if DEMO_MODE else GITHUB_REPO,
     "poll_seconds": POLL_SECONDS,
     "head_sha": HEAD_SHA,
+    "poll_source": POLL_SOURCE,
 })
 
 HTML = """<!DOCTYPE html>
@@ -805,7 +820,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="logo">horde of <span>bots</span></span>
     <span id="hb-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
-      <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+      <span class="hb-live-dot" style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
       <span class="hb-live-label">polling</span>
     </span>
   </div>
@@ -1509,6 +1524,22 @@ document.addEventListener('keydown', function(e) {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
   // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
   var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
+  var indicator = document.getElementById('hb-live-indicator');
+
+  // HB-078: pollSource: "none" — board is served somewhere off-GitHub (or
+  // bundled offline). Surface that explicitly instead of attempting fetches
+  // that will fail.
+  if (cfg.poll_source === 'none') {
+    if (indicator) {
+      indicator.style.display = 'flex';
+      var nDot = indicator.querySelector('.hb-live-dot');
+      var nLabel = indicator.querySelector('.hb-live-label');
+      if (nDot) nDot.style.background = 'var(--ink-dim)';
+      if (nLabel) nLabel.textContent = 'static \\u2014 refresh manually';
+    }
+    return;
+  }
+
   if (!cfg.repo) {
     console.warn('[hb-poll] no repo detected, polling disabled');
     return;
@@ -1521,7 +1552,6 @@ document.addEventListener('keydown', function(e) {
   }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
-  var indicator = document.getElementById('hb-live-indicator');
   if (indicator) {
     indicator.style.display = 'flex';
     var label = indicator.querySelector('.hb-live-label');

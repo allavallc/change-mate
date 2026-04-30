@@ -526,6 +526,8 @@ In progress | Complete | Paused
 
 The board updates from git, full stop. Whenever an agent pushes a ticket move, the GitHub Actions workflow rebuilds `horde-of-bots/board.html`. Browsers viewing the board poll the GitHub commits API every ~30 seconds; if the commit SHA on `main` changes, the page reloads. There is no broadcast layer, no WebSocket, no database. Push-to-board latency is bounded by the polling interval.
 
+**Polling is GitHub-specific.** Live updates work on GitHub-hosted repos (via the GitHub commits API). For adopters running the board off-platform — GitLab, Gitea, self-hosted git, or a static export — set `"pollSource": "none"` in `horde-of-bots/config.json`. The masthead then shows `static — refresh manually` instead of pretending the page is live. Reads (Add Story) still go through the GitHub Contents API, so non-GitHub adopters use the board read-only.
+
 ---
 
 ## Board rules
