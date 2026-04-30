@@ -346,6 +346,23 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 }
 .filter-clear:hover { color: var(--ink); border-color: var(--ink-dim); }
 .filter-clear:focus { outline: none; border-color: var(--accent); color: var(--ink); }
+.filter-toggle {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.filter-toggle:hover { color: var(--ink); border-color: var(--ink-dim); }
+.filter-toggle:focus { outline: none; border-color: var(--accent); color: var(--ink); }
+.filter-toggle.active { color: var(--accent); border-color: var(--accent); }
 @media (max-width: 560px) {
   .filter-bar { gap: 12px; }
   .filter-select { min-width: 120px; }
@@ -797,6 +814,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
           <option value="effort-desc">Effort large &rarr; small</option>
         </select>
       </div>
+      <button class="filter-toggle" id="flt-ready-only" type="button" onclick="toggleReadyOnly()" title="Hide tickets whose Blocked-by references aren't done yet">Ready only</button>
       <button class="filter-clear" id="flt-clear" type="button" onclick="clearFilters()">Clear</button>
     </div>
     <button class="btn-toggle-rejected" id="btn-rejected" onclick="toggleRejected()" style="display:none">Show rejected</button>
@@ -1056,7 +1074,7 @@ function render() {
 
 // --- filter/sort (CM-069) ---
 var FILTER_KEY = 'hb_board_filters_v1';
-var FILTER_DEFAULT = { priority: '', effort: '', featureset: '', sort: 'default' };
+var FILTER_DEFAULT = { priority: '', effort: '', featureset: '', sort: 'default', readyOnly: false };
 var FILTER_STATE = Object.assign({}, FILTER_DEFAULT);
 var PRIO_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
 var EFF_ORDER = { xs: 1, s: 2, m: 3, l: 4, xl: 5 };
@@ -1065,7 +1083,9 @@ function loadFilterState() {
   try {
     var saved = JSON.parse(localStorage.getItem(FILTER_KEY) || '{}');
     Object.keys(FILTER_DEFAULT).forEach(function(k) {
-      if (typeof saved[k] === 'string') FILTER_STATE[k] = saved[k];
+      var def = FILTER_DEFAULT[k];
+      var val = saved[k];
+      if (typeof val === typeof def) FILTER_STATE[k] = val;
     });
   } catch (e) { /* ignore */ }
 }
@@ -1079,6 +1099,16 @@ function passesFilter(t) {
   if (FILTER_STATE.priority && (t.priority || '').toLowerCase() !== FILTER_STATE.priority.toLowerCase()) return false;
   if (FILTER_STATE.effort   && (t.effort   || '').toUpperCase() !== FILTER_STATE.effort.toUpperCase()) return false;
   if (FILTER_STATE.featureset && t.feature_set !== FILTER_STATE.featureset) return false;
+  if (FILTER_STATE.readyOnly && (t.status === 'open' || t.status === 'in-progress')) {
+    var bb = t.blocked_by || [];
+    if (bb.length > 0) {
+      var allDone = bb.every(function(id) {
+        var ref = D.tickets.find(function(x) { return x.id === id; });
+        return ref && ref.status === 'done';
+      });
+      if (!allDone) return false;
+    }
+  }
   return true;
 }
 function sortTickets(list) {
@@ -1112,6 +1142,7 @@ function syncDropdownsFromState() {
   var e = document.getElementById('flt-effort');     if (e) e.value = FILTER_STATE.effort;
   var f = document.getElementById('flt-featureset'); if (f) f.value = FILTER_STATE.featureset;
   var s = document.getElementById('flt-sort');       if (s) s.value = FILTER_STATE.sort;
+  var r = document.getElementById('flt-ready-only'); if (r) r.classList.toggle('active', !!FILTER_STATE.readyOnly);
 }
 function readDropdownsToState() {
   FILTER_STATE.priority   = document.getElementById('flt-priority').value;
@@ -1133,6 +1164,14 @@ function clearFilters() {
   Object.assign(FILTER_STATE, FILTER_DEFAULT);
   saveFilterState();
   syncDropdownsFromState();
+  updateClearButtonVisibility();
+  render();
+}
+function toggleReadyOnly() {
+  FILTER_STATE.readyOnly = !FILTER_STATE.readyOnly;
+  saveFilterState();
+  var btn = document.getElementById('flt-ready-only');
+  if (btn) btn.classList.toggle('active', FILTER_STATE.readyOnly);
   updateClearButtonVisibility();
   render();
 }

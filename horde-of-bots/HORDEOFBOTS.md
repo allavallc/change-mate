@@ -234,15 +234,16 @@ git log --grep "Trigger: .* done"  # all completion events
 
 When the user picks a ticket from the backlog:
 
-1. Move the file from `horde-of-bots/backlog/` to `horde-of-bots/in-progress/` (keep the full filename including timestamp)
-3. Add `assigned_to` and `started` fields at the top of the file
-4. Run:
+1. **Check `Blocked by` first.** If the ticket lists any IDs in `**Blocked by**`, verify each is in `horde-of-bots/done/`. If any blocker is unfinished, do not claim — surface the dependency to the user instead. (The board's "Ready only" filter does this same check on the rendering side; the validator in HB-076 enforces it at done-transition time.)
+2. Move the file from `horde-of-bots/backlog/` to `horde-of-bots/in-progress/` (keep the full filename including timestamp)
+4. Add `assigned_to` and `started` fields at the top of the file
+5. Run:
    ```
    git add horde-of-bots/
    git commit -m "HB-XXX: in progress"
    git push
    ```
-5. If the push fails with a conflict, do not show raw git output. Instead say:
+6. If the push fails with a conflict, do not show raw git output. Instead say:
 
 ```
 ⚠️  HB-XXX was just picked up by someone else.

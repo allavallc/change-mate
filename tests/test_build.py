@@ -253,6 +253,29 @@ def test_build_generates_html(tmp_path):
     assert "Ship login, registration, and password reset" in html
 
 
+def test_build_renders_ready_only_filter_toggle(tmp_path):
+    """HB-075: the Ready-only filter toggle is wired into the filter bar."""
+    for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
+        (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
+
+    write(tmp_path, "horde-of-bots/backlog/CM-001-1000.md", FULL_TICKET)
+
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build.sh", tmp_path / "horde-of-bots" / "build.sh")
+    shutil.copy(REPO_ROOT / "horde-of-bots" / "build_lib.py", tmp_path / "horde-of-bots" / "build_lib.py")
+
+    result = subprocess.run(["bash", "horde-of-bots/build.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+    html = (tmp_path / "horde-of-bots" / "board.html").read_text(encoding="utf-8")
+    # Toggle button is in the filter bar
+    assert 'id="flt-ready-only"' in html
+    assert 'Ready only' in html
+    assert 'toggleReadyOnly()' in html
+    # Filter logic + state plumbing
+    assert 'readyOnly' in html
+    assert 'toggleReadyOnly' in html
+
+
 def test_build_hides_rejected_button_when_no_not_doing_tickets(tmp_path):
     for folder in ("backlog", "in-progress", "done", "blocked", "not-doing", "feature-sets"):
         (tmp_path / "horde-of-bots" / folder).mkdir(parents=True)
