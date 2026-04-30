@@ -603,7 +603,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="logo">horde of <span>bots</span></span>
     <span id="hb-live-indicator" style="display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-dim);">
-      <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+      <span class="hb-live-dot" style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
       <span class="hb-live-label">polling</span>
     </span>
   </div>
@@ -1108,7 +1108,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T16:05:02.280593+00:00",
+  "generated": "2026-04-30T16:07:49.353361+00:00",
   "demo_mode": true,
   "stale_after_hours": 4
 };
@@ -1724,12 +1724,28 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "71fd1870131a20ff1100e63b85d2952cb1cd523e"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "4b79e54949b024a4a013c61a23576b5b15e237df", "poll_source": "none"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
   // Auth: user's PAT from localStorage (also used by Add Story); falls back to anonymous for public repos.
   var cfg = JSON.parse(document.getElementById('hb-poll-config').textContent);
+  var indicator = document.getElementById('hb-live-indicator');
+
+  // HB-078: pollSource: "none" — board is served somewhere off-GitHub (or
+  // bundled offline). Surface that explicitly instead of attempting fetches
+  // that will fail.
+  if (cfg.poll_source === 'none') {
+    if (indicator) {
+      indicator.style.display = 'flex';
+      var nDot = indicator.querySelector('.hb-live-dot');
+      var nLabel = indicator.querySelector('.hb-live-label');
+      if (nDot) nDot.style.background = 'var(--ink-dim)';
+      if (nLabel) nLabel.textContent = 'static \u2014 refresh manually';
+    }
+    return;
+  }
+
   if (!cfg.repo) {
     console.warn('[hb-poll] no repo detected, polling disabled');
     return;
@@ -1742,7 +1758,6 @@ document.addEventListener('keydown', function(e) {
   }
 
   var intervalSec = Math.max(10, parseInt(cfg.poll_seconds, 10) || 30);
-  var indicator = document.getElementById('hb-live-indicator');
   if (indicator) {
     indicator.style.display = 'flex';
     var label = indicator.querySelector('.hb-live-label');
