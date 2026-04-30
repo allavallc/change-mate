@@ -54,6 +54,47 @@ skill_version() {
   [ -f "$1" ] && grep -E '^version:' "$1" | head -1 | sed 's/^version:[[:space:]]*//' | tr -d '\r' || true
 }
 
+install_skill() {
+  # install_skill <slug> <env-var-name>
+  # e.g. install_skill product-manager BOTHORDE_UPGRADE_SKILL
+  local slug="$1"
+  local upgrade_env="$2"
+  local skill_dir="$HOME/.claude/skills/$slug"
+  local skill_file="$skill_dir/SKILL.md"
+  local tmp_skill
+  tmp_skill=$(mktemp 2>/dev/null || echo "/tmp/bh-skill-$$")
+
+  mkdir -p "$skill_dir"
+
+  if curl -fsSL "$REPO_URL/skills/$slug/SKILL.md" -o "$tmp_skill" 2>/dev/null; then
+    local upstream_version local_version local_label upstream_label
+    upstream_version=$(skill_version "$tmp_skill")
+    if [ -f "$skill_file" ]; then
+      local_version=$(skill_version "$skill_file")
+      if [ "$local_version" = "$upstream_version" ] && [ -n "$local_version" ]; then
+        echo -e "${YELLOW}~${NC} $slug skill v$local_version already installed"
+      else
+        local_label="${local_version:-untagged}"
+        upstream_label="${upstream_version:-untagged}"
+        echo ""
+        echo -e "${YELLOW}skill upgrade available:${NC} $slug local v$local_label → upstream v$upstream_label"
+        if prompt_yn "upgrade now? [y/N]" "$upgrade_env" no; then
+          cp "$tmp_skill" "$skill_file"
+          echo -e "${GREEN}✓${NC} upgraded $slug skill to v$upstream_label"
+        else
+          echo "kept v$local_label — re-run setup.sh or set $upgrade_env=yes to upgrade"
+        fi
+      fi
+    else
+      cp "$tmp_skill" "$skill_file"
+      echo -e "${GREEN}✓${NC} installed $slug skill v${upstream_version:-untagged} to $skill_file"
+    fi
+    rm -f "$tmp_skill"
+  else
+    echo -e "${YELLOW}~${NC} could not fetch $slug skill (offline?), skipping"
+  fi
+}
+
 py_cmd() {
   for cmd in py python3 python; do
     if command -v "$cmd" >/dev/null 2>&1 && "$cmd" -c "import sys; assert sys.version_info[0] >= 3" 2>/dev/null; then
@@ -222,41 +263,10 @@ fi
 
 chmod +x bot-horde/build.sh 2>/dev/null || true
 
-# --- product-manager skill (global, ~/.claude/skills/) --------------------
+# --- skills (global, ~/.claude/skills/) -----------------------------------
 
-SKILL_DIR="$HOME/.claude/skills/product-manager"
-SKILL_FILE="$SKILL_DIR/SKILL.md"
-TMP_SKILL=$(mktemp 2>/dev/null || echo "/tmp/cm-skill-$$")
-
-mkdir -p "$SKILL_DIR"
-
-# Always fetch the upstream copy to compare versions.
-if curl -fsSL "$REPO_URL/skills/product-manager/SKILL.md" -o "$TMP_SKILL" 2>/dev/null; then
-  UPSTREAM_VERSION=$(skill_version "$TMP_SKILL")
-  if [ -f "$SKILL_FILE" ]; then
-    LOCAL_VERSION=$(skill_version "$SKILL_FILE")
-    if [ "$LOCAL_VERSION" = "$UPSTREAM_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
-      echo -e "${YELLOW}~${NC} product-manager skill v$LOCAL_VERSION already installed"
-    else
-      LOCAL_LABEL="${LOCAL_VERSION:-untagged}"
-      UPSTREAM_LABEL="${UPSTREAM_VERSION:-untagged}"
-      echo ""
-      echo -e "${YELLOW}skill upgrade available:${NC} local v$LOCAL_LABEL → upstream v$UPSTREAM_LABEL"
-      if prompt_yn "upgrade now? [y/N]" BOTHORDE_UPGRADE_SKILL no; then
-        cp "$TMP_SKILL" "$SKILL_FILE"
-        echo -e "${GREEN}✓${NC} upgraded product-manager skill to v$UPSTREAM_LABEL"
-      else
-        echo "kept v$LOCAL_LABEL — re-run setup.sh or set BOTHORDE_UPGRADE_SKILL=yes to upgrade"
-      fi
-    fi
-  else
-    cp "$TMP_SKILL" "$SKILL_FILE"
-    echo -e "${GREEN}✓${NC} installed product-manager skill v${UPSTREAM_VERSION:-untagged} to $SKILL_FILE"
-  fi
-  rm -f "$TMP_SKILL"
-else
-  echo -e "${YELLOW}~${NC} could not fetch product-manager skill (offline?), skipping"
-fi
+install_skill product-manager   BOTHORDE_UPGRADE_SKILL
+install_skill acceptance-tester BOTHORDE_UPGRADE_SKILL_TESTER
 
 # --- CLAUDE.md import (wrapped in markers) --------------------------------
 

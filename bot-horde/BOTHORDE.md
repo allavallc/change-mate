@@ -368,6 +368,8 @@ The field is orthogonal to status: status describes workflow stage; verification
 
 Tickets with `**User-facing**: yes` route through `in-review/` between `in-progress/` and `done/`. A *separate* tester (human or bot — never the bot that built the ticket) reads the dev bot's `## How to test` instructions, executes them, and either approves (→ `done/`) or rejects (→ `in-progress/`).
 
+Bot-tester entry point: the `acceptance-tester` skill (installed by `setup.sh` to `~/.claude/skills/acceptance-tester/`) walks a bot through the steps below, including the tester ≠ dev bot identity check. Humans testing manually follow the same steps without the skill.
+
 ### Handoff (dev bot, end of work)
 
 1. Populate `## How to test` with concrete reproducible steps a tester can execute (URLs, commands, click-paths, expected observations)
