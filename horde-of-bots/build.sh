@@ -928,6 +928,12 @@ function cardHTML(t, isRejected) {
   else if (t.status === 'blocked') statusClass = ' status-blocked';
   else if (t.status === 'open') statusClass = ' status-open';
   var fsChip = t.feature_set ? '<div class="card-fs" title="' + esc(t.feature_set) + '">' + esc(t.feature_set) + '</div>' : '';
+  var failChip = (t.status === 'blocked' && t.failure_mode)
+    ? '<div class="card-rels"><span class="card-rel card-rel-failure" title="Failure mode: ' + esc(t.failure_mode) + '">\\u26A0 ' + esc(t.failure_mode) + '</span></div>'
+    : '';
+  var failureRow = (t.status === 'blocked' && t.failure_mode)
+    ? '<div><div class="dl-label">Failure mode</div><div class="dl-val">' + esc(t.failure_mode) + '</div></div>'
+    : '';
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
   var relDetail = relDetailHTML(relChips);
@@ -950,7 +956,7 @@ function cardHTML(t, isRejected) {
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var detail = failureRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
     + robot
@@ -960,6 +966,7 @@ function cardHTML(t, isRejected) {
     + '<div class="badges">' + priorityBadge(t.priority) + (t.effort ? '<span class="badge b-effort">' + esc(t.effort) + '</span>' : '') + '</div>'
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
+    + failChip
     + relFace
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
     + footer

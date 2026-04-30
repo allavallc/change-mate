@@ -267,9 +267,19 @@ Want to pick one of these instead?
 
 ## Blocking a ticket
 
-When a ticket cannot proceed, move it to `horde-of-bots/blocked/` and set the `**Blocked by**` field to the HB-IDs preventing progress. The `Blocked by` value is **required** for tickets in the blocked folder — a blocked ticket with no explanation of what is blocking it is just an orphan.
+When a ticket cannot proceed, move it to `horde-of-bots/blocked/` and set both the `**Blocked by**` field (which HB-IDs are preventing progress) and the `**Failure mode**` field (the *category* of blocker). Both are **required** for tickets in the blocked folder — a blocked ticket with no explanation of what's blocking it is just an orphan.
 
-1. Update the file: set status to `blocked`, set `**Blocked by**: HB-XXX[, HB-YYY]`
+`**Failure mode**` allowed values:
+
+- **`failed-tests`** — code or build is failing; another bot can rerun once the cause is fixed.
+- **`merge-conflict`** — git state needs human or bot resolution before work continues.
+- **`context-exceeded`** — current bot ran out of context; another bot can pick up.
+- **`unmet-dep`** — depends on another ticket that isn't `done/` yet.
+- **`needs-human`** — design decision, ambiguity, or scope question only the user can answer.
+
+Steps:
+
+1. Update the file: set status to `blocked`, set `**Blocked by**: HB-XXX[, HB-YYY]`, set `**Failure mode**: <one of the values above>`
 2. Move the file from its current folder to `horde-of-bots/blocked/`
 3. Run:
    ```
@@ -278,7 +288,7 @@ When a ticket cannot proceed, move it to `horde-of-bots/blocked/` and set the `*
    git push
    ```
 
-When the blocker is resolved, move the ticket back to `in-progress/` (or `backlog/` if work has not started), clear the `Blocked by` field, and commit.
+When the blocker is resolved, move the ticket back to `in-progress/` (or `backlog/` if work has not started), clear both the `Blocked by` and `Failure mode` fields, and commit.
 
 ---
 
@@ -372,6 +382,7 @@ HB-004-1736847392.md
 - **Assigned to**: <name or blank>
 - **Started**: <YYYY-MM-DD HH:MM or blank>
 - **Completed**: <YYYY-MM-DD or blank>
+- **Failure mode**: <failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human> (required when ticket is in `blocked/`, blank otherwise)
 - **Rejected by**: <name or blank>
 - **Rejected**: <YYYY-MM-DD or blank>
 - **Rejection reason**: <reason or blank>
@@ -409,7 +420,7 @@ Unit tests, integration tests, or manual QA the developer should produce before 
 Decisions made, alternatives considered and rejected (with reasons), gotchas, out-of-scope items pushed to other tickets.
 ```
 
-**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, or the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`) must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
+**Backward compatibility**: legacy tickets without `## Desired output`, `## Success signals`, `## Failure signals`, `## Tests`, `**Feature set**`, the relationship fields (`**Related**`, `**Blocks**`, `**Blocked by**`, `**Split from**`), or `**Failure mode**` must still parse and render. Do not rewrite historical tickets to force the new format unless explicitly asked.
 
 ## Relationship fields
 

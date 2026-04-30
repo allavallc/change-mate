@@ -393,6 +393,67 @@ g
     assert t["split_from"] == ["CM-005", "CM-006"]
 
 
+# ---------- failure_mode field ----------
+
+
+def test_parse_failure_mode_set(tmp_path):
+    body = """# [CM-700] Blocked ticket
+
+- **Status**: blocked
+- **Blocked by**: CM-005
+- **Failure mode**: needs-human
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-700.md", body)
+    t = parse_ticket(p, "blocked")
+    assert t["failure_mode"] == "needs-human"
+
+
+def test_parse_failure_mode_each_allowed_value(tmp_path):
+    for value in ("failed-tests", "merge-conflict", "context-exceeded", "unmet-dep", "needs-human"):
+        body = f"""# [CM-701] Each value
+
+- **Status**: blocked
+- **Failure mode**: {value}
+
+## Goal
+g
+"""
+        p = write(tmp_path, f"CM-701-{value}.md", body)
+        t = parse_ticket(p, "blocked")
+        assert t["failure_mode"] == value
+
+
+def test_parse_failure_mode_default_empty(tmp_path):
+    body = """# [CM-702] No failure mode
+
+- **Status**: backlog
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-702.md", body)
+    t = parse_ticket(p, "backlog")
+    assert t["failure_mode"] == ""
+
+
+def test_parse_failure_mode_unknown_value_passes_through(tmp_path):
+    """Parser is permissive — value validation belongs in HB-076 validator."""
+    body = """# [CM-703] Unknown value
+
+- **Status**: blocked
+- **Failure mode**: something-weird
+
+## Goal
+g
+"""
+    p = write(tmp_path, "CM-703.md", body)
+    t = parse_ticket(p, "blocked")
+    assert t["failure_mode"] == "something-weird"
+
+
 # ---------- regression: every committed ticket parses ----------
 
 
