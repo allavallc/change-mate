@@ -60,6 +60,7 @@ def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
         "success_signals": "",
         "failure_signals": "",
         "tests": "",
+        "how_to_test": "",
         "notes": "",
         "rejected_by": "",
         "rejected": "",
@@ -110,6 +111,8 @@ def parse_ticket(path, default_status, prefix=DEFAULT_PREFIX):
             t["failure_signals"] = block
         elif section == "tests":
             t["tests"] = block
+        elif section == "how_to_test":
+            t["how_to_test"] = block
         elif section == "notes":
             t["notes"] = block
 

@@ -428,6 +428,11 @@ Unit tests, integration tests, or manual QA the developer should produce before 
 - test case 1
 - test case 2
 
+## How to test
+Reproducible steps a tester (human or bot) executes when the ticket sits in `in-review/`. Required when `User-facing: yes`, optional otherwise. Free-form: URLs, commands, click-paths, expected observations.
+- step 1
+- expected result
+
 ## Notes
 Decisions made, alternatives considered and rejected (with reasons), gotchas, out-of-scope items pushed to other tickets.
 ```

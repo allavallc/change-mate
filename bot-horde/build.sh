@@ -1086,12 +1086,13 @@ function cardHTML(t, isRejected) {
   var success = detailRow('Success signals', bulletOrProse(t.success_signals));
   var failure = detailRow('Failure signals', bulletOrProse(t.failure_signals));
   var tests   = detailRow('Tests', bulletOrProse(t.tests));
+  var howToTest = t.how_to_test ? '<div><div class="dl-label">How to test</div><div class="dl-val pre">' + esc(t.how_to_test) + '</div></div>' : '';
   var notes = t.notes ? '<div><div class="dl-label">Notes</div><div class="dl-val pre">' + esc(t.notes) + '</div></div>' : '';
   var rejection = (t.rejection_reason && t.rejection_reason.toLowerCase() !== 'n/a')
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + howToTest + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + staleClass + '" onclick="toggleCard(this)">'
     + robot

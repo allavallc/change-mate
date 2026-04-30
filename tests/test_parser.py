@@ -224,6 +224,43 @@ g
     assert t["user_facing"] == "no"
 
 
+def test_parse_how_to_test_section(tmp_path):
+    body = """# [BH-310] HTT
+
+- **Status**: in-review
+- **Priority**: Medium
+- **Effort**: S
+- **User-facing**: yes
+
+## Goal
+g
+
+## How to test
+- open localhost:8000
+- click the new button
+- expect: modal appears
+"""
+    p = write(tmp_path, "BH-310-1000.md", body)
+    t = parse_ticket(p, "in-review", prefix="BH")
+    assert "open localhost:8000" in t["how_to_test"]
+    assert "modal appears" in t["how_to_test"]
+
+
+def test_parse_how_to_test_default_empty(tmp_path):
+    body = """# [BH-311] HTT missing
+
+- **Status**: open
+- **Priority**: Medium
+- **Effort**: S
+
+## Goal
+g
+"""
+    p = write(tmp_path, "BH-311-1000.md", body)
+    t = parse_ticket(p, "open", prefix="BH")
+    assert t["how_to_test"] == ""
+
+
 # ---------- parse_feature_set ----------
 
 
