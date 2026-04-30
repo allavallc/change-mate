@@ -208,12 +208,27 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 **Trailer format:**
 
 - `Model:` — the model identifier of the agent that made the commit (e.g. `claude-opus-4-7`, `claude-sonnet-4-6`, `gpt-5-codex`).
-- `Trigger:` — `BH-XXX <action>` where action ∈ `claim | done | edit | blocked | reclaim`.
+- `Trigger:` — `BH-XXX <action>` where action ∈ `claim | done | edit | blocked | reclaim | in-review | accepted | rejected`.
 - `Co-Authored-By:` — existing convention, unchanged.
+
+**Acceptance-loop actions (fs-013):**
+
+- `in-review` — dev bot handed the ticket off to `bot-horde/in-review/` for tester signoff.
+- `accepted` — tester approved the work; ticket moved to `done/` with `Verification: human-reviewed` or `bot-reviewed`.
+- `rejected` — tester rejected the work; ticket moved back to `in-progress/` with `Rejected by` / `Rejection reason` populated.
+
+Acceptance and rejection commits should also carry a one-line summary in the subject for quick git-log scanning:
+
+```
+BH-090: rejected — step 3 returned 500, expected 302
+
+Model: claude-opus-4-7
+Trigger: BH-090 rejected
+```
 
 **When trailers apply:**
 
-- **Required** on commits that move a ticket through its lifecycle (claim, done, edit-while-in-progress, blocked, reclaim).
+- **Required** on commits that move a ticket through its lifecycle (claim, done, edit-while-in-progress, blocked, reclaim, in-review, accepted, rejected).
 - **Optional** on non-ticket commits — docs sweeps, build-script edits, MANIFEST bumps, etc. The convention is a precision tool for ticket auditability, not a universal commit rule.
 
 **Multi-ticket commits:** prefer splitting into one-ticket-per-commit. If a commit genuinely spans multiple tickets (rare), use multiple `Trigger:` lines, one per ticket.
@@ -223,9 +238,11 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 **Querying the audit:**
 
 ```bash
-git log --grep "Trigger: BH-074"   # full lifecycle of one ticket
-git log --grep "Model: claude-"    # everything done by Claude models
-git log --grep "Trigger: .* done"  # all completion events
+git log --grep "Trigger: BH-074"        # full lifecycle of one ticket
+git log --grep "Model: claude-"         # everything done by Claude models
+git log --grep "Trigger: .* done"       # all completion events
+git log --grep "Trigger: .* accepted"   # tester sign-offs (loop output)
+git log --grep "Trigger: .* rejected"   # rejected work — what came back
 ```
 
 ---
