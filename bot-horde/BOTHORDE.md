@@ -341,6 +341,8 @@ Why a new ticket rather than picking one of the originals? Two reasons: it surfa
 
 ## When work is complete
 
+> **`User-facing: yes`?** Skip this section and go to [Acceptance loop](#acceptance-loop) below — user-facing tickets pause in `in-review/` for a tester pass before they reach `done/`.
+
 1. Tell the user what was done in plain language
 2. Move the ticket file from `bot-horde/in-progress/` to `bot-horde/done/`
 3. Update the file — set status to `done`, add completion date, set `**Verification**` (default `bot-claimed`; use `tests-passed` if you ran the tests yourself and they passed), add notes about decisions made or issues encountered
@@ -358,7 +360,55 @@ Why a new ticket rather than picking one of the originals? Two reasons: it surfa
 - **`bot-reviewed`** — a *separate* bot reviewed the work and signed off. Higher again.
 - **`human-reviewed`** — a human eyeballed the diff and approved. Highest trust.
 
-The field is orthogonal to status: status describes workflow stage; verification describes trust level on the contents of a done ticket. Bots producing the work set `bot-claimed` or `tests-passed`. Reviewers (human or bot) update the field to the next level after review — this is how a downstream agent can tell which "done" tickets it can trust without re-reading the diff.
+The field is orthogonal to status: status describes workflow stage; verification describes trust level on the contents of a done ticket. Bots producing the work on `User-facing: no` tickets self-set `bot-claimed` or `tests-passed`. The `bot-reviewed` and `human-reviewed` values are produced exclusively by the acceptance loop below — a dev bot must not self-set them on `User-facing: yes` work.
+
+---
+
+## Acceptance loop
+
+Tickets with `**User-facing**: yes` route through `in-review/` between `in-progress/` and `done/`. A *separate* tester (human or bot — never the bot that built the ticket) reads the dev bot's `## How to test` instructions, executes them, and either approves (→ `done/`) or rejects (→ `in-progress/`).
+
+### Handoff (dev bot, end of work)
+
+1. Populate `## How to test` with concrete reproducible steps a tester can execute (URLs, commands, click-paths, expected observations)
+2. Move the ticket file from `bot-horde/in-progress/` to `bot-horde/in-review/`
+3. Update the file — set status to `in-review`. Leave `Verification` and `Completed` blank.
+4. Run:
+   ```
+   git add bot-horde/
+   git commit -m "BH-XXX: in-review"
+   git push
+   ```
+   Commit body must include `Trigger: BH-XXX in-review`.
+
+### Acceptance (tester, ≠ dev bot)
+
+1. Pick a ticket from `in-review/`. Refuse if you authored the dev work (commit author identity matches the latest `Trigger:` line)
+2. Read `## How to test`. Execute the steps.
+3. If the result matches expectations, move the file from `in-review/` to `done/`. Set `Status: done`, `Completed: <date>`, `Verification: human-reviewed` (you're a human) or `bot-reviewed` (you're a bot). Append any tester notes to `## Notes`.
+4. Run:
+   ```
+   git add bot-horde/
+   git commit -m "BH-XXX: accepted"
+   git push
+   ```
+   Commit body must include `Trigger: BH-XXX accepted`.
+
+### Rejection (tester, ≠ dev bot)
+
+1. Move the file from `in-review/` back to `in-progress/`. Set `Status: in-progress`.
+2. Populate `**Rejected by**: <your name>`, `**Rejected**: <YYYY-MM-DD>`, `**Rejection reason**: <one-line summary of what failed>`.
+3. Run:
+   ```
+   git add bot-horde/
+   git commit -m "BH-XXX: rejected — <reason>"
+   git push
+   ```
+   Commit body must include `Trigger: BH-XXX rejected`.
+
+The dev bot picks the ticket back up from `in-progress/`, fixes the rejection, and goes back to handoff.
+
+`User-facing: no` tickets are unaffected by this section — they go in-progress → done as documented in "When work is complete" above.
 
 ---
 
