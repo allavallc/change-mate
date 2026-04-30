@@ -680,61 +680,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "HB-076",
-      "title": "`validate.py` enforcing the schema in CI",
-      "status": "backlog",
-      "priority": "High",
-      "effort": "L",
-      "feature_set": "feature-set-010-bot-native-schema",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [
-        "HB-071",
-        "HB-072",
-        "HB-073",
-        "HB-075"
-      ],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "goal": "Add `horde-of-bots/validate.py` that walks the ticket tree, parses every ticket, and asserts each one against the schema. Wire it into `build.sh` so CI fails on malformed tickets. This is the enforcement layer that makes the new fields from HB-071/072/073/075 trustworthy.",
-      "why": "Today nothing checks that Status matches its folder, that dates parse, that referenced tickets exist, or that required fields are present. HB-060 sat in `backlog/` with `Status: in-progress` for two days because nothing caught it. With validation in CI, malformed tickets can't merge. As the schema gains fields (Verification, Failure-mode, Split-from), the only reasonable way to keep them honest is automated checking.",
-      "done_when": [
-        "New file `horde-of-bots/validate.py` that:",
-        "Walks every ticket file in `backlog/`, `in-progress/`, `done/`, `blocked/`, `not-doing/`",
-        "Parses each with `build_lib.parse_ticket`",
-        "Asserts the following per ticket; collects all errors before exiting:",
-        "**Required fields present**: `Status`, `Priority`, `Effort`",
-        "**Status matches folder**: ticket in `in-progress/` has `Status: in-progress`, etc.",
-        "**Dates parseable**: `Started` and `Completed` (when present) are valid ISO dates or `YYYY-MM-DD HH:MM`",
-        "**`Assigned to` present** iff ticket is in `in-progress/` or `done/`",
-        "**`Completed` present** iff ticket is in `done/`",
-        "**`Verification:` present and valid** (value in `bot-claimed | tests-passed | bot-reviewed | human-reviewed`) iff ticket is in `done/`",
-        "**`Failure-mode:` present and valid** (value in `failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human`) iff ticket is in `blocked/`",
-        "**Reference resolution**: every ID in `Blocked-by:`, `Blocks:`, `Related:`, `Split-from:` resolves to a real ticket file",
-        "**Dependency satisfaction**: when ticket is in `done/`, every `Blocked-by:` reference must be in `done/` (HB-075 enforcement)",
-        "Prints all errors in a single pass with file path and line context",
-        "Exit non-zero if any errors found, zero if all pass",
-        "`build.sh` runs `python3 horde-of-bots/validate.py` before generating HTML; build fails on validation error",
-        "`.github/workflows/test.yml` already runs the build, so validation runs in CI by default",
-        "New `tests/test_validate.py` with at least one fixture per error class",
-        "HORDEOFBOTS.md gains a short \"Validation\" section: tickets are validated in CI, here are the rules",
-        "Backfill: any existing tickets that fail the new rules are fixed in the same PR (expected: very few \u2014 most current tickets predate the new fields, and the new fields are not retroactively required for legacy tickets)"
-      ],
-      "desired_output": "A contributor opens a PR with a malformed ticket. CI fails with a precise message: `horde-of-bots/blocked/HB-099-1234.md: Failure-mode is required for blocked tickets but was not set`. They fix it; CI passes.",
-      "success_signals": "- At least one PR is caught by the validator during the rollout period.\n- HB-060-style orphan-status tickets become impossible to land.",
-      "failure_signals": "- Validator too strict \u2014 legacy tickets fail and have to be backfilled across the board. Mitigation: legacy tickets without Verification/Failure-mode pass silently if the new field is absent on a ticket created before this feature set lands. Concretely: only validate `Verification:` on done tickets that were touched after the validator landed (use Started/Completed date as the gate, OR backfill all done tickets to `bot-claimed` in the same PR).\n- Performance \u2014 walking ~30 tickets at build time is negligible (<100ms expected); flag if it becomes >500ms.",
-      "tests": "- `tests/test_validate.py` covers each error class with a minimal fixture ticket:\n  - Missing required field (Status, Priority, Effort)\n  - Status/folder mismatch (Status: done in backlog/)\n  - Unparseable date\n  - Assigned-to missing on in-progress\n  - Completed missing on done\n  - Verification missing or invalid on done\n  - Failure-mode missing or invalid on blocked\n  - Unresolved reference (Blocked-by: HB-9999)\n  - Done with unmet deps (Blocked-by: HB-003 where HB-003 is in backlog/)\n- `tests/test_build.py` confirms `build.sh` exits non-zero when a tmp ticket tree contains a malformed ticket",
-      "notes": "- **Build-sequence dependency**: this ticket is `Blocked-by: HB-071, HB-072, HB-073, HB-075` because it enforces fields/rules those tickets introduce. Build them first; this ticket lands last in the feature set.\n- **No fix-it mode.** The validator only reports; it doesn't auto-fix. Auto-fix would mask schema drift instead of surfacing it.\n- **Performance budget**: keep validation under 500ms on a tree of 100 tickets. Use simple file walks, no expensive parsing beyond what `build_lib.parse_ticket` already does.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-077",
       "title": "Stale-claim render on in-progress cards",
       "status": "backlog",
@@ -803,6 +748,61 @@ var D = {
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
       "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "HB-076",
+      "title": "`validate.py` enforcing the schema in CI",
+      "status": "in-progress",
+      "priority": "High",
+      "effort": "L",
+      "feature_set": "feature-set-010-bot-native-schema",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [
+        "HB-071",
+        "HB-072",
+        "HB-073",
+        "HB-075"
+      ],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 11:00",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "goal": "Add `horde-of-bots/validate.py` that walks the ticket tree, parses every ticket, and asserts each one against the schema. Wire it into `build.sh` so CI fails on malformed tickets. This is the enforcement layer that makes the new fields from HB-071/072/073/075 trustworthy.",
+      "why": "Today nothing checks that Status matches its folder, that dates parse, that referenced tickets exist, or that required fields are present. HB-060 sat in `backlog/` with `Status: in-progress` for two days because nothing caught it. With validation in CI, malformed tickets can't merge. As the schema gains fields (Verification, Failure-mode, Split-from), the only reasonable way to keep them honest is automated checking.",
+      "done_when": [
+        "New file `horde-of-bots/validate.py` that:",
+        "Walks every ticket file in `backlog/`, `in-progress/`, `done/`, `blocked/`, `not-doing/`",
+        "Parses each with `build_lib.parse_ticket`",
+        "Asserts the following per ticket; collects all errors before exiting:",
+        "**Required fields present**: `Status`, `Priority`, `Effort`",
+        "**Status matches folder**: ticket in `in-progress/` has `Status: in-progress`, etc.",
+        "**Dates parseable**: `Started` and `Completed` (when present) are valid ISO dates or `YYYY-MM-DD HH:MM`",
+        "**`Assigned to` present** iff ticket is in `in-progress/` or `done/`",
+        "**`Completed` present** iff ticket is in `done/`",
+        "**`Verification:` present and valid** (value in `bot-claimed | tests-passed | bot-reviewed | human-reviewed`) iff ticket is in `done/`",
+        "**`Failure-mode:` present and valid** (value in `failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human`) iff ticket is in `blocked/`",
+        "**Reference resolution**: every ID in `Blocked-by:`, `Blocks:`, `Related:`, `Split-from:` resolves to a real ticket file",
+        "**Dependency satisfaction**: when ticket is in `done/`, every `Blocked-by:` reference must be in `done/` (HB-075 enforcement)",
+        "Prints all errors in a single pass with file path and line context",
+        "Exit non-zero if any errors found, zero if all pass",
+        "`build.sh` runs `python3 horde-of-bots/validate.py` before generating HTML; build fails on validation error",
+        "`.github/workflows/test.yml` already runs the build, so validation runs in CI by default",
+        "New `tests/test_validate.py` with at least one fixture per error class",
+        "HORDEOFBOTS.md gains a short \"Validation\" section: tickets are validated in CI, here are the rules",
+        "Backfill: any existing tickets that fail the new rules are fixed in the same PR (expected: very few \u2014 most current tickets predate the new fields, and the new fields are not retroactively required for legacy tickets)"
+      ],
+      "desired_output": "A contributor opens a PR with a malformed ticket. CI fails with a precise message: `horde-of-bots/blocked/HB-099-1234.md: Failure-mode is required for blocked tickets but was not set`. They fix it; CI passes.",
+      "success_signals": "- At least one PR is caught by the validator during the rollout period.\n- HB-060-style orphan-status tickets become impossible to land.",
+      "failure_signals": "- Validator too strict \u2014 legacy tickets fail and have to be backfilled across the board. Mitigation: legacy tickets without Verification/Failure-mode pass silently if the new field is absent on a ticket created before this feature set lands. Concretely: only validate `Verification:` on done tickets that were touched after the validator landed (use Started/Completed date as the gate, OR backfill all done tickets to `bot-claimed` in the same PR).\n- Performance \u2014 walking ~30 tickets at build time is negligible (<100ms expected); flag if it becomes >500ms.",
+      "tests": "- `tests/test_validate.py` covers each error class with a minimal fixture ticket:\n  - Missing required field (Status, Priority, Effort)\n  - Status/folder mismatch (Status: done in backlog/)\n  - Unparseable date\n  - Assigned-to missing on in-progress\n  - Completed missing on done\n  - Verification missing or invalid on done\n  - Failure-mode missing or invalid on blocked\n  - Unresolved reference (Blocked-by: HB-9999)\n  - Done with unmet deps (Blocked-by: HB-003 where HB-003 is in backlog/)\n- `tests/test_build.py` confirms `build.sh` exits non-zero when a tmp ticket tree contains a malformed ticket",
+      "notes": "- **Build-sequence dependency**: this ticket is `Blocked-by: HB-071, HB-072, HB-073, HB-075` because it enforces fields/rules those tickets introduce. Build them first; this ticket lands last in the feature set.\n- **No fix-it mode.** The validator only reports; it doesn't auto-fix. Auto-fix would mask schema drift instead of surfacing it.\n- **Performance budget**: keep validation under 500ms on a tree of 100 tickets. Use simple file walks, no expensive parsing beyond what `build_lib.parse_ticket` already does.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2625,7 +2625,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T15:54:07.974381+00:00",
+  "generated": "2026-04-30T15:54:29.386991+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -3194,7 +3194,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "ae4fd24a8db42cda683ac24025d65785976007a0"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "34a2d7eb3c94099894e134a985c70bba400f281d"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
