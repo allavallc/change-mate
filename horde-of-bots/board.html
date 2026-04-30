@@ -675,6 +675,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Existing `Blocked-by:` field is already parsed and rendered. Add: (a) a \"Ready only\" filter toggle on the board that hides backlog/in-progress tickets whose `Blocked-by:` references a ticket not yet in `done/`; (b) validator rule (HB-076) refusing `done/` placement while `Blocked-by:` references unfinished tickets.",
       "why": "Today nothing prevents a bot from claiming a ticket whose dependencies aren't met. If HB-005 is `Blocked-by: HB-003` and HB-003 is in `backlog/`, a bot can grab HB-005 and burn cycles. The schema already encodes the dependency; we're not adding a feature, we're enforcing the field that already exists. The board filter helps humans + bots see only ready work; the validator catches premature done-transitions in CI.",
@@ -716,6 +717,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Add `horde-of-bots/validate.py` that walks the ticket tree, parses every ticket, and asserts each one against the schema. Wire it into `build.sh` so CI fails on malformed tickets. This is the enforcement layer that makes the new fields from HB-071/072/073/075 trustworthy.",
       "why": "Today nothing checks that Status matches its folder, that dates parse, that referenced tickets exist, or that required fields are present. HB-060 sat in `backlog/` with `Status: in-progress` for two days because nothing caught it. With validation in CI, malformed tickets can't merge. As the schema gains fields (Verification, Failure-mode, Split-from), the only reasonable way to keep them honest is automated checking.",
@@ -765,6 +767,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Render staleness metadata on in-progress cards: how long since the ticket was claimed, and how long since the file was last committed.",
       "why": "A card sits in `in-progress/` looking alive even after the bot crashes. Today only Notes or git history reveal whether work is actually moving. Surfacing both timestamps on the card lets humans and reclaiming bots judge staleness at a glance \u2014 without adding a heartbeat field bots have to remember to update.",
@@ -800,6 +803,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Add `pollSource` to `config.json` (`\"github\" | \"none\"`), surface a manual-refresh indicator when polling is off, and update README + HORDEOFBOTS.md to stop implying Horde of Bots works on any git host.",
       "why": "The board polls GitHub specifically. On `file://` it auto-disables silently. On GitLab/Gitea/self-hosted it just fails quietly. The README's \"no vendor lock-in\" framing is misleading. An explicit `\"none\"` mode + an honest README is cheaper than building real multi-backend polling and stops the false claim.",
@@ -824,43 +828,6 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-072",
-      "title": "`Verification:` field separate from `Status:`",
-      "status": "in-progress",
-      "priority": "High",
-      "effort": "M",
-      "feature_set": "feature-set-010-bot-native-schema",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "claude",
-      "started": "2026-04-30 10:00",
-      "completed": "",
-      "failure_mode": "",
-      "goal": "Add a `**Verification**:` field that is orthogonal to `Status:`. Allowed values: `bot-claimed | tests-passed | bot-reviewed | human-reviewed`. Status describes workflow stage; Verification describes trust level. Required on done tickets, optional elsewhere.",
-      "why": "Today a bot moves a ticket to `done/` and there's no way to distinguish \"the bot says it's done and walked away\" from \"the bot finished, tests pass, a human eyeballed it and signed off.\" All done tickets look equally trustworthy. In a world where bots ship the work, this is the bug \u2014 humans need to know which \"done\" they can trust without reading every diff. A separate field gives a glanceable trust signal without changing the workflow folders.",
-      "done_when": [
-        "Schema docs in HORDEOFBOTS.md list allowed values: `bot-claimed | tests-passed | bot-reviewed | human-reviewed`",
-        "`build_lib.parse_ticket` recognizes `**Verification**:` and returns `verification` on the ticket dict",
-        "Default behavior: when a bot transitions a ticket to `done/`, it sets `Verification: bot-claimed` (or `tests-passed` if it ran the tests itself)",
-        "Board renders a verification badge on done cards \u2014 mono uppercase, short label (e.g., `BOT` / `TESTS` / `BOT-REV` / `HUMAN-REV`), styled distinctly from status. `bot-claimed` is the visually weakest; `human-reviewed` is the strongest.",
-        "HORDEOFBOTS.md guidance section: explains the four states and who sets each",
-        "PM skill prompt updated: when generating done-state tickets, include `Verification: bot-claimed` by default",
-        "HB-076 validator requires `Verification:` field on done/ tickets and rejects invalid values",
-        "`tests/test_parser.py` covers parsing each of the four values + missing field"
-      ],
-      "desired_output": "A user looks at the done column. Tickets with `Verification: human-reviewed` look visibly more verified than `Verification: bot-claimed`. Trust is glanceable. A reviewer working through the pile can prioritize unreviewed tickets at a glance.",
-      "success_signals": "- Over time, the proportion of `bot-claimed` \u2192 `human-reviewed` transitions reflects actual review cadence.\n- Bots downstream of completed work read `Verification:` to decide whether to trust an upstream change.",
-      "failure_signals": "- Everything stays at `bot-claimed` forever because no human ever updates the field. The field becomes decorative noise.\n- Mitigation: board UI surfaces \"unverified\" count somewhere visible (e.g., column header subtitle); makes the gap visible.",
-      "tests": "- `tests/test_parser.py` \u2014 parse each of the four values + a missing-field case\n- Validator test (in HB-076): done ticket missing `Verification:` fails; done ticket with invalid value fails",
-      "notes": "- **Not** a Status replacement. Status = workflow stage (which folder). Verification = trust level on the contents of a done ticket.\n- Allowed values are deliberately small (4) \u2014 easy to remember, no ambiguity. Resist adding more.\n- Out of scope: a \"verifying agent\" workflow that automates promotion from `tests-passed` to `bot-reviewed`. That's a v3.0 platform concern; here we're just shipping the schema field so it exists when that work happens.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-001",
       "title": "Test ticket",
       "status": "done",
@@ -874,6 +841,7 @@ var D = {
       "assigned_to": "adefilippo",
       "started": "2026-04-13 00:00",
       "completed": "2026-04-14",
+      "verification": "",
       "failure_mode": "",
       "goal": "Test that the live board and GitHub Pages are working correctly.",
       "why": "Verify end-to-end flow from ticket creation to board update.",
@@ -904,6 +872,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-13 14:45",
       "completed": "2026-04-14",
+      "verification": "",
       "failure_mode": "",
       "goal": "Test live card animation from backlog to in-progress.",
       "why": "Verify the Supabase Realtime board fix works correctly.",
@@ -934,6 +903,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-14 18:38",
       "completed": "2026-04-14",
+      "verification": "",
       "failure_mode": "",
       "goal": "Let tickets reference other tickets so humans and agents can see dependencies and cross-ticket context at a glance.",
       "why": "Today \"blocked\" is just a folder \u2014 we lose *what* blocks *what*. Adding explicit relationships surfaces feature-set cohesion, reveals dependency chains, and makes the board useful beyond a flat list of cards.",
@@ -969,6 +939,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-14 14:56",
       "completed": "2026-04-14",
+      "verification": "",
       "failure_mode": "",
       "goal": "Rewrite the persona and working-style sections of `HORDEOFBOTS.md` so the agent operates as a senior technical product manager shaping features inside feature sets \u2014 not as a senior developer. Add a reusable `product-manager` skill that owns ticket intake.",
       "why": "The original opening line (\"You are a senior developer and project manager\") pushed agents toward implementation voice. The real job at the ticket layer is PM work: crisp problem statements, desired outputs, success/failure criteria, and handoff notes that tell the developer what to watch. Developer tone belongs downstream, inside the build phase.",
@@ -1008,6 +979,7 @@ var D = {
       "assigned_to": "allavallc",
       "started": "2026-04-14",
       "completed": "2026-04-15",
+      "verification": "",
       "failure_mode": "",
       "goal": "Create the Supabase Postgres schema that powers the next-generation board: atomic locking, event history, and per-person write keys \u2014 all protected by Row Level Security.",
       "why": "Current state: locking lives in a GitHub Gist (fragile, not atomic), there is zero history, and there is no access control. This schema is the foundation every other piece of the next build sits on \u2014 nothing else ships without it.",
@@ -1043,6 +1015,7 @@ var D = {
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
+      "verification": "",
       "failure_mode": "",
       "goal": "Build a Supabase Edge Function that validates a caller's write key, then creates/updates tickets in the GitHub repo on their behalf \u2014 keeping the GitHub PAT server-side only.",
       "why": "Today the \"Add story\" button on the board requires every user to paste their own GitHub PAT into localStorage. That is clunky, insecure, and blocks non-technical users. An Edge Function with the PAT stored as a Supabase secret is the right shape: one shared write path, per-person write keys, no tokens in the browser.",
@@ -1079,6 +1052,7 @@ var D = {
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
+      "verification": "",
       "failure_mode": "",
       "goal": "Teach the live board to operate in three distinct modes (`public-readonly`, `public-write`, `private`) and wire the Add Story button to the `cm-write` Edge Function instead of raw GitHub PAT + browser localStorage.",
       "why": "A single mode (\"anyone can see, nobody can write without their own PAT\") does not fit real projects. Some boards are fully public, some accept anonymous-but-gated contributions, some need to be private. Tying Add Story to a server-side write path also kills the per-user PAT setup friction that today makes the button a non-starter for non-technical users.",
@@ -1115,6 +1089,7 @@ var D = {
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
+      "verification": "",
       "failure_mode": "",
       "goal": "Rewrite the agent locking and event-broadcast sections of `HORDEOFBOTS.md` and `build.sh` so that agents lock tickets against the Supabase `locks` table and write status changes into `ticket_events` \u2014 retiring the GitHub Gist lock registry.",
       "why": "The Gist-based lock registry is fragile (race conditions on PATCH), requires every agent to carry a GitHub token with Gist scope, and records no history. Supabase gives us atomic locking and a permanent audit trail in one move \u2014 and it removes one more token from the agent environment.",
@@ -1151,6 +1126,7 @@ var D = {
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
+      "verification": "",
       "failure_mode": "",
       "goal": "Write end-to-end setup documentation so a new project can install Horde of Bots v5 (Supabase locks + events + write keys + Edge Function) from scratch in under 15 minutes.",
       "why": "The new architecture touches four systems (Supabase Postgres, Supabase Edge Functions, GitHub API, GitHub Actions). Without a clean setup guide, every new install becomes a support ticket. Docs are the final mile that makes HB-005 through HB-008 actually usable by anyone other than us.",
@@ -1190,6 +1166,7 @@ var D = {
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
+      "verification": "",
       "failure_mode": "",
       "goal": "Board cards should display which agent or person is working on a ticket \u2014 and once assigned, that name stays with the ticket for its entire life (in-progress, done, blocked, not-doing). Two layers: a **permanent assignment** baked into the ticket markdown, and a **live activity indicator** from the locks table.",
       "why": "Right now you can't tell who's working on what just by looking at the board. In a multi-agent setup where several Claude instances are working in parallel, this visibility is critical \u2014 it prevents duplicate work and lets the human see at a glance what's happening. And when a ticket is done, you should still see who did it.",
@@ -1234,6 +1211,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-24 14:00",
       "completed": "2026-04-24",
+      "verification": "",
       "failure_mode": "",
       "goal": "Rewrite the top of HORDEOFBOTS.md so any reader (human or LLM) finishes the first screen knowing Horde of Bots is local dev tooling that must never enter a deploy artifact, code must not depend on Horde of Bots paths, git is the intended sync layer, and Horde of Bots files should be excluded from code-quality passes.",
       "why": "An adopter using Horde of Bots inside hana-core (a production repo) reported that both humans and LLMs in the repo could not tell whether `horde-of-bots-board.html` was a deployable asset or a dev artifact, so Horde of Bots files drifted into WIP branches and caused deploy-pipeline worry. The feedback author's own TL;DR: \"one sentence at the top of HORDEOFBOTS.md saying this is local dev tooling, not product, and must never deploy\" is the single highest-leverage change available \u2014 everything else in this feature set flows from that.",
@@ -1273,6 +1251,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-24 14:30",
       "completed": "2026-04-24",
+      "verification": "",
       "failure_mode": "",
       "goal": "Move every Horde of Bots artifact that currently sits at repo root (`HORDEOFBOTS.md`, `build.sh`, `build_lib.py`, `horde-of-bots-board.html`, `horde-of-bots-config.json`) into the `horde-of-bots/` folder, so that the rule \"anything under `horde-of-bots/` is dev tooling\" becomes mechanically true and `.dockerignore` / `.gcloudignore` exclusions collapse to one line.",
       "why": "The current scattered layout forces every adopter and every LLM to independently build a mental model of which files belong to Horde of Bots and which are product. That mental model fails \u2014 see HB-048's underlying feedback. Consolidation makes the rule enforceable by tooling instead of tribal knowledge, and it's the enabler for HB-050's single-line deploy-ignore default.",
@@ -1317,6 +1296,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-24 15:00",
       "completed": "2026-04-24",
+      "verification": "",
       "failure_mode": "",
       "goal": "Make setup.sh the place that prevents Horde of Bots from leaking into deploy artifacts by default \u2014 by writing (or appending to) the common deploy-exclusion files on install.",
       "why": "HB-048 tells readers that Horde of Bots must not enter deploys. HB-049 makes that rule mechanically enforceable with one folder. HB-050 closes the loop by actually applying the one-line exclusion in every adopter's repo at install time, so nobody has to remember. Adopters using Docker, Cloud Build, Fly.io, or Vercel would otherwise each have to read HORDEOFBOTS.md, internalize the rule, and wire it themselves.",
@@ -1355,6 +1335,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-24 15:30",
       "completed": "2026-04-24",
+      "verification": "",
       "failure_mode": "",
       "goal": "Stop the board-rebuild workflow from silently producing noise commits on `main` for solo adopters while keeping the \"humans watch a fresh Pages-hosted board\" primitive working for teams. Default is mode-aware: Supabase configured \u2192 auto-commit on; no Supabase \u2192 off. Config flag overrides. Rename the workflow so its purpose is self-evident in the GitHub Actions UI.",
       "why": "Adopter feedback from hana-core: \"the auto-rebuild created noise commits in git log that made it hard to see real product changes.\" A flat default of `false` would kill the noise but break the Pages-fresh-board experience for teams. A flat default of `true` keeps the status quo noise. Mode-aware splits correctly: solo users (no Supabase, usually open the board locally) get a quiet log; teams (Supabase-configured, usually Pages-hosted) stay fresh automatically. Explicit config always wins, so anyone in the edge case (solo on Pages, team viewing locally) has a one-line escape.",
@@ -1393,6 +1374,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-25 09:00",
       "completed": "2026-04-25",
+      "verification": "",
       "failure_mode": "",
       "goal": "Replace the existing border-glow pulse on in-progress cards (which is too subtle to read as \"active\") with a small \ud83e\udd16 emoji that walks clockwise around the card perimeter. Reads instantly as \"work is being done here\" without being noisy.",
       "why": "The current `cm-active-pulse` (border color + box-shadow oscillation) is invisible to the user \u2014 they reported not seeing it. Humans need a clearer signal that a ticket is being worked on. A patrolling robot is universally legible as \"active worker,\" uses zero dependencies (pure CSS + emoji), and only animates the four cards that actually need attention.",
@@ -1434,6 +1416,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:00",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Make the board update from GitHub directly \u2014 no Supabase Realtime, no WebSocket, no DB. Browser polls the GitHub commits API every N seconds; if HEAD changed, refetch tickets and re-render.",
       "why": "Supabase adds setup, an Edge Function, three migrations, a CLI install, and a project that pauses after a week of inactivity. The board's actual job is \"show me the markdown files in this repo\" \u2014 git is the source of truth. Polling GitHub directly removes the entire backend dependency and keeps the watching experience close-to-live (30-second freshness).",
@@ -1476,6 +1459,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:15",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Replace the Supabase Edge Function `cm-write` with browser-direct calls to the GitHub Contents API. The Add Story button should write a markdown file to `horde-of-bots/backlog/` using the user's PAT \u2014 no server in between.",
       "why": "The Edge Function adds a deploy step, three Postgres migrations, a sequence + RPC, an SDK install, and a function to maintain. Its actual job is: validate a payload, claim an ID, render markdown, PUT to GitHub. Steps 1\u20133 happen fine in the browser. Step 4 happens fine in the browser. The middleman is unnecessary.",
@@ -1518,6 +1502,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:30",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Once polling (HB-057) and direct Add Story (HB-058) are live, remove every trace of Supabase from the codebase: the `supabase/` folder, the config fields, the verify scripts, the Team-path setup docs, the live lock pulse UI, and any tests covering Supabase pieces.",
       "why": "Leftover Supabase code is a drag on the project \u2014 bigger surface area for adopters to read, more ways setup can fail, more tests to maintain, more docs to keep in sync. The whole point of feature-set-005 is to be done with that backend. This ticket finishes the job.",
@@ -1559,6 +1544,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 16:30",
       "completed": "2026-04-29",
+      "verification": "",
       "failure_mode": "",
       "goal": "Make `horde-of-bots/board.html` look like the SimplifyOps design system: dark editorial brutalism, single rust accent, hairline borders, mono-uppercase metadata, Big Shoulders Display headlines, JetBrains Mono labels, Inter body. Match `plan/style-guide.md` token-for-token where it applies.",
       "why": "The user owns `simplifyops.com` and wants the board to live in the same visual family. The current Inter-only friendly look feels disconnected from that brand. A unified aesthetic makes the board feel like a deliberate product, not a prototype.",
@@ -1619,6 +1605,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Make `bash setup.sh` actually deliver a working board on a fresh repo. Today it only downloads `HORDEOFBOTS.md` and creates folders \u2014 `build.sh`, `build_lib.py`, `horde-of-bots/config.json`, and the GitHub Actions workflow are missing. Adopters who follow the README step `bash horde-of-bots/build.sh` get a \"no such file\" error.",
       "why": "The first-time adopter cannot generate a board after running setup.sh. They either copy files manually from the upstream repo (undocumented and brittle) or wait for CI \u2014 but the workflow itself isn't installed either, so CI never fires. The install is half-complete by design and that's the single biggest blocker to onboarding.",
@@ -1661,6 +1648,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Make `setup.sh` safe to run via `curl -fsSL ... | bash` and from CI \u2014 the legacy-migration prompt currently uses `read -r -p` which hangs forever on a non-TTY stdin.",
       "why": "The canonical install instruction in the README is `curl \u2026 | bash`. Today, if any of the legacy root-level files happen to exist, that exact command silently hangs because `read` has no TTY. CI installers, devcontainer post-create scripts, and any automation hits this. It's a 5-minute fix that removes a real footgun.",
@@ -1697,6 +1685,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Wrap the `# Horde of Bots\\n@horde-of-bots/HORDEOFBOTS.md` block setup.sh appends to `CLAUDE.md` with HTML comment markers so users can find it, understand what it does, and not accidentally delete it without realizing.",
       "why": "Today the import is two ambiguous lines. A user editing CLAUDE.md to tighten their own rules can innocently delete those lines and silently lose the Horde of Bots workflow \u2014 the agent stops following HORDEOFBOTS.md with no error. A `<!-- Horde of Bots import block \u2014 managed by setup.sh -->` marker pair makes the intent obvious and gives idempotency a stronger anchor.",
@@ -1732,6 +1721,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Remove three inaccurate or misleading claims from README.md and SETUP.md: (1) \"no external dependencies beyond git\" is false (Python 3 is required to run `build.sh`); (2) the README implies `bash horde-of-bots/build.sh` works after install but it doesn't yet (will be true once HB-061 lands); (3) GitHub Pages caveats \u2014 no warning that the board will be world-readable at `/horde-of-bots/board.html` when Pages is enabled on `main`.",
       "why": "A careful adopter reading the README before installing flagged each of these as a credibility issue. Inaccurate setup docs make people distrust the rest of the project. These are 30-minute copy edits that pay off in one place every adopter looks.",
@@ -1768,6 +1758,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Give adopters a way to know what version of the PM skill is installed and a one-liner to upgrade \u2014 instead of today's \"delete the file and re-run setup.\"",
       "why": "The skill installs globally to `~/.claude/skills/product-manager/SKILL.md`, shared across all Horde of Bots projects on the user's machine. Adopters managing more than one project (or returning months later) can't tell whether their skill is current. There's no version, no upgrade command. A small `## Version: 1.0.0` line in SKILL.md plus a `--upgrade-skill` flag on setup.sh closes the gap.",
@@ -1805,6 +1796,7 @@ var D = {
       "assigned_to": "",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Capture the install-time questions a careful adopter asks (CLAUDE.md import semantics, public-repo exposure, Pages collisions, PAT security, polling rate limits, skill versioning, idempotency) into a single file that ships with the install. Both bots and humans read it on first contact, so the same questions don't have to be answered repeatedly.",
       "why": "A real adopter sent ~12 install-time questions before running setup.sh. Most have correct answers but those answers live nowhere in the repo today \u2014 they're in scattered tickets, conversations, and people's heads. Centralising them in `horde-of-bots/INSTALL-FAQ.md` (installed automatically by setup.sh per HB-061) makes the project self-documenting at the moment adopters most need it.",
@@ -1851,6 +1843,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 19:00",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Make it explicit that Horde of Bots tickets must not contain secrets. The agent should refuse to put credentials, keys, passwords, tokens, PII, or internal connection strings into a ticket \u2014 and adopters should know the same rule applies on their end.",
       "why": "Tickets are committed to git, world-readable on public repos, and the agent doesn't redact anything before committing. The reviewer's feedback flagged that internal infrastructure detail (env var names, internal URLs, ports) might end up in tickets. A single rule line in HORDEOFBOTS.md (so the agent reads it every session) plus a reinforcing paragraph in INSTALL-FAQ.md (so adopters see it on first install) closes that gap.",
@@ -1887,6 +1880,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-27 19:30",
       "completed": "2026-04-27",
+      "verification": "",
       "failure_mode": "",
       "goal": "Give bots and humans a deterministic way to answer \"is my local copy of Horde of Bots up to date?\" \u2014 without relying on file mtimes, hashes, or \"delete and re-run.\" A single `horde-of-bots/MANIFEST.json` lists every managed file and its upstream version stamp. Local copy includes the manifest as of last install. Upgrade = fetch upstream manifest, diff, fetch the files that changed.",
       "why": "After HB-067 added the no-secrets rule, existing adopters had no path to the new HORDEOFBOTS.md / INSTALL-FAQ.md other than `delete + re-run` or manual curl. That same gap exists for every future doc/script update. A manifest closes the gap once: bots fetch one tiny JSON file, diff against their local copy, know exactly what's stale, and can update only what changed.",
@@ -1925,6 +1919,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-29 16:30",
       "completed": "2026-04-29",
+      "verification": "",
       "failure_mode": "",
       "goal": "Let a user narrow or rank tickets on the board by priority, effort, or feature set without scanning every column.",
       "why": "As the backlog grows, scanning four columns to find \"the highest-priority unblocked thing\" or \"the smallest-effort win\" gets tedious. The current 4-column kanban renders every active ticket \u2014 there's no way to focus. A user watching the board needs to slice it fast.",
@@ -1969,6 +1964,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-29 17:30",
       "completed": "2026-04-29",
+      "verification": "",
       "failure_mode": "",
       "goal": "Ship a permanent, view-only demo board at `demo/` so anyone landing on the repo can click in, look at a populated board, and play with the filter/sort UI without setting anything up.",
       "why": "The README + setup flow asks adopters to imagine what their board will look like once they have tickets. A live demo collapses that to one click. It also gives newcomers a feel for the brutalist styling, the walking robot, the per-bot crab colors, and the filter/sort UX without having to install anything.",
@@ -2004,6 +2000,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-30 08:30",
       "completed": "2026-04-30",
+      "verification": "",
       "failure_mode": "",
       "goal": "Add an optional `**Split-from**: HB-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
       "why": "A bot mid-claim sometimes realizes a ticket should have been three. Today there's no way to record that lineage in the schema \u2014 provenance lives in commit messages or Notes, neither of which is machine-readable. With this field, `git blame` on the new tickets is one click, and the audit trail for decomposition is preserved without conventions in commit messages.",
@@ -2025,6 +2022,44 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "HB-072",
+      "title": "`Verification:` field separate from `Status:`",
+      "status": "done",
+      "priority": "High",
+      "effort": "M",
+      "feature_set": "feature-set-010-bot-native-schema",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 10:00",
+      "completed": "2026-04-30",
+      "verification": "tests-passed",
+      "failure_mode": "",
+      "goal": "Add a `**Verification**:` field that is orthogonal to `Status:`. Allowed values: `bot-claimed | tests-passed | bot-reviewed | human-reviewed`. Status describes workflow stage; Verification describes trust level. Required on done tickets, optional elsewhere.",
+      "why": "Today a bot moves a ticket to `done/` and there's no way to distinguish \"the bot says it's done and walked away\" from \"the bot finished, tests pass, a human eyeballed it and signed off.\" All done tickets look equally trustworthy. In a world where bots ship the work, this is the bug \u2014 humans need to know which \"done\" they can trust without reading every diff. A separate field gives a glanceable trust signal without changing the workflow folders.",
+      "done_when": [
+        "Schema docs in HORDEOFBOTS.md list allowed values: `bot-claimed | tests-passed | bot-reviewed | human-reviewed`",
+        "`build_lib.parse_ticket` recognizes `**Verification**:` and returns `verification` on the ticket dict",
+        "Default behavior: when a bot transitions a ticket to `done/`, it sets `Verification: bot-claimed` (or `tests-passed` if it ran the tests itself)",
+        "Board renders a verification badge on done cards \u2014 mono uppercase, short label (e.g., `BOT` / `TESTS` / `BOT-REV` / `HUMAN-REV`), styled distinctly from status. `bot-claimed` is the visually weakest; `human-reviewed` is the strongest.",
+        "HORDEOFBOTS.md guidance section: explains the four states and who sets each",
+        "PM skill prompt updated: when generating done-state tickets, include `Verification: bot-claimed` by default",
+        "HB-076 validator requires `Verification:` field on done/ tickets and rejects invalid values",
+        "`tests/test_parser.py` covers parsing each of the four values + missing field"
+      ],
+      "desired_output": "A user looks at the done column. Tickets with `Verification: human-reviewed` look visibly more verified than `Verification: bot-claimed`. Trust is glanceable. A reviewer working through the pile can prioritize unreviewed tickets at a glance.",
+      "success_signals": "- Over time, the proportion of `bot-claimed` \u2192 `human-reviewed` transitions reflects actual review cadence.\n- Bots downstream of completed work read `Verification:` to decide whether to trust an upstream change.",
+      "failure_signals": "- Everything stays at `bot-claimed` forever because no human ever updates the field. The field becomes decorative noise.\n- Mitigation: board UI surfaces \"unverified\" count somewhere visible (e.g., column header subtitle); makes the gap visible.",
+      "tests": "- `tests/test_parser.py` \u2014 parse each of the four values + a missing-field case\n- Validator test (in HB-076): done ticket missing `Verification:` fails; done ticket with invalid value fails",
+      "notes": "- **Not** a Status replacement. Status = workflow stage (which folder). Verification = trust level on the contents of a done ticket.\n- Allowed values are deliberately small (4) \u2014 easy to remember, no ambiguity. Resist adding more.\n- Out of scope: a \"verifying agent\" workflow that automates promotion from `tests-passed` to `bot-reviewed`. That's a v3.0 platform concern; here we're just shipping the schema field so it exists when that work happens.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "HB-073",
       "title": "`Failure-mode:` field on blocked tickets",
       "status": "done",
@@ -2038,6 +2073,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-30 09:30",
       "completed": "2026-04-30",
+      "verification": "",
       "failure_mode": "",
       "goal": "Add a `**Failure-mode**:` field that is required when a ticket is in `blocked/` and absent/empty otherwise. Allowed values: `failed-tests | merge-conflict | context-exceeded | unmet-dep | needs-human`. Renderer shows the failure mode as a chip on blocked cards.",
       "why": "Today a ticket sitting in `blocked/` says nothing about *why* it's blocked. A reclaiming bot has to read Notes (which may not exist) to figure out if the blocker is \"tests failing\" (re-runnable), \"context exceeded\" (different bot can take it), or \"needs a human decision\" (action item for the user). Different blockers imply different next moves; making the mode explicit lets bots and humans triage at a glance.",
@@ -2073,6 +2109,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-30 08:05",
       "completed": "2026-04-30",
+      "verification": "",
       "failure_mode": "",
       "goal": "Document and adopt a commit-message convention for bot commits that captures model + trigger + ticket. Pure docs + PM skill update \u2014 no schema change, no validator, no enforcement. Audit comes from `git log` once the convention is in place.",
       "why": "Git already records author, timestamp, and diff. What it doesn't capture: which model/agent did the work, what triggered the commit (claim, heartbeat, done, edit), and which ticket it serves. A simple trailer convention turns `git log --grep \"HB-072\"` into a complete audit trail with zero new infrastructure. Bots can read each other's history. Humans can answer \"what did the bots actually do this week?\" without reading source.\n\nThe trailer format:\n\n```\nHB-072: tests passing on verification field\n\n<commit body \u2014 short description of what changed>\n\nModel: claude-opus-4-7\nTrigger: HB-072 done\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\n```\n\n`Trigger:` format: `HB-XXX <action>` where action is one of: `claim`, `heartbeat`, `done`, `edit`, `blocked`, `reclaim`.",
@@ -2107,6 +2144,7 @@ var D = {
       "assigned_to": "claude",
       "started": "2026-04-30 09:00",
       "completed": "2026-04-30",
+      "verification": "",
       "failure_mode": "",
       "goal": "Fix two pre-existing test-infrastructure bugs that survived the change-mate \u2192 horde-of-bots rename: the repo-root `conftest.py` adds the wrong path (so `py -m pytest <specific-test>` fails); and the regression test that walks every committed ticket globs `CM-*.md`, so post-rename it walks zero files.",
       "why": "Both bugs make the test setup pretend to work. Standalone path invocations fail with `ModuleNotFoundError: build_lib`, hiding why CI passes but local runs of a single file don't. The regression test claims to verify every committed ticket parses \u2014 but currently walks zero files, catching nothing. As fs-010 adds new schema fields (Verification, Failure-mode), that regression test is exactly what we need to catch breakage on real tickets.",
@@ -2140,6 +2178,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Add an optional second-LLM review step that critiques a ticket draft (produced by the product-manager skill) before the draft is shown to the user \u2014 catching weak \"done when\" criteria, missing success/failure signals, or muddled goals.",
       "why": "The product-manager skill (HB-004) lets one LLM act as the PM and draft tickets autonomously. Drafts will occasionally be thin, vague, or self-consistent-but-wrong. A second LLM with a critic prompt \u2014 senior PM reviewer, or senior tech lead \u2014 can flag those issues before they reach the user, raising draft quality and cutting review rounds.",
@@ -2178,6 +2217,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Give each Kanban column a small animated SVG scene in its header showing a blacksmith at the matching stage of work \u2014 raw materials piled up for backlog, hammering on the anvil for in-progress, finished blades on a display rack for done, and so on.",
       "why": "The board today is visually flat \u2014 text cards in gray columns. A thematic animated scene per column makes work state feel visceral, rewards progress (watching cards move toward the \"done\" rack is satisfying), and gives Horde of Bots a memorable visual identity that stands out from every other Kanban tool.",
@@ -2214,6 +2254,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Verify cm-write works.",
       "why": "",
@@ -2242,6 +2283,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "test",
       "why": "test",
@@ -2270,6 +2312,7 @@ var D = {
       "assigned_to": "",
       "started": "",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Demo the real-time board flow.",
       "why": "",
@@ -2300,6 +2343,7 @@ var D = {
       "assigned_to": "test-agent",
       "started": "2026-04-25 09:15",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Live in-progress card on the board so the user can evaluate the walking-robot animation shipped by HB-052.",
       "why": "HB-052 shipped the animation but there is no real in-progress work to render it against. This card exists purely to make the animation visible while the user reviews it.",
@@ -2331,6 +2375,7 @@ var D = {
       "assigned_to": "demo-bot",
       "started": "2026-04-26 10:00",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Second live in-progress card so the user can compare the per-agent robot color against HB-053 (test-agent).",
       "why": "With two cards in `in-progress/` assigned to different agents, the user can verify that the per-agent color hashing actually produces visibly different robots.",
@@ -2363,6 +2408,7 @@ var D = {
       "assigned_to": "alpha-bot",
       "started": "2026-04-26 10:30",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Third in-progress card to test natural distribution of the staggered robot animation across more agents.",
       "why": "",
@@ -2396,6 +2442,7 @@ var D = {
       "assigned_to": "scout-9",
       "started": "2026-04-26 10:30",
       "completed": "",
+      "verification": "",
       "failure_mode": "",
       "goal": "Fourth in-progress card to test natural distribution of the staggered robot animation across more agents.",
       "why": "",
@@ -2560,7 +2607,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T14:26:00.088198+00:00",
+  "generated": "2026-04-30T14:28:04.892104+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -2668,6 +2715,12 @@ function cardHTML(t, isRejected) {
   var failureRow = (t.status === 'blocked' && t.failure_mode)
     ? '<div><div class="dl-label">Failure mode</div><div class="dl-val">' + esc(t.failure_mode) + '</div></div>'
     : '';
+  var verifChip = (t.status === 'done' && t.verification)
+    ? '<div class="card-rels"><span class="card-rel card-rel-verif card-rel-verif-' + esc(t.verification) + '" title="Verification: ' + esc(t.verification) + '">' + esc(t.verification.toUpperCase()) + '</span></div>'
+    : '';
+  var verifRow = (t.status === 'done' && t.verification)
+    ? '<div><div class="dl-label">Verification</div><div class="dl-val">' + esc(t.verification) + '</div></div>'
+    : '';
   var relChips = buildRelChips(t);
   var relFace = relChipsFaceHTML(relChips, 3);
   var relDetail = relDetailHTML(relChips);
@@ -2690,7 +2743,7 @@ function cardHTML(t, isRejected) {
     ? '<div><div class="dl-label">Rejection reason</div><div class="dl-val">' + esc(t.rejection_reason) + '</div></div>'
     : '';
 
-  var detail = failureRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
+  var detail = failureRow + verifRow + goal + why + dw + desired + success + failure + tests + relDetail + notes + rejection;
   var robot = (t.status === 'in-progress') ? robotSvg(t.assigned_to) : '';
   return '<div class="card' + rejClass + statusClass + '" onclick="toggleCard(this)">'
     + robot
@@ -2701,6 +2754,7 @@ function cardHTML(t, isRejected) {
     + '</div>'
     + '<div class="card-title">' + esc(t.title || t.id) + '</div>'
     + failChip
+    + verifChip
     + relFace
     + (detail ? '<div class="card-detail"><div class="detail-inner">' + detail + '</div></div>' : '')
     + footer
@@ -3101,7 +3155,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "93153d722b742d5c415ba62e4de5a595aae4aa84"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "d06d5222a75f9f76de64e3409bb09c92b7a658d2"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
