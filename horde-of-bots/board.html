@@ -671,6 +671,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -706,6 +707,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -739,6 +741,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -778,6 +781,7 @@ var D = {
         "HB-073",
         "HB-075"
       ],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -825,6 +829,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -858,6 +863,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -884,38 +890,6 @@ var D = {
       "blocked_by_inferred": []
     },
     {
-      "id": "HB-071",
-      "title": "`Split-from:` field for ticket decomposition",
-      "status": "in-progress",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-010-bot-native-schema",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "assigned_to": "claude",
-      "started": "2026-04-30 08:30",
-      "completed": "",
-      "goal": "Add an optional `**Split-from**: HB-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
-      "why": "A bot mid-claim sometimes realizes a ticket should have been three. Today there's no way to record that lineage in the schema \u2014 provenance lives in commit messages or Notes, neither of which is machine-readable. With this field, `git blame` on the new tickets is one click, and the audit trail for decomposition is preserved without conventions in commit messages.",
-      "done_when": [
-        "`build_lib.parse_ticket` recognizes `**Split-from**:` and returns `split_from` on the ticket dict (single ID or list, comma-separated)",
-        "Board renders `Split from HB-XXX` as a chip next to existing relationship chips, same styling",
-        "HORDEOFBOTS.md schema reference lists `Split-from:` as an optional field with example",
-        "PM skill prompt mentions `split_from` so it can populate the field when generating decomposed tickets",
-        "`tests/test_parser.py` covers a ticket with `Split-from` set (single + multi)"
-      ],
-      "desired_output": "A user splits HB-005 into HB-080, HB-081, HB-082. Each child shows a `Split from HB-005` chip. The parent's history is one click away.",
-      "success_signals": "- When the user later asks \"where did HB-080 come from?\", the answer is on the card, not buried in `git log`.\n- Bots writing decomposition tickets populate the field by default.",
-      "failure_signals": "- Field becomes decorative \u2014 bots forget to set it, no inverse rendering on the parent, audit value never materializes.\n- Mitigation: PM skill defaults to populating it; HB-076 validator does not require it (optional field).",
-      "tests": "- `tests/test_parser.py` adds two cases: ticket with `Split-from: HB-005` and ticket with `Split-from: HB-005, HB-006`\n- `tests/test_build.py` adds a case that confirms the chip renders in HTML",
-      "notes": "- Inverse rendering (\"Split into HB-080, HB-081\" on the parent) is **out of scope** for this ticket. Renderer infers other inverses (Blocks/Blocked-by) at build time; could add for split later as a polish pass if it becomes valuable.\n- Field is optional everywhere \u2014 legacy tickets without it parse fine.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-001",
       "title": "Test ticket",
       "status": "done",
@@ -925,6 +899,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "adefilippo",
       "started": "2026-04-13 00:00",
       "completed": "2026-04-14",
@@ -953,6 +928,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-13 14:45",
       "completed": "2026-04-14",
@@ -981,6 +957,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-14 18:38",
       "completed": "2026-04-14",
@@ -1014,6 +991,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-14 14:56",
       "completed": "2026-04-14",
@@ -1051,6 +1029,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "allavallc",
       "started": "2026-04-14",
       "completed": "2026-04-15",
@@ -1084,6 +1063,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
@@ -1118,6 +1098,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
@@ -1152,6 +1133,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
@@ -1186,6 +1168,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
@@ -1223,6 +1206,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "allavallc",
       "started": "2026-04-15",
       "completed": "2026-04-16",
@@ -1265,6 +1249,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-24 14:00",
       "completed": "2026-04-24",
@@ -1302,6 +1287,7 @@ var D = {
         "HB-050"
       ],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-24 14:30",
       "completed": "2026-04-24",
@@ -1344,6 +1330,7 @@ var D = {
       "blocked_by": [
         "HB-049"
       ],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-24 15:00",
       "completed": "2026-04-24",
@@ -1380,6 +1367,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-24 15:30",
       "completed": "2026-04-24",
@@ -1416,6 +1404,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-25 09:00",
       "completed": "2026-04-25",
@@ -1455,6 +1444,7 @@ var D = {
         "HB-059"
       ],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:00",
       "completed": "2026-04-27",
@@ -1495,6 +1485,7 @@ var D = {
       "blocked_by": [
         "HB-057"
       ],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:15",
       "completed": "2026-04-27",
@@ -1535,6 +1526,7 @@ var D = {
         "HB-057",
         "HB-058"
       ],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:30",
       "completed": "2026-04-27",
@@ -1574,6 +1566,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 16:30",
       "completed": "2026-04-29",
@@ -1632,6 +1625,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
@@ -1672,6 +1666,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
@@ -1706,6 +1701,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
@@ -1739,6 +1735,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
@@ -1773,6 +1770,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
@@ -1808,6 +1806,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "2026-04-27 17:35",
       "completed": "2026-04-27",
@@ -1852,6 +1851,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 19:00",
       "completed": "2026-04-27",
@@ -1886,6 +1886,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-27 19:30",
       "completed": "2026-04-27",
@@ -1922,6 +1923,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-29 16:30",
       "completed": "2026-04-29",
@@ -1964,6 +1966,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-29 17:30",
       "completed": "2026-04-29",
@@ -1988,6 +1991,39 @@ var D = {
       "blocked_by_inferred": []
     },
     {
+      "id": "HB-071",
+      "title": "`Split-from:` field for ticket decomposition",
+      "status": "done",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-010-bot-native-schema",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 08:30",
+      "completed": "2026-04-30",
+      "goal": "Add an optional `**Split-from**: HB-XXX` field to the ticket schema. When a bot or PM splits one ticket into multiple, each child carries `Split-from:` referencing the parent. Renderer parses the field and shows it as a small chip near the existing relationship chips.",
+      "why": "A bot mid-claim sometimes realizes a ticket should have been three. Today there's no way to record that lineage in the schema \u2014 provenance lives in commit messages or Notes, neither of which is machine-readable. With this field, `git blame` on the new tickets is one click, and the audit trail for decomposition is preserved without conventions in commit messages.",
+      "done_when": [
+        "`build_lib.parse_ticket` recognizes `**Split-from**:` and returns `split_from` on the ticket dict (single ID or list, comma-separated)",
+        "Board renders `Split from HB-XXX` as a chip next to existing relationship chips, same styling",
+        "HORDEOFBOTS.md schema reference lists `Split-from:` as an optional field with example",
+        "PM skill prompt mentions `split_from` so it can populate the field when generating decomposed tickets",
+        "`tests/test_parser.py` covers a ticket with `Split-from` set (single + multi)"
+      ],
+      "desired_output": "A user splits HB-005 into HB-080, HB-081, HB-082. Each child shows a `Split from HB-005` chip. The parent's history is one click away.",
+      "success_signals": "- When the user later asks \"where did HB-080 come from?\", the answer is on the card, not buried in `git log`.\n- Bots writing decomposition tickets populate the field by default.",
+      "failure_signals": "- Field becomes decorative \u2014 bots forget to set it, no inverse rendering on the parent, audit value never materializes.\n- Mitigation: PM skill defaults to populating it; HB-076 validator does not require it (optional field).",
+      "tests": "- `tests/test_parser.py` adds two cases: ticket with `Split-from: HB-005` and ticket with `Split-from: HB-005, HB-006`\n- `tests/test_build.py` adds a case that confirms the chip renders in HTML",
+      "notes": "- Inverse rendering (\"Split into HB-080, HB-081\" on the parent) is **out of scope** for this ticket. Renderer infers other inverses (Blocks/Blocked-by) at build time; could add for split later as a polish pass if it becomes valuable.\n- Field is optional everywhere \u2014 legacy tickets without it parse fine.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
       "id": "HB-074",
       "title": "Commit-message provenance convention",
       "status": "done",
@@ -1997,6 +2033,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "claude",
       "started": "2026-04-30 08:05",
       "completed": "2026-04-30",
@@ -2029,6 +2066,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -2065,6 +2103,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -2099,6 +2138,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -2125,6 +2165,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -2151,6 +2192,7 @@ var D = {
       "related": [],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "",
       "started": "",
       "completed": "",
@@ -2179,6 +2221,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "test-agent",
       "started": "2026-04-25 09:15",
       "completed": "",
@@ -2208,6 +2251,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "demo-bot",
       "started": "2026-04-26 10:00",
       "completed": "",
@@ -2238,6 +2282,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "alpha-bot",
       "started": "2026-04-26 10:30",
       "completed": "",
@@ -2269,6 +2314,7 @@ var D = {
       ],
       "blocks": [],
       "blocked_by": [],
+      "split_from": [],
       "assigned_to": "scout-9",
       "started": "2026-04-26 10:30",
       "completed": "",
@@ -2425,7 +2471,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T13:12:49.772536+00:00",
+  "generated": "2026-04-30T13:17:42.217795+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -2491,6 +2537,7 @@ function buildRelChips(t) {
   (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
   (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
   Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\u2190'}); });
+  (t.split_from || []).forEach(function(id) { all.push({kind:'split_from', id:id, prefix:'\u21B0'}); });
   return all;
 }
 
@@ -2499,7 +2546,7 @@ function relChipsFaceHTML(chips, cap) {
   var visible = chips.slice(0, cap);
   var extra = chips.length - visible.length;
   var html = visible.map(function(c) {
-    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : 'Blocked by ') + c.id;
+    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : c.kind === 'split_from' ? 'Split from ' : 'Blocked by ') + c.id;
     return '<span class="card-rel" title="' + esc(title) + '">' + c.prefix + ' ' + esc(c.id) + '</span>';
   }).join('');
   if (extra > 0) html += '<span class="card-rel card-rel-more">+' + extra + ' more</span>';
@@ -2508,12 +2555,13 @@ function relChipsFaceHTML(chips, cap) {
 
 function relDetailHTML(chips) {
   if (!chips.length) return '';
-  var groups = {related: [], blocks: [], blocked_by: []};
+  var groups = {related: [], blocks: [], blocked_by: [], split_from: []};
   chips.forEach(function(c) { groups[c.kind].push(c.id); });
   var parts = [];
   if (groups.related.length)    parts.push('<div><div class="dl-label">Related</div><div class="dl-val">'    + groups.related.map(esc).join(', ')    + '</div></div>');
   if (groups.blocks.length)     parts.push('<div><div class="dl-label">Blocks</div><div class="dl-val">'     + groups.blocks.map(esc).join(', ')     + '</div></div>');
   if (groups.blocked_by.length) parts.push('<div><div class="dl-label">Blocked by</div><div class="dl-val">' + groups.blocked_by.map(esc).join(', ') + '</div></div>');
+  if (groups.split_from.length) parts.push('<div><div class="dl-label">Split from</div><div class="dl-val">' + groups.split_from.map(esc).join(', ') + '</div></div>');
   return parts.join('');
 }
 
@@ -2957,7 +3005,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "ec9dfb9523e753b3bec10d2622755a7563f490ea"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "177cb829cb7dcd39ff333b7018b70e41a09cd15f"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.

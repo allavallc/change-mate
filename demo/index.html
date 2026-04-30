@@ -1079,7 +1079,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T13:12:49.898634+00:00",
+  "generated": "2026-04-30T13:17:42.350306+00:00",
   "demo_mode": true
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -1145,6 +1145,7 @@ function buildRelChips(t) {
   (t.blocked_by || []).forEach(function(id) { bb[id] = true; });
   (t.blocked_by_inferred || []).forEach(function(id) { bb[id] = true; });
   Object.keys(bb).forEach(function(id) { all.push({kind:'blocked_by', id:id, prefix:'\u2190'}); });
+  (t.split_from || []).forEach(function(id) { all.push({kind:'split_from', id:id, prefix:'\u21B0'}); });
   return all;
 }
 
@@ -1153,7 +1154,7 @@ function relChipsFaceHTML(chips, cap) {
   var visible = chips.slice(0, cap);
   var extra = chips.length - visible.length;
   var html = visible.map(function(c) {
-    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : 'Blocked by ') + c.id;
+    var title = (c.kind === 'related' ? 'Related to ' : c.kind === 'blocks' ? 'Blocks ' : c.kind === 'split_from' ? 'Split from ' : 'Blocked by ') + c.id;
     return '<span class="card-rel" title="' + esc(title) + '">' + c.prefix + ' ' + esc(c.id) + '</span>';
   }).join('');
   if (extra > 0) html += '<span class="card-rel card-rel-more">+' + extra + ' more</span>';
@@ -1162,12 +1163,13 @@ function relChipsFaceHTML(chips, cap) {
 
 function relDetailHTML(chips) {
   if (!chips.length) return '';
-  var groups = {related: [], blocks: [], blocked_by: []};
+  var groups = {related: [], blocks: [], blocked_by: [], split_from: []};
   chips.forEach(function(c) { groups[c.kind].push(c.id); });
   var parts = [];
   if (groups.related.length)    parts.push('<div><div class="dl-label">Related</div><div class="dl-val">'    + groups.related.map(esc).join(', ')    + '</div></div>');
   if (groups.blocks.length)     parts.push('<div><div class="dl-label">Blocks</div><div class="dl-val">'     + groups.blocks.map(esc).join(', ')     + '</div></div>');
   if (groups.blocked_by.length) parts.push('<div><div class="dl-label">Blocked by</div><div class="dl-val">' + groups.blocked_by.map(esc).join(', ') + '</div></div>');
+  if (groups.split_from.length) parts.push('<div><div class="dl-label">Split from</div><div class="dl-val">' + groups.split_from.map(esc).join(', ') + '</div></div>');
   return parts.join('');
 }
 
@@ -1611,7 +1613,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "ec9dfb9523e753b3bec10d2622755a7563f490ea"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "", "poll_seconds": 30, "head_sha": "177cb829cb7dcd39ff333b7018b70e41a09cd15f"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
