@@ -680,42 +680,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 32px; }
 var D = {
   "tickets": [
     {
-      "id": "HB-077",
-      "title": "Stale-claim render on in-progress cards",
-      "status": "open",
-      "priority": "Medium",
-      "effort": "S",
-      "feature_set": "feature-set-011-board-honesty",
-      "related": [],
-      "blocks": [],
-      "blocked_by": [],
-      "split_from": [],
-      "assigned_to": "",
-      "started": "",
-      "completed": "",
-      "verification": "",
-      "failure_mode": "",
-      "goal": "Render staleness metadata on in-progress cards: how long since the ticket was claimed, and how long since the file was last committed.",
-      "why": "A card sits in `in-progress/` looking alive even after the bot crashes. Today only Notes or git history reveal whether work is actually moving. Surfacing both timestamps on the card lets humans and reclaiming bots judge staleness at a glance \u2014 without adding a heartbeat field bots have to remember to update.",
-      "done_when": [
-        "In-progress cards show two relative timestamps in the footer: `claimed Xh ago` (from `Started` field) and `last commit Yh ago` (from `git log -1 --format=%ct -- <ticket-file>`)",
-        "Build script computes both at render time; no schema change",
-        "If `last commit > stale_after_hours` AND `claimed > stale_after_hours`, card gets a dotted accent border to flag possible-stale",
-        "`stale_after_hours` configurable in `config.json`, default 4",
-        "Missing `Started`: omit the \"claimed Xh\" string, no error",
-        "pytest: render with recent commit (no stale styling), with old commit (stale styling), with missing Started (no claimed display)"
-      ],
-      "desired_output": "A user opens the board, sees one in-progress card flagged \"claimed 18h ago \u00b7 last commit 14h ago\" with a dotted border, and immediately knows to check whether the bot is still alive.",
-      "success_signals": "- A stale claim gets reclaimed in the rollout window because someone noticed the flag\n- Bots can read the same render output to decide whether to attempt reclaim",
-      "failure_signals": "- All cards trip the threshold because real work outpaces 4h \u2014 tune up\n- Last-commit timestamp doesn't reflect work-in-progress (long-running task pre-commit) \u2014 acceptable; the heuristic is \"are you visibly committing?\", and bots that don't commit appear stale",
-      "tests": "- Render with file commit >4h ago \u2192 stale border class in HTML\n- Render with recent commit \u2192 no stale class\n- Missing `Started` \u2192 no \"claimed Xh\" string in card",
-      "notes": "- No new schema field. Render-only computation from existing data + git log.\n- 4h threshold is a guess; configurable, no code change to tune.\n- **Out of scope**: any reclaim automation. Render-only.",
-      "rejected_by": "",
-      "rejected": "",
-      "rejection_reason": "",
-      "blocked_by_inferred": []
-    },
-    {
       "id": "HB-078",
       "title": "Polling source honesty + README update",
       "status": "open",
@@ -748,6 +712,42 @@ var D = {
       "failure_signals": "- Adopters read `\"none\"` as \"no live updates ever, even on GitHub\" \u2014 wording in config comment + docs should make the meaning clear",
       "tests": "- Build with `pollSource: \"none\"` \u2192 no `hb-poll` script in output, `_(static \u2014 refresh manually)_` indicator present\n- Build with `pollSource: \"github\"` \u2192 existing polling unchanged\n- Invalid value \u2192 build warns and falls back to `\"github\"`",
       "notes": "- **Out of scope**: GitLab/Gitea/Bitbucket polling backends. Both reads (commits API) and writes (Contents API for Add Story) are GitHub-shaped \u2014 multi-backend is a re-architecture, not a flag. Honest framing now; real backends only if a real adopter asks.\n- **Why not auto-detect from remote URL?** Adopters may host the board separately from origin (GitHub Pages serving a GitLab repo). Explicit config is cleaner.",
+      "rejected_by": "",
+      "rejected": "",
+      "rejection_reason": "",
+      "blocked_by_inferred": []
+    },
+    {
+      "id": "HB-077",
+      "title": "Stale-claim render on in-progress cards",
+      "status": "in-progress",
+      "priority": "Medium",
+      "effort": "S",
+      "feature_set": "feature-set-011-board-honesty",
+      "related": [],
+      "blocks": [],
+      "blocked_by": [],
+      "split_from": [],
+      "assigned_to": "claude",
+      "started": "2026-04-30 12:00",
+      "completed": "",
+      "verification": "",
+      "failure_mode": "",
+      "goal": "Render staleness metadata on in-progress cards: how long since the ticket was claimed, and how long since the file was last committed.",
+      "why": "A card sits in `in-progress/` looking alive even after the bot crashes. Today only Notes or git history reveal whether work is actually moving. Surfacing both timestamps on the card lets humans and reclaiming bots judge staleness at a glance \u2014 without adding a heartbeat field bots have to remember to update.",
+      "done_when": [
+        "In-progress cards show two relative timestamps in the footer: `claimed Xh ago` (from `Started` field) and `last commit Yh ago` (from `git log -1 --format=%ct -- <ticket-file>`)",
+        "Build script computes both at render time; no schema change",
+        "If `last commit > stale_after_hours` AND `claimed > stale_after_hours`, card gets a dotted accent border to flag possible-stale",
+        "`stale_after_hours` configurable in `config.json`, default 4",
+        "Missing `Started`: omit the \"claimed Xh\" string, no error",
+        "pytest: render with recent commit (no stale styling), with old commit (stale styling), with missing Started (no claimed display)"
+      ],
+      "desired_output": "A user opens the board, sees one in-progress card flagged \"claimed 18h ago \u00b7 last commit 14h ago\" with a dotted border, and immediately knows to check whether the bot is still alive.",
+      "success_signals": "- A stale claim gets reclaimed in the rollout window because someone noticed the flag\n- Bots can read the same render output to decide whether to attempt reclaim",
+      "failure_signals": "- All cards trip the threshold because real work outpaces 4h \u2014 tune up\n- Last-commit timestamp doesn't reflect work-in-progress (long-running task pre-commit) \u2014 acceptable; the heuristic is \"are you visibly committing?\", and bots that don't commit appear stale",
+      "tests": "- Render with file commit >4h ago \u2192 stale border class in HTML\n- Render with recent commit \u2192 no stale class\n- Missing `Started` \u2192 no \"claimed Xh\" string in card",
+      "notes": "- No new schema field. Render-only computation from existing data + git log.\n- 4h threshold is a guess; configurable, no code change to tune.\n- **Out of scope**: any reclaim automation. Render-only.",
       "rejected_by": "",
       "rejected": "",
       "rejection_reason": "",
@@ -2625,7 +2625,7 @@ var D = {
       ]
     }
   ],
-  "generated": "2026-04-30T16:00:37.442051+00:00",
+  "generated": "2026-04-30T16:00:58.363614+00:00",
   "demo_mode": false
 };
 var DEFAULT_REPO = "allavallc/horde-of-bots";
@@ -3194,7 +3194,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeModal(); closeSetupModal(); }
 });
 </script>
-<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "5f4ac08ac27e03e18b8f06fce1da62a4061c37b9"}</script>
+<script id="hb-poll-config" type="application/json">{"repo": "allavallc/horde-of-bots", "poll_seconds": 30, "head_sha": "bcc0253938552d9efd218252a4aa6536ea46fafb"}</script>
 <script>
 (function() {
   // Poll the GitHub commits API; if HEAD on main changed, reload the page.
